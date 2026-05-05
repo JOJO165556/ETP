@@ -1,2 +1,34 @@
+# Environnements virtuels
 venv/
+env/
 .env
+
+# Dossiers spécifiques aux IDE
+.vscode/
+.idea/
+
+# Fichiers Python compilés
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Bases de données locales
+*.sqlite3
+*.db
+
+# Dossiers de builds et distributions
+build/
+dist/
+*.egg-info/
+
+# Logs et rapports
+*.log
+.coverage
+htmlcov/
+.pytest_cache/
+
+# Dossiers de données Docker
+postgres_data/
+
+# Poetry
+poetry.lock
