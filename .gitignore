@@ -1,4 +1,5 @@
 # Environnements virtuels
+.venv/
 venv/
 env/
 .env
@@ -26,6 +27,7 @@ dist/
 .coverage
 htmlcov/
 .pytest_cache/
+.mypy_cache/
 
 # Dossiers de données Docker
 postgres_data/
