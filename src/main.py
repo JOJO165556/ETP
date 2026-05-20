@@ -3,14 +3,21 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from src.core.config import settings
 from src.core.database import engine
+from src.core.storage import AsyncStorageService
 from src.modules.auth.router import router as auth_router
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup actions: valider la connectivité db, charger les modèles de cache,...
+    # Actions au démarrage de l'API
+    # 1. Initialisation des buckets MinIO / S3 pour les CVs
+    storage_service = AsyncStorageService()
+    await storage_service.initialize_buckets()
+        
     yield
-    # Shutdown actions: couper les connexions du pool
+    
+    # Actions à l'extinction de l'API
+    # Couper proprement les connexions du pool SQL
     await engine.dispose()
 
 
