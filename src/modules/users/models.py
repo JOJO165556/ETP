@@ -42,6 +42,10 @@ class Profile(Base, BaseUUIDMixin, AuditMixin, SoftDeleteMixin):
     last_name: Mapped[str | None] = mapped_column(String(100), nullable=True)
     phone: Mapped[str | None] = mapped_column(String(30), nullable=True)
 
+    # PORTION STOCKAGE CV
+    # Stocke la clé unique du fichier dans MinIO (ex: 'cvs/uuid.pdf')
+    cv_key: Mapped[str | None] = mapped_column(String(255), nullable=True)
+
     # PORTION INTÉGRATION GIS (PostGIS)
     # Stocke le point géographique précis de résidence (SRID 4326 - WGS 84)
     location = mapped_column(Geometry(geometry_type="POINT", srid=4326), nullable=True, index=True)
