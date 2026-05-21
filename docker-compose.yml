@@ -3,7 +3,7 @@ services:
     image: postgis/postgis:15-3.4
     container_name: etp_platform_db
     volumes:
-      - /home/jojo/etp_postgres_data:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql/data
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
@@ -11,3 +11,21 @@ services:
     ports:
       - "5432:5432"
     restart: always
+
+  minio:
+    image: minio/minio:latest
+    container_name: etp_platform_minio
+    volumes:
+      - minio_data:/data
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY}
+    ports:
+      - "9000:9000"  # Port pour l'API 
+      - "9001:9001"  # Port pour l'interface web (Console MinIO)
+    command: server /data --console-address ":9001"
+    restart: always
+
+volumes:
+  postgres_data:
+  minio_data:

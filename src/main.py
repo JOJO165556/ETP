@@ -5,7 +5,7 @@ from src.core.config import settings
 from src.core.database import engine
 from src.core.storage import AsyncStorageService
 from src.modules.auth.router import router as auth_router
-
+from src.modules.users.router import router as users_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -41,7 +41,7 @@ if settings.BACKEND_CORS_ORIGINS:
 
 # Enregistrement des routes de l'API v1
 app.include_router(auth_router, prefix=settings.API_V1_STR)
-
+app.include_router(users_router, prefix=settings.API_V1_STR)
 
 @app.get("/health", tags=["Infrastructure"])
 async def health_check():
