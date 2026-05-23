@@ -1,15 +1,17 @@
+import os
+import uuid
 import aioboto3
 from botocore.exceptions import ClientError
 from fastapi import UploadFile
-import os
-import uuid
+from src.core.config import settings
 
 class AsyncStorageService:
     def __init__(self):
-        self.endpoint_url = f"http://{os.getenv('MINIO_ENDPOINT', 'localhost:9000')}"
-        self.access_key = os.getenv("MINIO_ACCESS_KEY")
-        self.secret_key = os.getenv("MINIO_SECRET_KEY")
-        self.bucket_cv = os.getenv("MINIO_BUCKET_CV", "candidats-cv")
+        # Utilisation exclusive de l'objet settings validé par Pydantic
+        self.endpoint_url = f"http://{settings.MINIO_ENDPOINT}"
+        self.access_key = settings.MINIO_ACCESS_KEY
+        self.secret_key = settings.MINIO_SECRET_KEY
+        self.bucket_cv = settings.MINIO_BUCKET_NAME
         
         # Configuration de la session asynchrone aioboto3
         self.session = aioboto3.Session()
@@ -33,21 +35,20 @@ class AsyncStorageService:
                 error_code = e.response.get("Error", {}).get("Code")
                 if error_code == "404":
                     await s3.create_bucket(Bucket=self.bucket_cv)
-                    print(f"Bucket '{self.bucket_cv}' créé avec succès dans MinIO.")
 
     async def upload_cv(self, file: UploadFile) -> str:
         """
         Upload un CV de manière asynchrone et renvoie sa clé unique de stockage
         """
-        # Génération d'un nom de fichier unique pour éviter les collisions (ex: uuid_nom.pdf)
+        # Extraction de l'extension et génération d'une clé unique basée sur un UUID
         file_extension = os.path.splitext(file.filename)[1]
         unique_filename = f"cvs/{uuid.uuid4()}{file_extension}"
 
         async with self._get_client() as s3:
-            # Lecture du contenu du fichier
+            # Lecture du contenu binaire du fichier transmis
             file_content = await file.read()
             
-            # Upload asynchrone vers MinIO
+            # Téléversement asynchrone vers MinIO
             await s3.put_object(
                 Bucket=self.bucket_cv,
                 Key=unique_filename,

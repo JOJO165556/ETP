@@ -9,12 +9,12 @@ from src.core.security import ALGORITHM, verify_password, create_access_token
 from src.modules.auth.schemas import Token, TokenData
 from src.modules.users.models import User
 
-router = APIRouter(prefix="/auth", tags=["Authentication"])
+router = APIRouter(prefix="/auth", tags=["Authentification"])
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl=f"{settings.API_V1_STR}/auth/login")
 
 
-@router.post("/login", response_model=Token)
+@router.post("/login", response_model=Token, summary="Se connecter (Obtenir un Token)")
 async def login_for_access_token(
     form_data: OAuth2PasswordRequestForm = Depends(),
     db: AsyncSession = Depends(get_db)
