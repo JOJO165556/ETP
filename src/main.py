@@ -43,6 +43,6 @@ if settings.BACKEND_CORS_ORIGINS:
 app.include_router(auth_router, prefix=settings.API_V1_STR)
 app.include_router(users_router, prefix=settings.API_V1_STR)
 
-@app.get("/health", tags=["Infrastructure"])
+@app.get("/health", tags=["Infrastructure"], summary="Vérification de l'état de santé")
 async def health_check():
     return {"status": "healthy", "service": settings.PROJECT_NAME}
