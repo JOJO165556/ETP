@@ -1,17 +1,15 @@
 from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from jose import jwt, JWTError
+from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from src.core.config import settings
 from src.core.database import get_db
-from src.core.security import ALGORITHM, verify_password, create_access_token
-from src.modules.auth.schemas import Token, TokenData
+from src.core.security import verify_password, create_access_token
+from src.modules.auth.schemas import Token
+from src.modules.auth.dependencies import get_current_user
 from src.modules.users.models import User
 
 router = APIRouter(prefix="/auth", tags=["Authentification"])
-
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl=f"{settings.API_V1_STR}/auth/login")
 
 
 @router.post("/login", response_model=Token, summary="Se connecter (Obtenir un Token)")
@@ -40,25 +38,4 @@ async def login_for_access_token(
     return Token(access_token=access_token, token_type="bearer")
 
 
-async def get_current_user(
-    db: AsyncSession = Depends(get_db), token: str = Depends(oauth2_scheme)
-) -> User:
-    credentials_exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Could not validate credentials",
-        headers={"WWW-Authenticate": "Bearer"},
-    )
-    try:
-        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[ALGORITHM])
-        user_id: str = payload.get("sub")
-        if user_id is None:
-            raise credentials_exception
-        token_data = TokenData(user_id=user_id)
-    except JWTError:
-        raise credentials_exception
-
-    result = await db.execute(select(User).where(User.id == token_data.user_id))
-    user = result.scalars().first()
-    if user is None or not user.is_active:
-        raise credentials_exception
-    return user
+__all__ = ["get_current_user"]
