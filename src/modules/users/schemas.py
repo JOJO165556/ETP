@@ -23,9 +23,19 @@ class UserBase(BaseModel):
 class UserCreate(UserBase):
     password: str
 
+class UserAdminCreate(UserCreate):
+    company_id: str | None = None
+
+class UserUpdate(BaseModel):
+    email: EmailStr | None = None
+    is_active: bool | None = None
+    role: UserRole | None = None
+    company_id: str | None = None
+
 
 class UserResponse(UserBase):
     model_config = ConfigDict(from_attributes=True)
     id: str
     is_active: bool
+    company_id: str | None = None
     profile: ProfileResponse | None = None
