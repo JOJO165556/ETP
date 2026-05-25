@@ -1,6 +1,6 @@
 from sqlalchemy import update, select
 from src.core.repository import BaseAsyncRepository
-from src.modules.users.models import Profile
+from src.modules.users.models import Profile, User
 
 class UserProfileRepository(BaseAsyncRepository[Profile]):
     def __init__(self, session):
@@ -28,3 +28,24 @@ class UserProfileRepository(BaseAsyncRepository[Profile]):
         result = await self.session.execute(query)
         await self.session.commit()
         return result.scalar_one_or_none()
+
+class UserRepository(BaseAsyncRepository[User]):
+    def __init__(self, session):
+        super().__init__(User, session)
+
+    async def get_by_email(self, email: str) -> User | None:
+        query = select(self.model).where(self.model.email == email)
+        result = await self.session.execute(query)
+        return result.scalar_one_or_none()
+
+    async def create(self, data: dict) -> User:
+        user = User(**data)
+        self.session.add(user)
+        await self.session.flush()
+        
+        # Création automatique du profil
+        profile = Profile(user_id=user.id)
+        self.session.add(profile)
+        await self.session.flush()
+        
+        return user

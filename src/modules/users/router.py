@@ -5,11 +5,13 @@ from src.core.database import get_db
 from src.core.storage import AsyncStorageService
 from src.modules.auth.dependencies import get_current_user, require_roles
 from src.modules.users.models import User, UserRole
-from src.modules.users.repository import UserProfileRepository
-from src.modules.users.schemas import ProfileResponse
+from src.modules.users.repository import UserProfileRepository, UserRepository
+from src.modules.users.schemas import ProfileResponse, UserResponse, UserCreate, UserAdminCreate
+from src.modules.users.services import UserService
 
 profile_router = APIRouter(prefix="/profile")
 
+_SUPERADMIN = require_roles(UserRole.SUPERADMIN)
 _CANDIDATE_OR_ADMIN = require_roles(UserRole.CANDIDATE, UserRole.SUPERADMIN)
 _RECRUITER_OR_ADMIN = require_roles(UserRole.RECRUITER, UserRole.COMPANY_ADMIN, UserRole.SUPERADMIN)
 
@@ -117,4 +119,54 @@ async def get_candidate_cv_link(
 
 # Routeur principal du module utilisateurs
 router = APIRouter(prefix="/users", tags=["Utilisateurs"])
+
+@router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED, summary="Inscription publique d'un candidat")
+async def register_candidate(
+    user_in: UserCreate, 
+    db: AsyncSession = Depends(get_db)
+) -> UserResponse:
+    """
+    Inscription publique pour les candidats.
+    Le rôle est forcé à CANDIDATE.
+    """
+    user_in.role = UserRole.CANDIDATE
+    service = UserService(db)
+    user = await service.register_user(user_in)
+    await db.commit() # Commit transaction
+    return user
+
+
+@router.post("/admin", response_model=UserResponse, status_code=status.HTTP_201_CREATED, summary="Création d'un utilisateur par un Superadmin")
+async def create_user_by_admin(
+    user_in: UserAdminCreate, 
+    current_admin: User = Depends(_SUPERADMIN),
+    db: AsyncSession = Depends(get_db)
+) -> UserResponse:
+    """
+    Création d'un utilisateur (ex: recruteur, admin entreprise) par un superadmin.
+    """
+    service = UserService(db)
+    user = await service.register_user(user_in)
+    await db.commit()
+    return user
+
+
+@router.get("/me", response_model=UserResponse, summary="Obtenir son propre profil")
+async def get_my_profile(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+) -> UserResponse:
+    """
+    Récupère le profil de l'utilisateur connecté via son Token JWT.
+    """
+    repo = UserRepository(db)
+    user = await repo.get(str(current_user.id))
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Utilisateur non trouvé."
+        )
+    return user
+
+
 router.include_router(profile_router)
