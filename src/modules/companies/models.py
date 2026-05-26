@@ -13,6 +13,7 @@ class Company(Base, BaseUUIDMixin, AuditMixin, SoftDeleteMixin):
 
     name: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
     slug: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
+    siret: Mapped[str | None] = mapped_column(String(14), unique=True, nullable=True, index=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, server_default="true")
     
     # Préparation multi-tenant & billing
