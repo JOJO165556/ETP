@@ -8,6 +8,7 @@ from src.modules.users.models import User, UserRole
 from src.modules.applications.schemas import ApplicationResponse, ApplicationUpdateStage
 from src.modules.applications.services import ApplicationService
 from src.modules.applications.repository import ApplicationRepository
+from src.modules.applications.tasks import parse_resume
 from src.modules.jobs.repository import JobRepository
 
 router = APIRouter(prefix="/applications", tags=["Candidatures"])
@@ -29,6 +30,12 @@ async def apply_to_job(
     service = ApplicationService(db)
     application = await service.apply_to_job(job_id, str(current_user.id))
     await db.commit()
+
+    # Dispatch asynchrone du parsing — n'impacte pas le temps de réponse HTTP
+    # Le worker Celery prend le relais via Redis
+    if application.resume_storage_path:
+        parse_resume.delay(str(application.id), application.resume_storage_path)
+
     return application
 
 

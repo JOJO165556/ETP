@@ -12,6 +12,18 @@ services:
       - "5432:5432"
     restart: always
 
+  redis:
+    image: redis:7-alpine
+    container_name: etp_platform_redis
+    ports:
+      - "6379:6379"
+    restart: always
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   minio:
     image: minio/minio:latest
     container_name: etp_platform_minio
@@ -21,10 +33,40 @@ services:
       MINIO_ROOT_USER: ${MINIO_ACCESS_KEY}
       MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY}
     ports:
-      - "9000:9000"  # Port pour l'API 
-      - "9001:9001"  # Port pour l'interface web (Console MinIO)
+      - "9000:9000"
+      - "9001:9001"
     command: server /data --console-address ":9001"
     restart: always
+
+  celery_worker:
+    build: .
+    container_name: etp_platform_celery_worker
+    # Commande de démarrage du worker — concurrency=4 = 4 tâches en parallèle
+    command: celery -A src.core.celery_app.celery_app worker --loglevel=info --concurrency=4
+    env_file:
+      - .env
+    volumes:
+      - .:/app
+    depends_on:
+      redis:
+        condition: service_healthy
+      db:
+        condition: service_started
+    restart: on-failure
+
+  flower:
+    build: .
+    container_name: etp_platform_flower
+    # Interface web de monitoring des tâches Celery (accessible sur :5555)
+    command: celery -A src.core.celery_app.celery_app flower --port=5555
+    env_file:
+      - .env
+    ports:
+      - "5555:5555"
+    depends_on:
+      - redis
+      - celery_worker
+    restart: on-failure
 
 volumes:
   postgres_data:

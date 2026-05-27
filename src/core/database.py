@@ -22,6 +22,9 @@ AsyncSessionLocal = sessionmaker(
     autoflush=False,
 )
 
+# Alias explicite pour les workers Celery qui instancient leur session manuellement
+async_session_maker = AsyncSessionLocal
+
 # Registre centralisé pour les métadonnées SQLAlchemy et les futures migrations 
 Base = declarative_base()
 
