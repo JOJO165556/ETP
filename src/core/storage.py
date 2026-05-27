@@ -69,3 +69,15 @@ class AsyncStorageService:
                 ExpiresIn=expires_in
             )
             return url
+
+    async def download_file(self, file_key: str, destination_path: str) -> None:
+        """
+        Télécharge un objet depuis MinIO vers un fichier local.
+        Utilisé principalement par les workers Celery pour accéder aux CVs avant parsing.
+        """
+        async with self._get_client() as s3:
+            response = await s3.get_object(Bucket=self.bucket_cv, Key=file_key)
+            async with response["Body"] as stream:
+                data = await stream.read()
+            with open(destination_path, "wb") as f:
+                f.write(data)
