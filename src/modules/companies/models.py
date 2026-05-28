@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, List
 from sqlalchemy import String, Boolean, JSON
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from src.core.database import Base
@@ -6,6 +6,7 @@ from src.models.mixins import BaseUUIDMixin, AuditMixin, SoftDeleteMixin
 
 if TYPE_CHECKING:
     from src.modules.users.models import User
+    from src.modules.jobs.models import Job
 
 
 class Company(Base, BaseUUIDMixin, AuditMixin, SoftDeleteMixin):
@@ -21,4 +22,4 @@ class Company(Base, BaseUUIDMixin, AuditMixin, SoftDeleteMixin):
 
     # Relations d'entreprise
     users: Mapped[list["User"]] = relationship("User", back_populates="company", cascade="all, delete-orphan")
-    
+    jobs: Mapped[list["Job"]] = relationship("Job", back_populates="company", cascade="all, delete-orphan")

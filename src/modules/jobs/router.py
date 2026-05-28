@@ -106,3 +106,18 @@ async def list_company_jobs(
     repo = JobRepository(db)
     jobs = await repo.get_active_jobs_by_company(company_id)
     return jobs
+
+@router.get("/search/location", response_model=List[JobResponse], summary="Recherche d'offres par géolocalisation (PostGIS)")
+async def search_jobs_by_location(
+    lon: float,
+    lat: float,
+    radius_km: float = 50.0,
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Recherche des offres d'emploi actives dans un rayon géographique donné.
+    Utilise PostGIS (ST_DWithin) pour un filtrage haute performance sur la base de données.
+    """
+    repo = JobRepository(db)
+    jobs = await repo.find_jobs_within_radius(lon=lon, lat=lat, radius_km=radius_km)
+    return jobs

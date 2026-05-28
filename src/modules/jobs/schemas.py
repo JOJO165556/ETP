@@ -11,6 +11,8 @@ class JobBase(BaseModel):
 
 class JobCreate(JobBase):
     status: JobStatus = Field(default=JobStatus.DRAFT, description="Le statut initial de l'offre")
+    longitude: float | None = Field(None, description="Longitude pour le SIG (ex: 2.3522)")
+    latitude: float | None = Field(None, description="Latitude pour le SIG (ex: 48.8566)")
 
 class JobUpdate(BaseModel):
     title: str | None = None
@@ -19,6 +21,8 @@ class JobUpdate(BaseModel):
     is_remote: bool | None = None
     formatted_address: str | None = None
     required_skills: List[str] | None = None
+    longitude: float | None = None
+    latitude: float | None = None
 
 class JobResponse(JobBase):
     model_config = ConfigDict(from_attributes=True)
