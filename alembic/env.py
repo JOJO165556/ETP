@@ -23,8 +23,16 @@ from src.modules.applications.models import Application
 
 target_metadata = Base.metadata
 
-# Construction de l'URL de base de données
-DATABASE_URL = f"postgresql+psycopg2://{os.getenv('POSTGRES_USER')}:{os.getenv('POSTGRES_PASSWORD')}@localhost:5432/{os.getenv('POSTGRES_DB')}"
+# Réutilisation de DATABASE_URL si définie (Docker), sinon reconstruction depuis les variables
+_raw_url = os.getenv("DATABASE_URL", "")
+if _raw_url:
+    # Alembic requiert un driver synchrone — on convertit asyncpg -> psycopg2
+    DATABASE_URL = _raw_url.replace("postgresql+asyncpg://", "postgresql+psycopg2://")
+else:
+    DATABASE_URL = (
+        f"postgresql+psycopg2://{os.getenv('POSTGRES_USER')}:{os.getenv('POSTGRES_PASSWORD')}"
+        f"@{os.getenv('POSTGRES_SERVER', 'localhost')}:5432/{os.getenv('POSTGRES_DB')}"
+    )
 
 def include_object(object, name, type_, reflected, compare_to):
     """Filtre pour ignorer les tables système PostGIS et Tiger Geocoder."""

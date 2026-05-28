@@ -14,6 +14,13 @@ class JobService:
         """
         job_data = job_in.model_dump()
         job_data["company_id"] = company_id
+        
+        # Traitement SIG : Conversion lat/lon en POINT PostGIS (WKT)
+        lon = job_data.pop("longitude", None)
+        lat = job_data.pop("latitude", None)
+        if lon is not None and lat is not None:
+            job_data["job_location"] = f"POINT({lon} {lat})"
+
         return await self.repo.create(job_data)
 
     async def update_job(self, job_id: str, job_in: JobUpdate, company_id: str, is_superadmin: bool = False) -> Job:
@@ -35,4 +42,11 @@ class JobService:
             )
 
         updated_data = job_in.model_dump(exclude_unset=True)
+        
+        # Traitement SIG lors de la mise à jour
+        lon = updated_data.pop("longitude", None)
+        lat = updated_data.pop("latitude", None)
+        if lon is not None and lat is not None:
+            updated_data["job_location"] = f"POINT({lon} {lat})"
+            
         return await self.repo.update(job_id, updated_data)
