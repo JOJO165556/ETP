@@ -5,7 +5,7 @@ from typing import List
 from src.core.database import get_db
 from src.modules.auth.dependencies import require_roles
 from src.modules.users.models import User, UserRole
-from src.modules.jobs.schemas import JobCreate, JobUpdate, JobResponse
+from src.modules.jobs.schemas import JobCreate, JobUpdate, JobResponse, CandidateMatchResponse
 from src.modules.jobs.services import JobService
 from src.modules.jobs.repository import JobRepository
 from src.modules.jobs.models import JobStatus
@@ -121,3 +121,34 @@ async def search_jobs_by_location(
     repo = JobRepository(db)
     jobs = await repo.find_jobs_within_radius(lon=lon, lat=lat, radius_km=radius_km)
     return jobs
+
+@router.get("/{job_id}/match", response_model=List[CandidateMatchResponse], summary="Matching Engine : Trouver des candidats")
+async def match_candidates_for_job(
+    job_id: str,
+    current_user: User = Depends(_RECRUITER_OR_ADMIN),
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Retourne la liste des profils candidats correspondant à l'offre.
+    Le score combine l'intersection des compétences et la distance géographique PostGIS.
+    Restreint au recruteur de l'entreprise ou au Superadmin.
+    """
+    repo = JobRepository(db)
+    job = await repo.get(job_id)
+    
+    if not job:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Offre d'emploi introuvable."
+        )
+
+    # Vérification des droits : le recruteur doit appartenir à la même entreprise
+    if current_user.role != UserRole.SUPERADMIN and str(job.company_id) != str(current_user.company_id):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Vous n'êtes pas autorisé à voir les matchs pour cette offre."
+        )
+
+    matches = await repo.find_matching_candidates_for_job(job_id)
+    return matches
+

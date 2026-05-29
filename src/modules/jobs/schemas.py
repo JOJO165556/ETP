@@ -29,3 +29,14 @@ class JobResponse(JobBase):
     id: str
     company_id: str
     status: JobStatus
+
+class CandidateMatchResponse(BaseModel):
+    profile_id: str
+    user_id: str
+    first_name: str | None
+    last_name: str | None
+    email: str
+    matching_score: float
+    distance_km: float | None
+    matched_skills: List[str]
+    missing_skills: List[str]
