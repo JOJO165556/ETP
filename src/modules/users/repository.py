@@ -15,6 +15,18 @@ class UserProfileRepository(BaseAsyncRepository[Profile]):
         result = await self.session.execute(query)
         return result.scalar_one_or_none()
 
+    async def update_by_user_id(self, user_id: str, data: dict) -> Profile | None:
+        """Met à jour le profil via le user_id"""
+        query = (
+            update(self.model)
+            .where(self.model.user_id == user_id)
+            .values(**data)
+            .execution_options(synchronize_session="fetch")
+        )
+        await self.session.execute(query)
+        await self.session.flush()
+        return await self.get_by_user_id(user_id)
+
     async def update_cv_key(self, user_id: str, cv_key: str) -> Profile | None:
         """
         Met à jour ou ajoute la clé de stockage du CV pour un utilisateur spécifique

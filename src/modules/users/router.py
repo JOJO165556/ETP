@@ -6,7 +6,7 @@ from src.core.storage import AsyncStorageService
 from src.modules.auth.dependencies import get_current_user, require_roles
 from src.modules.users.models import User, UserRole
 from src.modules.users.repository import UserProfileRepository, UserRepository
-from src.modules.users.schemas import ProfileResponse, UserResponse, UserCreate, UserAdminCreate
+from src.modules.users.schemas import ProfileResponse, UserResponse, UserCreate, UserAdminCreate, UserUpdate, UserMeUpdate
 from src.modules.users.services import UserService
 
 profile_router = APIRouter(prefix="/profile")
@@ -167,6 +167,56 @@ async def get_my_profile(
             detail="Utilisateur non trouvé."
         )
     return user
+
+
+@router.patch("/me", response_model=UserResponse, summary="Modifier son propre profil")
+async def update_my_profile(
+    data_in: UserMeUpdate,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+) -> UserResponse:
+    """
+    Permet à l'utilisateur connecté de modifier ses informations et son profil.
+    """
+    service = UserService(db)
+    user = await service.update_me(str(current_user.id), data_in)
+    await db.commit()
+    return user
+
+
+@router.patch("/{user_id}", response_model=UserResponse, summary="Modifier un utilisateur (Superadmin)")
+async def update_user_by_admin(
+    user_id: str,
+    user_in: UserUpdate,
+    current_admin: User = Depends(_SUPERADMIN),
+    db: AsyncSession = Depends(get_db)
+) -> UserResponse:
+    """
+    Permet à un Superadmin de modifier les données de base d'un utilisateur.
+    """
+    service = UserService(db)
+    user = await service.update_user(user_id, user_in)
+    await db.commit()
+    return user
+
+
+@router.delete("/{user_id}", status_code=status.HTTP_200_OK, summary="Désactiver un utilisateur (Soft Delete)")
+async def delete_user(
+    user_id: str,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Désactive un utilisateur. 
+    Restreint au propriétaire du compte ou à un Superadmin.
+    """
+    if str(current_user.id) != user_id and current_user.role != UserRole.SUPERADMIN:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Accès refusé.")
+        
+    service = UserService(db)
+    result = await service.soft_delete_user(user_id)
+    await db.commit()
+    return result
 
 
 router.include_router(profile_router)

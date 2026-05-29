@@ -13,6 +13,14 @@ class ProfileResponse(ProfileBase):
     id: str
     user_id: str
     cv_key: str | None = None  # Permet de voir si le candidat a un CV enregistré
+    skills: list[str] | None = None
+
+
+class ProfileUpdate(BaseModel):
+    first_name: str | None = None
+    last_name: str | None = None
+    phone: str | None = None
+    raw_address: str | None = None
 
     
 class UserBase(BaseModel):
@@ -31,6 +39,12 @@ class UserUpdate(BaseModel):
     is_active: bool | None = None
     role: UserRole | None = None
     company_id: str | None = None
+
+
+class UserMeUpdate(BaseModel):
+    email: EmailStr | None = None
+    password: str | None = None
+    profile: ProfileUpdate | None = None
 
 
 class UserResponse(UserBase):

@@ -9,6 +9,7 @@ from src.core.celery_app import celery_app
 from src.core.storage import AsyncStorageService
 from src.core.database import async_session_maker
 from src.modules.applications.repository import ApplicationRepository
+from src.modules.users.repository import UserProfileRepository
 
 logger = get_task_logger(__name__)
 
@@ -64,10 +65,30 @@ async def async_parse_resume_task(application_id: str, resume_key: str):
     # 4. Sauvegarder dans la base de données
     async with async_session_maker() as session:
         repo = ApplicationRepository(session)
-        await repo.update(application_id, {
-            "parsed_data": parsed_data,
-            "matching_score": score
-        })
+        profile_repo = UserProfileRepository(session)
+        
+        application = await repo.get(application_id)
+        if application:
+            # Mise à jour de la candidature
+            await repo.update(application_id, {
+                "parsed_data": parsed_data,
+                "matching_score": score
+            })
+            
+            # Mise à jour du Profil (simulation pour compétences et adresse brute)
+            # Simulation de l'extraction d'adresse depuis le PDF
+            simulated_address = "Paris" if "paris" in text_lower else None
+            
+            profile = await profile_repo.get_by_user_id(str(application.candidate_id))
+            if profile:
+                profile_update_data = {}
+                # Fusionner les nouvelles skills avec les existantes, ou remplacer
+                profile_update_data["skills"] = list(set((profile.skills or []) + found_skills))
+                if simulated_address:
+                    profile_update_data["raw_address"] = simulated_address
+                    
+                await profile_repo.update_by_user_id(str(application.candidate_id), profile_update_data)
+                
         await session.commit()
         
     logger.info(f"Parsing terminé pour {application_id}. Skills trouvées: {found_skills}")
