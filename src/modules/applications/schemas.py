@@ -20,3 +20,8 @@ class ApplicationResponse(ApplicationBase):
     stage: ApplicationStage
     resume_storage_path: str | None = None
     matching_score: float | None = None
+    
+    # Celery Task Tracking
+    celery_task_id: str | None = None
+    celery_task_status: str | None = None
+    celery_task_result: dict | None = None

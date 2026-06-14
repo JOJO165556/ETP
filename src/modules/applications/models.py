@@ -1,6 +1,6 @@
 from enum import Enum
 from typing import TYPE_CHECKING
-from sqlalchemy import String, ForeignKey, Enum as SQLEnum, JSON, Numeric
+from sqlalchemy import String, ForeignKey, Enum as SQLEnum, JSON, Numeric, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from src.core.database import Base
 from src.models.mixins import BaseUUIDMixin, AuditMixin, SoftDeleteMixin
@@ -42,6 +42,11 @@ class Application(Base, BaseUUIDMixin, AuditMixin, SoftDeleteMixin):
     matching_score: Mapped[float | None] = mapped_column(Numeric(5, 2), nullable=True)
     # Données brutes extraites par le parser (historique de carrière, éducation au format JSON structural)
     parsed_data: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    
+    # Celery Task Tracking
+    celery_task_id: Mapped[str | None] = mapped_column(String(255), nullable=True, index=True)
+    celery_task_status: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    celery_task_result: Mapped[dict | None] = mapped_column(JSON, nullable=True)
 
     # Relations
     job: Mapped["Job"] = relationship("Job", back_populates="applications")
