@@ -130,7 +130,8 @@ class TestSmartJobMatchingAlgorithm:
         result = await calculate_smart_match(candidate_skills, extracted_text, mock_job)
         
         # Devrait avoir un bonus d'éducation
-        assert result["education_match"] == 15.0  # EDUCATION_WEIGHT * 100
+        # "Licence" = bachelor, "Bachelor" = bachelor → même niveau → EDUCATION_WEIGHT * 100
+        assert result["education_match"] == 15.0  # EDUCATION_WEIGHT * 100 (equal levels)
         assert result["overall_score"] >= 65  # Skill match + education bonus
 
     @pytest.mark.asyncio

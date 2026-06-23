@@ -3,8 +3,10 @@ import pdfplumber
 import tempfile
 import os
 import json
+import re
 import numpy as np
 from datetime import datetime
+from collections import Counter
 from celery.utils.log import get_task_logger
 
 from src.core.celery_app import celery_app
@@ -37,6 +39,10 @@ EDUCATION_LEVELS = {
 }
 
 # Skill importance weights (higher = more important for most jobs)
+def _word_match(keyword: str, text: str) -> bool:
+    """Vérifie si un keyword apparaît comme mot entier dans le texte (évite 'bac' dans 'bachelor')."""
+    return bool(re.search(r'\b' + re.escape(keyword) + r'\b', text))
+
 SKILL_IMPORTANCE = {
     "python": 1.0,
     "fastapi": 0.9,
@@ -53,6 +59,25 @@ SKILL_IMPORTANCE = {
     "communication": 0.6,
     "leadership": 0.6,
     "teamwork": 0.5
+}
+
+# Advanced skill synonyms and variations
+SKILL_SYNONYMS = {
+    "python": ["python3", "python 3", "py", "python programming"],
+    "fastapi": ["fast api", "fastapi.py"],
+    "react": ["reactjs", "react js", "react.js"],
+    "postgresql": ["postgres", "psql", "postgresql", "postgreSQL"],
+    "docker": ["container", "containers"],
+    "kubernetes": ["k8s", "kube"],
+    "aws": ["amazon web services", "aws services"],
+    "gcp": ["google cloud platform", "google cloud"],
+    "django": ["django framework"],
+    "java": ["java programming", "java development"],
+    "sql": ["sql query", "sql database"],
+    "git": ["git version control", "git hub", "github"],
+    "communication": ["communication skills", "verbal communication"],
+    "leadership": ["team leadership", "management"],
+    "teamwork": ["collaboration", "team player"]
 }
 
 # Poids pour les différents critères de matching
@@ -194,7 +219,18 @@ async def calculate_smart_match(candidate_skills: list, extracted_text: str, job
                     is_fuzzy_match = True
                     break
         
-        is_matched = is_exact_match or is_fuzzy_match
+        # Vérifier les synonymes
+        is_synonym_match = False
+        for main_skill, synonyms in SKILL_SYNONYMS.items():
+            if normalized_skill == main_skill.lower().strip():
+                for synonym in synonyms:
+                    if synonym.lower() in [cskill.lower().strip() for cskill in candidate_skills]:
+                        is_synonym_match = True
+                        break
+                if is_synonym_match:
+                    break
+        
+        is_matched = is_exact_match or is_fuzzy_match or is_synonym_match
         
         if is_matched:
             matched_count += 1
@@ -208,7 +244,8 @@ async def calculate_smart_match(candidate_skills: list, extracted_text: str, job
             "weight": SKILL_WEIGHT * 100,
             "importance": skill_importance,
             "exact_match": is_exact_match,
-            "fuzzy_match": is_fuzzy_match
+            "fuzzy_match": is_fuzzy_match,
+            "synonym_match": is_synonym_match
         }
     
     # Calculer le score de correspondance des compétences
@@ -227,15 +264,19 @@ async def calculate_smart_match(candidate_skills: list, extracted_text: str, job
     
     # Détecter le niveau d'expérience du candidat
     candidate_experience_level = "unknown"
-    for level, keywords in EXPERIENCE_LEVELS.items():
-        if any(keyword in extracted_text_lower for keyword in keywords):
+    experience_level_order = ["intern", "junior", "mid", "senior"]
+    for level in experience_level_order:
+        keywords = EXPERIENCE_LEVELS[level]
+        if any(_word_match(kw, extracted_text_lower) for kw in keywords):
             candidate_experience_level = level
             break
     
     # Détecter le niveau d'expérience requis par le job
     job_experience_level = "unknown"
-    for level, keywords in EXPERIENCE_LEVELS.items():
-        if any(keyword in extracted_text_lower for keyword in keywords):
+    job_text_lower = job.description.lower()
+    for level in experience_level_order:
+        keywords = EXPERIENCE_LEVELS[level]
+        if any(_word_match(kw, job_text_lower) for kw in keywords):
             job_experience_level = level
             break
     
@@ -245,7 +286,7 @@ async def calculate_smart_match(candidate_skills: list, extracted_text: str, job
         if candidate_experience_level == job_experience_level:
             experience_match = EXPERIENCE_WEIGHT * 100
         # Candidat plus expérimenté
-        elif EXPERIENCE_LEVELS.index(candidate_experience_level) > EXPERIENCE_LEVELS.index(job_experience_level):
+        elif experience_level_order.index(candidate_experience_level) > experience_level_order.index(job_experience_level):
             experience_match = EXPERIENCE_WEIGHT * 80
         # Candidat moins expérimenté
         else:
@@ -260,16 +301,19 @@ async def calculate_smart_match(candidate_skills: list, extracted_text: str, job
     
     # Détecter le niveau d'éducation du candidat
     candidate_education_level = "unknown"
-    for level, keywords in EDUCATION_LEVELS.items():
-        if any(keyword in extracted_text_lower for keyword in keywords):
+    education_level_order = ["high_school", "associate", "bachelor", "master", "phd"]
+    for level in education_level_order:
+        keywords = EDUCATION_LEVELS[level]
+        if any(_word_match(kw, extracted_text_lower) for kw in keywords):
             candidate_education_level = level
             break
     
     # Détecter le niveau d'éducation requis par le job (si spécifié dans la description)
     job_education_level = "unknown"
     job_text_lower = job.description.lower()
-    for level, keywords in EDUCATION_LEVELS.items():
-        if any(keyword in job_text_lower for keyword in keywords):
+    for level in education_level_order:
+        keywords = EDUCATION_LEVELS[level]
+        if any(_word_match(kw, job_text_lower) for kw in keywords):
             job_education_level = level
             break
     
@@ -280,7 +324,7 @@ async def calculate_smart_match(candidate_skills: list, extracted_text: str, job
             if candidate_education_level == job_education_level:
                 education_score = EDUCATION_WEIGHT * 100
             # Candidat plus éduqué
-            elif list(EDUCATION_LEVELS.keys()).index(candidate_education_level) > list(EDUCATION_LEVELS.keys()).index(job_education_level):
+            elif education_level_order.index(candidate_education_level) > education_level_order.index(job_education_level):
                 education_score = EDUCATION_WEIGHT * 90
             # Candidat moins éduqué
             else:
