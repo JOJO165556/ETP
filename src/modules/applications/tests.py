@@ -22,7 +22,10 @@ class TestSmartJobMatchingAlgorithm:
         assert result["recommended_stage"] == "screening"
         assert all(skill["matched"] for skill in result["skill_details"].values())
         assert result["job_skills_required"] == ["python", "fastapi", "postgresql"]
-        assert result["candidate_skills_found"] == candidate_skills
+        # L'IA peut extraire plus de compétences que l'entrée statique
+        assert "python" in result["candidate_skills_found"]
+        assert "fastapi" in result["candidate_skills_found"]
+        assert "postgresql" in result["candidate_skills_found"]
         assert result["candidate_experience_level"] == "senior"
         assert result["job_experience_level"] == "senior"
 
@@ -41,7 +44,9 @@ class TestSmartJobMatchingAlgorithm:
         assert result["overall_score"] >= 30
         assert result["recommended_stage"] == "applied"
         assert result["job_skills_required"] == ["python", "fastapi", "react", "docker"]
-        assert result["candidate_skills_found"] == candidate_skills
+        # L'IA peut extraire plus de compétences que l'entrée statique
+        assert "python" in result["candidate_skills_found"]
+        assert "react" in result["candidate_skills_found"]
         
         # Vérifier les détails des compétences
         matched_skills = [s for s, details in result["skill_details"].items() if details["matched"]]
@@ -100,7 +105,9 @@ class TestSmartJobMatchingAlgorithm:
         assert "python" in result["job_skills_required"]
         assert "postgresql" in result["job_skills_required"]
         assert "docker" in result["job_skills_required"]
-        assert result["candidate_skills_found"] == candidate_skills
+        # L'IA peut extraire plus de compétences que l'entrée statique
+        assert "python" in result["candidate_skills_found"]
+        assert "postgresql" in result["candidate_skills_found"]
 
     @pytest.mark.asyncio
     async def test_calculate_match_with_none_job_skills(self):

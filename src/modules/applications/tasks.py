@@ -15,6 +15,7 @@ from src.core.database import async_session_maker
 from src.modules.applications.repository import ApplicationRepository
 from src.modules.users.repository import UserProfileRepository
 from src.modules.jobs.repository import JobRepository
+from src.modules.applications.resume_analyzer import get_resume_analyzer, CONFIDENCE_THRESHOLD
 
 logger = get_task_logger(__name__)
 
@@ -185,7 +186,27 @@ async def calculate_smart_match(candidate_skills: list, extracted_text: str, job
     """
     Implémente le Smart Job Matching Algorithm.
     Compare les compétences du candidat avec les exigences du job et calcule un score global.
+    Utilise l'analyse IA locale avec fallback sur l'extraction statique.
     """
+    # 0. Analyse IA avec fallback
+    analyzer = get_resume_analyzer()
+    try:
+        ai_result = analyzer.analyze(extracted_text)
+        if ai_result.confidence >= CONFIDENCE_THRESHOLD and ai_result.skills:
+            logger.info("Extraction IA utilisée (confiance: %.2f, compétences: %s)", ai_result.confidence, ai_result.skills)
+            candidate_skills = ai_result.skills
+            # Utiliser les niveaux IA si détectés
+            ai_experience = ai_result.experience_level
+            ai_education = ai_result.education_level
+        else:
+            logger.info("Confiance IA faible (%.2f), fallback sur extraction statique", ai_result.confidence)
+            ai_experience = None
+            ai_education = None
+    except Exception as e:
+        logger.warning("Erreur analyse IA: %s, fallback statique", e)
+        ai_experience = None
+        ai_education = None
+
     # 1. Récupération des compétences requises depuis le champ JSON du job
     job_skills = []
     if job.required_skills:
@@ -261,15 +282,17 @@ async def calculate_smart_match(candidate_skills: list, extracted_text: str, job
     # 3. Évaluation de l'expérience basée sur les niveaux d'expérience
     experience_match = 0
     extracted_text_lower = extracted_text.lower()
+    experience_level_order = ["intern", "junior", "mid", "senior"]
     
     # Détecter le niveau d'expérience du candidat
-    candidate_experience_level = "unknown"
-    experience_level_order = ["intern", "junior", "mid", "senior"]
-    for level in experience_level_order:
-        keywords = EXPERIENCE_LEVELS[level]
-        if any(_word_match(kw, extracted_text_lower) for kw in keywords):
-            candidate_experience_level = level
-            break
+    # Préférer l'extraction IA si disponible
+    candidate_experience_level = ai_experience if (ai_experience and ai_experience != "unknown") else "unknown"
+    if candidate_experience_level == "unknown":
+        for level in experience_level_order:
+            keywords = EXPERIENCE_LEVELS[level]
+            if any(_word_match(kw, extracted_text_lower) for kw in keywords):
+                candidate_experience_level = level
+                break
     
     # Détecter le niveau d'expérience requis par le job
     job_experience_level = "unknown"
@@ -298,15 +321,17 @@ async def calculate_smart_match(candidate_skills: list, extracted_text: str, job
     # 4. Évaluation de l'éducation basée sur les niveaux d'éducation
     education_score = 0
     extracted_text_lower = extracted_text.lower()
+    education_level_order = ["high_school", "associate", "bachelor", "master", "phd"]
     
     # Détecter le niveau d'éducation du candidat
-    candidate_education_level = "unknown"
-    education_level_order = ["high_school", "associate", "bachelor", "master", "phd"]
-    for level in education_level_order:
-        keywords = EDUCATION_LEVELS[level]
-        if any(_word_match(kw, extracted_text_lower) for kw in keywords):
-            candidate_education_level = level
-            break
+    # Préférer l'extraction IA si disponible
+    candidate_education_level = ai_education if (ai_education and ai_education != "unknown") else "unknown"
+    if candidate_education_level == "unknown":
+        for level in education_level_order:
+            keywords = EDUCATION_LEVELS[level]
+            if any(_word_match(kw, extracted_text_lower) for kw in keywords):
+                candidate_education_level = level
+                break
     
     # Détecter le niveau d'éducation requis par le job (si spécifié dans la description)
     job_education_level = "unknown"
