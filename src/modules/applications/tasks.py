@@ -36,7 +36,7 @@ EDUCATION_LEVELS = {
     "master": ["master", "mastère", "msc", "meng"],
     "bachelor": ["licence", "bachelor", "bs", "ba", "ingénieur"],
     "associate": ["associate", "demi-licence"],
-    "high_school": ["bac", "high school", "lycée", "diplôme d'études secondaires"]
+    "high_school": ["bac", "baccalauréat", "high school", "lycée", "diplôme d'études secondaires"]
 }
 
 # Skill importance weights (higher = more important for most jobs)

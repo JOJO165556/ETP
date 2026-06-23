@@ -84,7 +84,7 @@ EDUCATION_KEYWORDS = {
     "master": ["master", "mastère", "msc", "meng", "mba", "deep learning"],
     "bachelor": ["licence", "bachelor", "bs", "ba", "ingénieur", "diplôme d'ingénieur"],
     "associate": ["associate", "demi-licence", "bts", "dut"],
-    "high_school": ["bac", "high school", "lycée", "brevet"],
+    "high_school": ["bac", "baccalauréat", "high school", "lycée", "brevet"],
 }
 
 # Patterns regex pour les email, téléphone, etc.

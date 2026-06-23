@@ -1,6 +1,7 @@
 import pytest
 from unittest.mock import AsyncMock, MagicMock
 from src.modules.applications.tasks import calculate_smart_match
+from src.modules.applications.resume_analyzer import LocalResumeAnalyzer, ResumeAnalysis
 
 
 class TestSmartJobMatchingAlgorithm:
@@ -204,3 +205,117 @@ class TestSmartJobMatchingAlgorithm:
         assert CELERY_TASK_SUCCESS == "SUCCESS"
         assert CELERY_TASK_FAILURE == "FAILURE"
         assert CELERY_TASK_RETRY == "RETRY"
+
+
+class TestLocalResumeAnalyzer:
+    """Tests pour l'analyseur de CV local (LocalResumeAnalyzer)."""
+
+    def setup_method(self):
+        self.analyzer = LocalResumeAnalyzer()
+
+    def test_extract_skills_python(self):
+        """Test extraction de compétences Python."""
+        text = "Développeur Python avec 5 ans d'expérience en FastAPI et Docker."
+        skills = self.analyzer.extract_skills(text)
+        assert "python" in skills
+        assert "fastapi" in skills
+        assert "docker" in skills
+
+    def test_extract_skills_react(self):
+        """Test extraction de compétences React."""
+        text = "Frontend developer avec React, TypeScript et CSS3."
+        skills = self.analyzer.extract_skills(text)
+        assert "react" in skills
+        assert "typescript" in skills
+        assert "css" in skills
+
+    def test_extract_skills_docker_kubernetes(self):
+        """Test extraction Docker et Kubernetes."""
+        text = "DevOps engineer avec Docker, Kubernetes et Terraform."
+        skills = self.analyzer.extract_skills(text)
+        assert "docker" in skills
+        assert "kubernetes" in skills
+        assert "terraform" in skills
+
+    def test_extract_skills_empty_text(self):
+        """Test extraction avec texte vide."""
+        skills = self.analyzer.extract_skills("")
+        assert skills == []
+
+    def test_extract_skills_no_match(self):
+        """Test extraction sans compétence trouvée."""
+        text = "J'aime le chocolat et les vacances."
+        skills = self.analyzer.extract_skills(text)
+        assert skills == []
+
+    def test_extract_experience_senior(self):
+        """Test détection niveau expérience senior."""
+        text = "Senior developer avec 10 ans d'expérience."
+        level = self.analyzer.extract_experience_level(text)
+        assert level == "senior"
+
+    def test_extract_experience_junior(self):
+        """Test détection niveau expérience junior."""
+        text = "Junior developer débutant en Python."
+        level = self.analyzer.extract_experience_level(text)
+        assert level == "junior"
+
+    def test_extract_experience_intern(self):
+        """Test détection niveau expérience stagiaire."""
+        text = "Stagiaire en développement web."
+        level = self.analyzer.extract_experience_level(text)
+        assert level == "intern"
+
+    def test_extract_experience_unknown(self):
+        """Test détection niveau expérience inconnu."""
+        text = "Développeur Python."
+        level = self.analyzer.extract_experience_level(text)
+        assert level == "unknown"
+
+    def test_extract_education_bachelor(self):
+        """Test détection niveau éducation bachelor."""
+        text = "Licence en informatique."
+        level = self.analyzer.extract_education_level(text)
+        assert level == "bachelor"
+
+    def test_extract_education_master(self):
+        """Test détection niveau éducation master."""
+        text = "Master en intelligence artificielle."
+        level = self.analyzer.extract_education_level(text)
+        assert level == "master"
+
+    def test_extract_education_phd(self):
+        """Test détection niveau éducation doctorat."""
+        text = "Doctorat en informatique, thèse sur le deep learning."
+        level = self.analyzer.extract_education_level(text)
+        assert level == "phd"
+
+    def test_extract_education_high_school(self):
+        """Test détection niveau éducation lycée."""
+        text = "Baccalauréat S mention bien."
+        level = self.analyzer.extract_education_level(text)
+        assert level == "high_school"
+
+    def test_analyze_complete(self):
+        """Test analyse complète d'un CV."""
+        text = "Senior Python developer avec 8 ans d'expérience. Master en informatique. Compétences: Python, FastAPI, Docker, PostgreSQL, AWS."
+        result = self.analyzer.analyze(text)
+        assert isinstance(result, ResumeAnalysis)
+        assert "python" in result.skills
+        assert result.experience_level == "senior"
+        assert result.education_level == "master"
+        assert result.confidence > 0
+        assert result.extraction_method == "ai_local"
+
+    def test_analyze_empty_text(self):
+        """Test analyse avec texte vide."""
+        result = self.analyzer.analyze("")
+        assert result.confidence == 0.0
+        assert result.extraction_method == "empty"
+        assert result.skills == []
+
+    def test_analyze_minimal_text(self):
+        """Test analyse avec texte minimal."""
+        result = self.analyzer.analyze("Bonjour")
+        assert result.confidence >= 0
+        assert isinstance(result.skills, list)
