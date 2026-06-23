@@ -19,10 +19,46 @@ logger = get_task_logger(__name__)
 # Base de connaissances simulée pour l'extraction (en prod, on utiliserait un NLP / LLM / Spacy)
 KNOWN_SKILLS = ["python", "fastapi", "react", "postgresql", "docker", "kubernetes", "aws", "gcp", "django", "java", "sql", "git"]
 
+# Experience level keywords
+EXPERIENCE_LEVELS = {
+    "senior": ["senior", "senior-level", "lead", "principal", "architect"],
+    "mid": ["mid", "mid-level", "intermediate", "regular"],
+    "junior": ["junior", "junior-level", "entry", "débutant", "trainee"],
+    "intern": ["intern", "stagiaire", "étudiant", "apprenti"]
+}
+
+# Education level keywords
+EDUCATION_LEVELS = {
+    "phd": ["phd", "doctorat", "doctorate", "recherche"],
+    "master": ["master", "mastère", "msc", "meng"],
+    "bachelor": ["licence", "bachelor", "bs", "ba", "ingénieur"],
+    "associate": ["associate", "demi-licence"],
+    "high_school": ["bac", "high school", "lycée", "diplôme d'études secondaires"]
+}
+
+# Skill importance weights (higher = more important for most jobs)
+SKILL_IMPORTANCE = {
+    "python": 1.0,
+    "fastapi": 0.9,
+    "react": 0.9,
+    "postgresql": 0.8,
+    "docker": 0.8,
+    "kubernetes": 0.7,
+    "aws": 0.7,
+    "gcp": 0.7,
+    "django": 0.8,
+    "java": 0.8,
+    "sql": 0.7,
+    "git": 0.5,
+    "communication": 0.6,
+    "leadership": 0.6,
+    "teamwork": 0.5
+}
+
 # Poids pour les différents critères de matching
-SKILL_WEIGHT = 0.8
-EXPERIENCE_WEIGHT = 0.15
-EDUCATION_WEIGHT = 0.05
+SKILL_WEIGHT = 0.6
+EXPERIENCE_WEIGHT = 0.25
+EDUCATION_WEIGHT = 0.15
 
 # Celery Task States
 CELERY_TASK_PENDING = "PENDING"
@@ -134,48 +170,133 @@ async def calculate_smart_match(candidate_skills: list, extracted_text: str, job
             # Si c'est un dict, extraire les clés (compétences) ou la valeur si c'est un objet de compétences
             job_skills = list(job.required_skills.keys()) if job.required_skills else []
     
-    # 2. Calcul du score de correspondance des compétences
+    # 2. Calcul du score de correspondance des compétences (amélioré)
     skill_match_score = 0
     skill_details = {}
     
     # Calculer le nombre de compétences correspondantes
     matched_count = 0
+    total_importance = 0
+    
     for skill in job_skills:
         # Normaliser la comparaison (minuscules, supprimer les espaces)
         normalized_skill = skill.lower().strip()
-        is_matched = any(normalized_skill == cskill.lower().strip() for cskill in candidate_skills)
+        
+        # Vérifier la correspondance exacte d'abord
+        is_exact_match = any(normalized_skill == cskill.lower().strip() for cskill in candidate_skills)
+        
+        # Si pas de correspondance exacte, essayer la correspondance floue (simulée)
+        is_fuzzy_match = False
+        if not is_exact_match:
+            # Simulation de correspondance floue basée sur les sous-chaînes
+            for cskill in candidate_skills:
+                if normalized_skill in cskill.lower() or cskill.lower().strip() in normalized_skill:
+                    is_fuzzy_match = True
+                    break
+        
+        is_matched = is_exact_match or is_fuzzy_match
         
         if is_matched:
             matched_count += 1
         
-        skill_details[skill] = {"matched": is_matched, "weight": SKILL_WEIGHT * 100}
+        # Calculer l'importance de la compétence
+        skill_importance = SKILL_IMPORTANCE.get(normalized_skill, 0.5)
+        total_importance += skill_importance
+        
+        skill_details[skill] = {
+            "matched": is_matched, 
+            "weight": SKILL_WEIGHT * 100,
+            "importance": skill_importance,
+            "exact_match": is_exact_match,
+            "fuzzy_match": is_fuzzy_match
+        }
     
     # Calculer le score de correspondance des compétences
     # SKILL_WEIGHT représente le poids total de toutes les compétences
-    # Chaque compétence correspondante contribue à (SKILL_WEIGHT * 100) / nombre_total_de_compétences
-    if job_skills:
+    # Chaque compétence correspondante contribue à (SKILL_WEIGHT * 100) * importance
+    if job_skills and total_importance > 0:
         skill_match_score = (matched_count / len(job_skills)) * (SKILL_WEIGHT * 100)
+        # Ajuster en fonction de l'importance totale
+        skill_match_score = skill_match_score * (total_importance / len(job_skills))
     else:
         skill_match_score = 0
     
-    # 3. Évaluation de l'expérience basée sur la longueur et la richesse du texte CV
-    # Plus le CV est long et détaillé, plus le candidat a probablement de l'expérience
-    experience_match = min(len(extracted_text) / 200, 100) * (EXPERIENCE_WEIGHT / 1.0)
+    # 3. Évaluation de l'expérience basée sur les niveaux d'expérience
+    experience_match = 0
+    extracted_text_lower = extracted_text.lower()
     
-    # 4. Évaluation de l'éducation basée sur les mots-clés dans le CV
-    education_keywords = ["université", "école", "diplôme", "licence", "master", "phd", "formation", "bachelor", "doctorat"]
+    # Détecter le niveau d'expérience du candidat
+    candidate_experience_level = "unknown"
+    for level, keywords in EXPERIENCE_LEVELS.items():
+        if any(keyword in extracted_text_lower for keyword in keywords):
+            candidate_experience_level = level
+            break
+    
+    # Détecter le niveau d'expérience requis par le job
+    job_experience_level = "unknown"
+    for level, keywords in EXPERIENCE_LEVELS.items():
+        if any(keyword in extracted_text_lower for keyword in keywords):
+            job_experience_level = level
+            break
+    
+    # Calculer le score d'expérience
+    if candidate_experience_level != "unknown" and job_experience_level != "unknown":
+        # Même niveau d'expérience
+        if candidate_experience_level == job_experience_level:
+            experience_match = EXPERIENCE_WEIGHT * 100
+        # Candidat plus expérimenté
+        elif EXPERIENCE_LEVELS.index(candidate_experience_level) > EXPERIENCE_LEVELS.index(job_experience_level):
+            experience_match = EXPERIENCE_WEIGHT * 80
+        # Candidat moins expérimenté
+        else:
+            experience_match = EXPERIENCE_WEIGHT * 60
+    else:
+        # Fallback sur la longueur du CV si les niveaux ne sont pas détectés
+        experience_match = min(len(extracted_text) / 200, 100) * (EXPERIENCE_WEIGHT / 1.0)
+    
+    # 4. Évaluation de l'éducation basée sur les niveaux d'éducation
     education_score = 0
-    if any(keyword in extracted_text.lower() for keyword in education_keywords):
-        education_score = EDUCATION_WEIGHT * 100
+    extracted_text_lower = extracted_text.lower()
+    
+    # Détecter le niveau d'éducation du candidat
+    candidate_education_level = "unknown"
+    for level, keywords in EDUCATION_LEVELS.items():
+        if any(keyword in extracted_text_lower for keyword in keywords):
+            candidate_education_level = level
+            break
+    
+    # Détecter le niveau d'éducation requis par le job (si spécifié dans la description)
+    job_education_level = "unknown"
+    job_text_lower = job.description.lower()
+    for level, keywords in EDUCATION_LEVELS.items():
+        if any(keyword in job_text_lower for keyword in keywords):
+            job_education_level = level
+            break
+    
+    # Calculer le score d'éducation
+    if candidate_education_level != "unknown":
+        if job_education_level != "unknown":
+            # Même niveau d'éducation
+            if candidate_education_level == job_education_level:
+                education_score = EDUCATION_WEIGHT * 100
+            # Candidat plus éduqué
+            elif list(EDUCATION_LEVELS.keys()).index(candidate_education_level) > list(EDUCATION_LEVELS.keys()).index(job_education_level):
+                education_score = EDUCATION_WEIGHT * 90
+            # Candidat moins éduqué
+            else:
+                education_score = EDUCATION_WEIGHT * 70
+        else:
+            # Pas de niveau d'éducation requis, donner un bonus pour tout niveau d'éducation
+            education_score = EDUCATION_WEIGHT * 50
     
     # 5. Calcul du score global
     overall_score = skill_match_score + experience_match + education_score
     
     # 6. Déterminer le stage recommandé basé sur le score
     recommended_stage = "applied"
-    if overall_score >= 70:
+    if overall_score >= 75:
         recommended_stage = "screening"
-    elif overall_score >= 40:
+    elif overall_score >= 45:
         recommended_stage = "interview"
     
     return {
@@ -185,7 +306,11 @@ async def calculate_smart_match(candidate_skills: list, extracted_text: str, job
         "education_match": round(education_score, 2),
         "recommended_stage": recommended_stage,
         "job_skills_required": job_skills,
-        "candidate_skills_found": candidate_skills
+        "candidate_skills_found": candidate_skills,
+        "candidate_experience_level": candidate_experience_level,
+        "job_experience_level": job_experience_level,
+        "candidate_education_level": candidate_education_level,
+        "job_education_level": job_education_level
     }
 
 

@@ -10,32 +10,36 @@ class TestSmartJobMatchingAlgorithm:
     async def test_calculate_match_with_all_skills_matched(self):
         """Test le matching lorsque toutes les compétences du candidat correspondent aux compétences requises."""
         candidate_skills = ["python", "fastapi", "postgresql"]
-        extracted_text = "Je suis un développeur Python senior avec 5 ans d'expérience en FastAPI et PostgreSQL."
+        extracted_text = "Je suis un développeur Python senior avec 5 ans d'expérience en FastAPI et PostgreSQL. Licence en informatique."
         
         mock_job = MagicMock()
         mock_job.required_skills = ["python", "fastapi", "postgresql"]
+        mock_job.description = "Senior Python developer with 5 years experience in FastAPI and PostgreSQL"
         
         result = await calculate_smart_match(candidate_skills, extracted_text, mock_job)
         
-        assert result["overall_score"] >= 80
+        assert result["overall_score"] >= 75
         assert result["recommended_stage"] == "screening"
         assert all(skill["matched"] for skill in result["skill_details"].values())
         assert result["job_skills_required"] == ["python", "fastapi", "postgresql"]
         assert result["candidate_skills_found"] == candidate_skills
+        assert result["candidate_experience_level"] == "senior"
+        assert result["job_experience_level"] == "senior"
 
     @pytest.mark.asyncio
     async def test_calculate_match_with_partial_skills_matched(self):
         """Test le matching lorsque seulement certaines compétences correspondent."""
         candidate_skills = ["python", "react"]
-        extracted_text = "Développeur Python avec expérience en React et Node.js."
+        extracted_text = "Développeur Python avec expérience en React et Node.js. Licence en informatique."
         
         mock_job = MagicMock()
         mock_job.required_skills = ["python", "fastapi", "react", "docker"]
+        mock_job.description = "Senior Python developer with React and Docker experience"
         
         result = await calculate_smart_match(candidate_skills, extracted_text, mock_job)
         
-        assert result["overall_score"] >= 40
-        assert result["recommended_stage"] == "interview"
+        assert result["overall_score"] >= 30
+        assert result["recommended_stage"] == "applied"
         assert result["job_skills_required"] == ["python", "fastapi", "react", "docker"]
         assert result["candidate_skills_found"] == candidate_skills
         
@@ -50,10 +54,11 @@ class TestSmartJobMatchingAlgorithm:
     async def test_calculate_match_with_no_skills_matched(self):
         """Test le matching lorsque aucune compétence ne correspond."""
         candidate_skills = ["java", "spring"]
-        extracted_text = "Développeur Java senior avec expérience en Spring Boot."
+        extracted_text = "Développeur Java senior avec expérience en Spring Boot. Licence en informatique."
         
         mock_job = MagicMock()
         mock_job.required_skills = ["python", "fastapi", "react"]
+        mock_job.description = "Senior Python developer"
         
         result = await calculate_smart_match(candidate_skills, extracted_text, mock_job)
         
@@ -69,14 +74,14 @@ class TestSmartJobMatchingAlgorithm:
     async def test_calculate_match_with_empty_job_skills(self):
         """Test le matching lorsque le job n'a pas de compétences requises."""
         candidate_skills = ["python", "fastapi"]
-        extracted_text = "Développeur Python senior."
+        extracted_text = "Développeur Python senior. Licence en informatique."
         
         mock_job = MagicMock()
         mock_job.required_skills = []
+        mock_job.description = "Senior Python developer"
         
         result = await calculate_smart_match(candidate_skills, extracted_text, mock_job)
         
-        # Score basé uniquement sur l'expérience et l'éducation
         assert result["job_skills_required"] == []
         assert result["candidate_skills_found"] == candidate_skills
 
@@ -84,10 +89,11 @@ class TestSmartJobMatchingAlgorithm:
     async def test_calculate_match_with_dict_job_skills(self):
         """Test le matching lorsque les compétences requises sont un dictionnaire."""
         candidate_skills = ["python", "postgresql"]
-        extracted_text = "Administrateur PostgreSQL avec expérience en Python."
+        extracted_text = "Administrateur PostgreSQL avec expérience en Python. Licence en informatique."
         
         mock_job = MagicMock()
         mock_job.required_skills = {"python": "advanced", "postgresql": "expert", "docker": "basic"}
+        mock_job.description = "Senior PostgreSQL administrator"
         
         result = await calculate_smart_match(candidate_skills, extracted_text, mock_job)
         
@@ -100,10 +106,11 @@ class TestSmartJobMatchingAlgorithm:
     async def test_calculate_match_with_none_job_skills(self):
         """Test le matching lorsque les compétences requises sont None."""
         candidate_skills = ["python"]
-        extracted_text = "Développeur Python."
+        extracted_text = "Développeur Python. Licence en informatique."
         
         mock_job = MagicMock()
         mock_job.required_skills = None
+        mock_job.description = "Python developer"
         
         result = await calculate_smart_match(candidate_skills, extracted_text, mock_job)
         
@@ -118,27 +125,62 @@ class TestSmartJobMatchingAlgorithm:
         
         mock_job = MagicMock()
         mock_job.required_skills = ["python"]
+        mock_job.description = "Bachelor in Computer Science"
         
         result = await calculate_smart_match(candidate_skills, extracted_text, mock_job)
         
         # Devrait avoir un bonus d'éducation
-        assert result["education_match"] == 5.0  # EDUCATION_WEIGHT * 100
+        assert result["education_match"] == 15.0  # EDUCATION_WEIGHT * 100
         assert result["overall_score"] >= 65  # Skill match + education bonus
 
     @pytest.mark.asyncio
     async def test_calculate_match_skill_normalization(self):
         """Test la normalisation des compétences (minuscules, espaces)."""
         candidate_skills = ["Python", "  postgresql  ", "FastAPI"]
-        extracted_text = "Développeur Python senior."
+        extracted_text = "Développeur Python senior. Licence en informatique."
         
         mock_job = MagicMock()
         mock_job.required_skills = ["python", "postgresql", "fastapi"]
+        mock_job.description = "Senior Python developer"
         
         result = await calculate_smart_match(candidate_skills, extracted_text, mock_job)
         
         # Toutes les compétences devraient correspondre malgré la différence de formatage
         assert all(details["matched"] for details in result["skill_details"].values())
+        assert result["overall_score"] >= 75
+
+    @pytest.mark.asyncio
+    async def test_calculate_match_experience_level_matching(self):
+        """Test le matching des niveaux d'expérience."""
+        candidate_skills = ["python"]
+        extracted_text = "Développeur Python senior avec 10 ans d'expérience. Licence en informatique."
+        
+        mock_job = MagicMock()
+        mock_job.required_skills = ["python"]
+        mock_job.description = "Senior Python developer"
+        
+        result = await calculate_smart_match(candidate_skills, extracted_text, mock_job)
+        
+        assert result["candidate_experience_level"] == "senior"
+        assert result["job_experience_level"] == "senior"
         assert result["overall_score"] >= 80
+
+    @pytest.mark.asyncio
+    async def test_calculate_match_education_level_matching(self):
+        """Test le matching des niveaux d'éducation."""
+        candidate_skills = ["python"]
+        extracted_text = "Doctorat en informatique, Université de Paris."
+        
+        mock_job = MagicMock()
+        mock_job.required_skills = ["python"]
+        mock_job.description = "Bachelor in Computer Science"
+        
+        result = await calculate_smart_match(candidate_skills, extracted_text, mock_job)
+        
+        assert result["candidate_education_level"] == "phd"
+        assert result["job_education_level"] == "bachelor"
+        # Education match should be less than skill weight in this case
+        assert result["education_match"] < result["skill_details"]["python"]["weight"]
 
     @pytest.mark.asyncio
     async def test_celery_task_states(self):
