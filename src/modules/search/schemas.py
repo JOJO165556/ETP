@@ -1,7 +1,17 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
 class JobSearchFilters(BaseModel):
+    model_config = ConfigDict(json_schema_extra={
+        "example": {
+            "query": "développeur python",
+            "skills": ["python", "fastapi", "postgresql"],
+            "status": "active",
+            "is_remote": True,
+            "page": 1,
+            "page_size": 20,
+        }
+    })
     query: str | None = None
     skills: list[str] | None = None
     status: str | None = None
@@ -9,12 +19,20 @@ class JobSearchFilters(BaseModel):
     company_id: str | None = None
     latitude: float | None = None
     longitude: float | None = None
-    radius_km: float | None = None  # rayon de recherche en km
+    radius_km: float | None = None
     page: int = 1
     page_size: int = 20
 
 
 class CandidateSearchFilters(BaseModel):
+    model_config = ConfigDict(json_schema_extra={
+        "example": {
+            "query": "Jean",
+            "skills": ["python", "react"],
+            "page": 1,
+            "page_size": 10,
+        }
+    })
     query: str | None = None
     skills: list[str] | None = None
     role: str | None = None
@@ -26,6 +44,15 @@ class CandidateSearchFilters(BaseModel):
 
 
 class SearchResult(BaseModel):
+    model_config = ConfigDict(json_schema_extra={
+        "example": {
+            "items": [{"id": "job-123", "title": "Dev Python"}],
+            "total": 42,
+            "page": 1,
+            "page_size": 20,
+            "total_pages": 3,
+        }
+    })
     items: list[dict]
     total: int
     page: int
