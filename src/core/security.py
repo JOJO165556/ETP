@@ -7,6 +7,7 @@ from src.core.config import settings
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 ALGORITHM = "HS256"
+REFRESH_TOKEN_EXPIRE_DAYS = 30
 
 
 def create_access_token(subject: Union[str, Any], expires_delta: Optional[timedelta] = None) -> str:
@@ -16,7 +17,15 @@ def create_access_token(subject: Union[str, Any], expires_delta: Optional[timede
     else:
         expire = datetime.now(timezone.utc) + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     
-    to_encode = {"exp": expire, "sub": str(subject)}
+    to_encode = {"exp": expire, "sub": str(subject), "type": "access"}
+    encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=ALGORITHM)
+    return encoded_jwt
+
+
+def create_refresh_token(subject: Union[str, Any]) -> str:
+    """Génère un refresh token de longue durée"""
+    expire = datetime.now(timezone.utc) + timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS)
+    to_encode = {"exp": expire, "sub": str(subject), "type": "refresh"}
     encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 

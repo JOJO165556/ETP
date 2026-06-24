@@ -11,6 +11,8 @@ from src.modules.jobs.router import router as jobs_router
 from src.modules.applications.router import router as applications_router
 from src.modules.analytics.router import router as analytics_router
 from src.modules.gdpr.router import router as gdpr_router
+from src.modules.notifications.router import router as notifications_router
+from src.modules.search.router import router as search_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -52,6 +54,15 @@ app.include_router(jobs_router, prefix=settings.API_V1_STR)
 app.include_router(applications_router, prefix=settings.API_V1_STR)
 app.include_router(analytics_router, prefix=settings.API_V1_STR)
 app.include_router(gdpr_router, prefix=settings.API_V1_STR)
+app.include_router(notifications_router, prefix=settings.API_V1_STR)
+app.include_router(search_router, prefix=settings.API_V1_STR)
+
+# Rate limiting (optionnel, nécessite Redis)
+try:
+    from src.core.rate_limit import RateLimitMiddleware
+    app.add_middleware(RateLimitMiddleware, redis_url=str(settings.REDIS_URL), default_limit=100)
+except Exception:
+    pass
 
 @app.get("/health", tags=["Infrastructure"], summary="Vérification de l'état de santé")
 async def health_check():
