@@ -4,6 +4,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from src.core.config import settings
 from src.core.database import engine
 from src.core.storage import AsyncStorageService
+from src.core.logging_config import setup_logging
+
+# Logging structure (JSON)
+setup_logging()
+
 from src.modules.auth.router import router as auth_router
 from src.modules.users.router import router as users_router
 from src.modules.companies.router import router as companies_router
