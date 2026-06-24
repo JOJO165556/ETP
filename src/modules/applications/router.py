@@ -1,12 +1,12 @@
 from fastapi import APIRouter, Depends, status, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, update
 from typing import List
 
 from src.core.database import get_db
 from src.modules.auth.dependencies import get_current_user, require_roles
 from src.modules.users.models import User, UserRole
-from src.modules.applications.schemas import ApplicationResponse, ApplicationUpdateStage
+from src.modules.applications.schemas import ApplicationResponse, ApplicationUpdateStage, ApplicationSubmitResponse, TaskStatusResponse
 from src.modules.applications.services import ApplicationService
 from src.modules.applications.repository import ApplicationRepository
 from src.modules.applications.tasks import parse_resume, CELERY_TASK_PENDING
@@ -19,7 +19,16 @@ _CANDIDATE_OR_ADMIN = require_roles(UserRole.CANDIDATE, UserRole.SUPERADMIN)
 _RECRUITER_OR_ADMIN = require_roles(UserRole.RECRUITER, UserRole.COMPANY_ADMIN, UserRole.SUPERADMIN)
 
 
-@router.post("/jobs/{job_id}/apply", response_model=ApplicationResponse, status_code=status.HTTP_201_CREATED, summary="Postuler à une offre")
+@router.post(
+    "/jobs/{job_id}/apply",
+    response_model=ApplicationSubmitResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Postuler à une offre",
+    responses={
+        404: {"description": "Offre introuvable"},
+        409: {"description": "Vous avez déjà postulé"},
+    },
+)
 async def apply_to_job(
     job_id: str,
     current_user: User = Depends(_CANDIDATE_OR_ADMIN),
@@ -33,25 +42,21 @@ async def apply_to_job(
     application = await service.apply_to_job(job_id, str(current_user.id))
     await db.commit()
 
-    # Dispatch asynchrone du parsing — n'impacte pas le temps de réponse HTTP
-    # Le worker Celery prend le relais via Redis
     task_result = None
     if application.resume_storage_path:
         task_result = parse_resume.delay(str(application.id), application.resume_storage_path)
-        # Enregistrer l'ID de la tâche dans l'application
         await db.execute(
-            update(src.modules.applications.models.Application)
-            .where(src.modules.applications.models.Application.id == application.id)
+            update(Application)
+            .where(Application.id == application.id)
             .values(celery_task_id=task_result.id, celery_task_status=CELERY_TASK_PENDING)
         )
         await db.commit()
 
-    # Retourner l'application avec l'ID de la tâche si disponible
-    return {
-        "application": application,
-        "task_id": task_result.id if task_result else None,
-        "task_status": "PENDING" if task_result else None
-    }
+    return ApplicationSubmitResponse(
+        application=ApplicationResponse.model_validate(application),
+        task_id=task_result.id if task_result else None,
+        task_status="PENDING" if task_result else None,
+    )
 
 
 @router.get("/me", response_model=List[ApplicationResponse], summary="Mes candidatures")
@@ -66,17 +71,18 @@ async def get_my_applications(
     return await repo.get_applications_by_candidate(str(current_user.id))
 
 
-@router.get("/tasks/{task_id}/status", summary="Vérifier le statut d'une tâche Celery")
+@router.get(
+    "/tasks/{task_id}/status",
+    response_model=TaskStatusResponse,
+    summary="Vérifier le statut d'une tâche Celery",
+    responses={404: {"description": "Tâche introuvable"}},
+)
 async def get_task_status(
     task_id: str,
     current_user: User = Depends(_CANDIDATE_OR_ADMIN),
     db: AsyncSession = Depends(get_db)
 ):
-    """
-    Permet de vérifier le statut d'une tâche Celery.
-    Retourne l'état actuel de la tâche et ses résultats.
-    """
-    # Récupérer l'application associée à la tâche
+    """Permet de vérifier le statut d'une tâche Celery."""
     application = await db.execute(
         select(Application)
         .where(Application.celery_task_id == task_id)
@@ -86,17 +92,17 @@ async def get_task_status(
     if not application:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Tâche non trouvée ou vous n'êtes pas autorisé à y accéder."
+            detail="Tâche non trouvée."
         )
     
-    return {
-        "task_id": task_id,
-        "application_id": str(application.id),
-        "status": application.celery_task_status or "UNKNOWN",
-        "result": application.celery_task_result,
-        "matching_score": application.matching_score,
-        "stage": application.stage.value if application.stage else None
-    }
+    return TaskStatusResponse(
+        task_id=task_id,
+        application_id=str(application.id),
+        status=application.celery_task_status or "UNKNOWN",
+        result=application.celery_task_result,
+        matching_score=float(application.matching_score) if application.matching_score else None,
+        stage=application.stage.value if application.stage else None,
+    )
 
 
 @router.get("/jobs/{job_id}", response_model=List[ApplicationResponse], summary="Candidatures d'une offre")

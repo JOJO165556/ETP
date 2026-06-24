@@ -59,14 +59,28 @@ async def list_jobs(
     jobs = await repo.list(skip=skip, limit=limit)
     return [job for job in jobs if job.status == JobStatus.ACTIVE]
 
+@router.get("/search/location", response_model=List[JobResponse], summary="Recherche d'offres par géolocalisation (PostGIS)")
+async def search_jobs_by_location(
+    lon: float,
+    lat: float,
+    radius_km: float = 50.0,
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Recherche des offres d'emploi actives dans un rayon géographique donné.
+    Utilise PostGIS (ST_DWithin) pour un filtrage haute performance.
+    """
+    repo = JobRepository(db)
+    jobs = await repo.find_jobs_within_radius(lon=lon, lat=lat, radius_km=radius_km)
+    return jobs
+
+
 @router.get("/{job_id}", response_model=JobResponse, summary="Détails d'une offre")
 async def get_job(
     job_id: str,
     db: AsyncSession = Depends(get_db)
 ):
-    """
-    Récupère les détails d'une offre d'emploi.
-    """
+    """Récupère les détails d'une offre d'emploi."""
     repo = JobRepository(db)
     job = await repo.get(job_id)
     if not job:
@@ -100,27 +114,11 @@ async def list_company_jobs(
     company_id: str,
     db: AsyncSession = Depends(get_db)
 ):
-    """
-    Récupère toutes les offres actives d'une entreprise spécifique.
-    """
+    """Récupère toutes les offres actives d'une entreprise spécifique."""
     repo = JobRepository(db)
     jobs = await repo.get_active_jobs_by_company(company_id)
     return jobs
 
-@router.get("/search/location", response_model=List[JobResponse], summary="Recherche d'offres par géolocalisation (PostGIS)")
-async def search_jobs_by_location(
-    lon: float,
-    lat: float,
-    radius_km: float = 50.0,
-    db: AsyncSession = Depends(get_db)
-):
-    """
-    Recherche des offres d'emploi actives dans un rayon géographique donné.
-    Utilise PostGIS (ST_DWithin) pour un filtrage haute performance sur la base de données.
-    """
-    repo = JobRepository(db)
-    jobs = await repo.find_jobs_within_radius(lon=lon, lat=lat, radius_km=radius_km)
-    return jobs
 
 @router.get("/{job_id}/match", response_model=List[CandidateMatchResponse], summary="Matching Engine : Trouver des candidats")
 async def match_candidates_for_job(
