@@ -20,7 +20,21 @@ from src.modules.applications.resume_analyzer import get_resume_analyzer, CONFID
 logger = get_task_logger(__name__)
 
 # Base de connaissances simulée pour l'extraction (en prod, on utiliserait un NLP / LLM / Spacy)
-KNOWN_SKILLS = ["python", "fastapi", "react", "postgresql", "docker", "kubernetes", "aws", "gcp", "django", "java", "sql", "git"]
+KNOWN_SKILLS = [
+    "python", "fastapi", "react", "react native", "reactjs",
+    "postgresql", "docker", "kubernetes", "aws", "gcp",
+    "django", "java", "sql", "git", "typescript", "javascript",
+    "node.js", "nodejs", "spring", "spring boot", "flutter",
+    "swift", "kotlin", "ruby", "php", "golang", "go", "rust",
+    "redis", "mongodb", "elasticsearch", "terraform", "ansible",
+    "jenkins", "ci/cd", "graphql", "rest", "rest api",
+    "machine learning", "ml", "data science", "pandas", "numpy",
+    "scikit-learn", "pytorch", "tensorflow", "nlp", "llm",
+    "agile", "scrum", "jira", "linux", "bash", "powershell",
+    "figma", "ui/ux", "css", "html", "sass", "tailwind",
+    "vue.js", "vuejs", "angular", "svelte", "next.js", "nextjs",
+    "nuxt", "ember", "backbone", "jQuery", "bootstrap",
+]
 
 # Experience level keywords
 EXPERIENCE_LEVELS = {
@@ -48,6 +62,8 @@ SKILL_IMPORTANCE = {
     "python": 1.0,
     "fastapi": 0.9,
     "react": 0.9,
+    "react native": 0.9,
+    "reactjs": 0.9,
     "postgresql": 0.8,
     "docker": 0.8,
     "kubernetes": 0.7,
@@ -57,16 +73,37 @@ SKILL_IMPORTANCE = {
     "java": 0.8,
     "sql": 0.7,
     "git": 0.5,
+    "typescript": 0.8,
+    "javascript": 0.8,
+    "node.js": 0.7,
+    "flutter": 0.8,
+    "swift": 0.8,
+    "kotlin": 0.8,
+    "ruby": 0.7,
+    "php": 0.7,
+    "golang": 0.8,
+    "rust": 0.8,
+    "redis": 0.6,
+    "mongodb": 0.6,
+    "elasticsearch": 0.6,
+    "terraform": 0.7,
+    "machine learning": 0.9,
+    "nlp": 0.9,
+    "figma": 0.7,
+    "vue.js": 0.8,
+    "angular": 0.8,
+    "next.js": 0.8,
     "communication": 0.6,
     "leadership": 0.6,
-    "teamwork": 0.5
+    "teamwork": 0.5,
 }
 
 # Advanced skill synonyms and variations
 SKILL_SYNONYMS = {
     "python": ["python3", "python 3", "py", "python programming"],
     "fastapi": ["fast api", "fastapi.py"],
-    "react": ["reactjs", "react js", "react.js"],
+    "react": ["reactjs", "react js", "react.js", "react native", "react-native"],
+    "react native": ["react-native", "reactnative", "react native"],
     "postgresql": ["postgres", "psql", "postgresql", "postgreSQL"],
     "docker": ["container", "containers"],
     "kubernetes": ["k8s", "kube"],
@@ -78,7 +115,17 @@ SKILL_SYNONYMS = {
     "git": ["git version control", "git hub", "github"],
     "communication": ["communication skills", "verbal communication"],
     "leadership": ["team leadership", "management"],
-    "teamwork": ["collaboration", "team player"]
+    "teamwork": ["collaboration", "team player"],
+    "flutter": ["dart", "flutter framework"],
+    "swift": ["swiftui", "ios"],
+    "kotlin": ["kotlin multiplatform", "android"],
+    "typescript": ["ts"],
+    "node.js": ["nodejs", "node"],
+    "golang": ["go"],
+    "machine learning": ["ml", "deep learning"],
+    "nlp": ["natural language processing"],
+    "terraform": ["tf"],
+    "figma": ["design system", "ui design"],
 }
 
 # Poids pour les différents critères de matching
