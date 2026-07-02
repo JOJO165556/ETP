@@ -1,7 +1,10 @@
 """Repository pour la recherche avancée avec filtres et géolocalisation."""
 import math
-from sqlalchemy import select, func, or_, and_
+import json
+from sqlalchemy import select, func, or_, and_, text, cast, String
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.asyncio import AsyncSession
+from geoalchemy2.functions import ST_DWithin, ST_MakePoint, ST_SetSRID
 
 from src.modules.jobs.models import Job, JobStatus
 from src.modules.users.models import User, Profile, UserRole
@@ -25,10 +28,9 @@ class SearchRepository:
         page: int = 1,
         page_size: int = 20,
     ) -> dict:
-        """Recherche avancée d'offres avec filtres multiples."""
+        """Recherche avancée d'offres avec filtres multiples + géolocalisation."""
         stmt = select(Job)
 
-        # Filtres
         if status:
             stmt = stmt.where(Job.status == status)
         else:
@@ -49,19 +51,30 @@ class SearchRepository:
                 )
             )
 
+        # Recherche JSONB avec opérateur @> et index GIN (performant)
         if skills:
-            # Recherche dans le JSON required_skills
             for skill in skills:
+                # Conteneur JSONB : ["React", "Python"] @> ["React"]
                 stmt = stmt.where(
-                    Job.required_skills.ilike(f"%{skill}%")
+                    Job.required_skills.op("@>")(json.dumps([skill]))
                 )
 
-        # Compter le total
+        # Filtre géospatial PostGIS
+        if latitude is not None and longitude is not None and radius_km is not None:
+            point = func.ST_SetSRID(func.ST_MakePoint(longitude, latitude), 4326)
+            radius_m = radius_km * 1000
+            stmt = stmt.where(
+                ST_DWithin(
+                    func.geography(Job.job_location),
+                    func.geography(point),
+                    radius_m,
+                )
+            )
+
         count_stmt = select(func.count()).select_from(stmt.subquery())
         total_result = await self.session.execute(count_stmt)
         total = total_result.scalar() or 0
 
-        # Pagination
         offset = (page - 1) * page_size
         stmt = stmt.offset(offset).limit(page_size)
 
@@ -70,7 +83,7 @@ class SearchRepository:
 
         items = []
         for job in jobs:
-            item = {
+            items.append({
                 "id": str(job.id),
                 "title": job.title,
                 "description": job.description[:200] + "..." if len(job.description) > 200 else job.description,
@@ -78,8 +91,7 @@ class SearchRepository:
                 "is_remote": job.is_remote,
                 "company_id": str(job.company_id),
                 "required_skills": job.required_skills,
-            }
-            items.append(item)
+            })
 
         return {
             "items": items,
@@ -114,9 +126,12 @@ class SearchRepository:
                 )
             )
 
+        # Recherche JSONB avec index GIN pour les skills
         if skills:
             for skill in skills:
-                stmt = stmt.where(Profile.skills.ilike(f"%{skill}%"))
+                stmt = stmt.where(
+                    Profile.skills.op("@>")(json.dumps([skill]))
+                )
 
         count_stmt = select(func.count()).select_from(stmt.subquery())
         total_result = await self.session.execute(count_stmt)
@@ -130,14 +145,13 @@ class SearchRepository:
 
         items = []
         for user, profile in rows:
-            item = {
+            items.append({
                 "id": str(user.id),
                 "email": user.email,
                 "first_name": profile.first_name if profile else None,
                 "last_name": profile.last_name if profile else None,
                 "skills": profile.skills if profile else [],
-            }
-            items.append(item)
+            })
 
         return {
             "items": items,
