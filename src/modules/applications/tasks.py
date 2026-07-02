@@ -234,9 +234,12 @@ async def calculate_smart_match(candidate_skills: list, extracted_text: str, job
         # Si pas de correspondance exacte, essayer la correspondance floue (simulée)
         is_fuzzy_match = False
         if not is_exact_match:
-            # Simulation de correspondance floue basée sur les sous-chaînes
+            # Correspondance floue: uniquement si la skill est un suffixe/préfixe légitime
+            # Ex: "react" matche "reactjs", "react.js" — mais "java" ne matche PAS "javascript"
             for cskill in candidate_skills:
-                if normalized_skill in cskill.lower() or cskill.lower().strip() in normalized_skill:
+                cskill_lower = cskill.lower().strip()
+                # Seulement si la skill candidat CONTIENT la skill demandée COMME MOT ENTIER
+                if _word_match(normalized_skill, cskill_lower):
                     is_fuzzy_match = True
                     break
         

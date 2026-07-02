@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime
-from sqlalchemy import Boolean, DateTime, func
+from sqlalchemy import Boolean, DateTime, String, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -28,6 +28,10 @@ class AuditMixin:
         server_default=func.now(),
         onupdate=func.now(),
         nullable=False,
+    )
+    # Qui a effectué la dernière modification (audit trail)
+    modified_by: Mapped[str | None] = mapped_column(
+        String(255), nullable=True
     )
 
 class SoftDeleteMixin:

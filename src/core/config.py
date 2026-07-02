@@ -10,7 +10,7 @@ class Settings(BaseSettings):
     PROJECT_NAME: str = "Enterprise Talent Platform"
     API_V1_STR: str = "/api/v1"
     SECRET_KEY: str 
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7 #7j
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60  # 1 heure (au lieu de 7j)
 
     # CORS
     BACKEND_CORS_ORIGINS: List[AnyHttpUrl] = []
