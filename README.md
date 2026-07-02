@@ -86,7 +86,3 @@ python -m pytest src/ tests/ -v
 ## Variables d'environnement
 
 Voir `.env.example` pour la liste complete.
-
-## Licence
-
-Propritaire - JOJO
