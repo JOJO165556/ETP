@@ -17,59 +17,6 @@ CONFIDENCE_THRESHOLD = 0.4
 SENTENCE_TRANSFORMER_MODEL = "all-MiniLM-L6-v2"
 NER_MODEL = "dslim/bert-base-NER"
 
-# Dictionnaire étendu de compétences techniques avec catégories
-TECH_SKILLS_DB = {
-    "python": ["python", "python3", "python2", "cpython", "pypy"],
-    "javascript": ["javascript", "js", "ecmascript", "es6", "es2015"],
-    "typescript": ["typescript", "ts"],
-    "java": ["java", "jdk", "jvm"],
-    "react": ["react", "reactjs", "react.js"],
-    "angular": ["angular", "angularjs", "angular.js"],
-    "vue": ["vue", "vuejs", "vue.js"],
-    "node": ["node", "nodejs", "node.js"],
-    "fastapi": ["fastapi", "fast api"],
-    "django": ["django"],
-    "flask": ["flask"],
-    "spring": ["spring", "springboot", "spring boot"],
-    "postgresql": ["postgresql", "postgres", "psql"],
-    "mysql": ["mysql", "mariadb"],
-    "mongodb": ["mongodb", "mongo"],
-    "redis": ["redis"],
-    "docker": ["docker", "dockerfile", "docker-compose"],
-    "kubernetes": ["kubernetes", "k8s"],
-    "aws": ["aws", "amazon web services", "ec2", "s3", "lambda"],
-    "gcp": ["gcp", "google cloud", "bigquery", "cloud functions"],
-    "azure": ["azure", "microsoft azure"],
-    "git": ["git", "github", "gitlab", "bitbucket"],
-    "ci/cd": ["ci/cd", "cicd", "pipeline", "jenkins", "github actions", "gitlab ci"],
-    "machine learning": ["machine learning", "ml", "deep learning", "ia", "intelligence artificielle"],
-    "sql": ["sql", "requêtes sql"],
-    "html": ["html", "html5"],
-    "css": ["css", "css3", "scss", "sass", "less"],
-    "php": ["php"],
-    "ruby": ["ruby", "ruby on rails", "rails"],
-    "go": ["golang", "go"],
-    "rust": ["rust"],
-    "swift": ["swift", "swiftui"],
-    "kotlin": ["kotlin"],
-    "c++": ["c++", "cpp"],
-    "c#": ["c#", "csharp", ".net"],
-    "scala": ["scala"],
-    "r": [" r ", "r studio", "rstudio"],
-    "data engineering": ["data engineering", "etl", "airflow", "spark", "kafka"],
-    "devops": ["devops", "sre", "infrastructure"],
-    "agile": ["agile", "scrum", "kanban"],
-    "terraform": ["terraform", "infrastructure as code", "iac"],
-    "ansible": ["ansible"],
-    "elasticsearch": ["elasticsearch", "elastic", "kibana"],
-    "graphql": ["graphql", "graph ql"],
-    "rest": ["rest", "restapi", "api rest", "api"],
-    "microservices": ["microservices", "microservices"],
-    "linux": ["linux", "ubuntu", "debian", "centos"],
-    "figma": ["figma"],
-    "photoshop": ["photoshop"],
-}
-
 # Niveaux d'expérience
 EXPERIENCE_KEYWORDS = {
     "senior": ["senior", "lead", "principal", "architect", "staff", "head of", "directeur", "responsable"],
@@ -91,6 +38,19 @@ EDUCATION_KEYWORDS = {
 EMAIL_PATTERN = re.compile(r'\b[\w.-]+@[\w.-]+\.\w+\b')
 PHONE_PATTERN = re.compile(r'[\+]?[\d\s\-\(\)]{8,}')
 
+# Fallback regex quand l'IA n'est pas disponible
+# Détecte les mots composés de lettres seules (langages, frameworks, outils)
+_FALLBACK_SKILL_PATTERN = re.compile(
+    r'\b(python|javascript|typescript|react|angular|vue|fastapi|django|flask|spring|'
+    r'postgresql|mysql|mongodb|redis|docker|kubernetes|aws|gcp|azure|'
+    r'git|ci/cd|jenkins|terraform|ansible|graphql|rest|'
+    r'machine learning|deep learning|nlp|data science|'
+    r'java(?!script)|golang|rust|swift|kotlin|ruby|php|scala|'
+    r'figma|photoshop|tailwind|sass|scss|css3?|html5?|'
+    r'linux|bash|powershell|jira|agile|scrum|node\.?js)\b',
+    re.IGNORECASE
+)
+
 
 @dataclass
 class ResumeAnalysis:
@@ -109,7 +69,7 @@ class LocalResumeAnalyzer:
     
     - Sentence-transformers (MiniLM-L6-v2) pour la similarité sémantique
     - Transformers NER pour l'extraction d'entités nommées
-    - Regex + dictionnaire pour les compétences techniques
+    - Fallback regex si les modèles IA ne sont pas disponibles
     """
 
     def __init__(self):
@@ -145,36 +105,62 @@ class LocalResumeAnalyzer:
     def extract_skills(self, text: str) -> list[str]:
         """
         Extraction dynamique de compétences depuis le texte du CV.
-        Combine NER + dictionnaire de compétences + similarité sémantique.
+        Utilise NER + similarité sémantique. Fallback regex si les modèles ne sont pas disponibles.
         """
-        text_lower = text.lower()
         found_skills = set()
 
-        # 1. Extraction par dictionnaire (rapide, fiable)
-        for skill, variants in TECH_SKILLS_DB.items():
-            for variant in variants:
-                if variant in text_lower:
-                    found_skills.add(skill)
-                    break
-
-        # 2. Extraction NER pour détecter les entités de type ORG/TECH
+        # 1. Extraction NER pour détecter les entités techniques
         try:
             ner_pipeline = self._load_ner_pipeline()
-            # Tronquer le texte pour le NER (limite de 512 tokens)
             truncated = text[:2000]
             entities = ner_pipeline(truncated)
             for entity in entities:
                 word = entity.get("word", "").lower().strip()
-                entity_type = entity.get("entity_group", "")
                 score = entity.get("score", 0)
-                if score > 0.7 and entity_type in ("ORG", "MISC"):
-                    # Vérifier si l'entité correspond à une compétence connue
-                    for skill, variants in TECH_SKILLS_DB.items():
-                        if word in variants or any(v in word for v in variants):
-                            found_skills.add(skill)
-                            break
+                entity_type = entity.get("entity_group", "")
+                if score > 0.7 and entity_type in ("ORG", "MISC", "PER"):
+                    # Garder les entités qui ressemblent à des compétences techniques
+                    if len(word) > 2 and not word.startswith(("http", "www", "com")):
+                        found_skills.add(word)
         except Exception as e:
             logger.warning("Erreur extraction NER: %s", e)
+
+        # 2. Extraction par similarité sémantique avec des patterns de skills connus
+        try:
+            model = self._load_sentence_model()
+            # Patterns de skills pour la similarité sémantique
+            skill_patterns = [
+                "python programming", "javascript development", "react framework",
+                "database management", "cloud infrastructure", "devops practices",
+                "machine learning", "data analysis", "web development",
+                "mobile development", "api design", "version control",
+            ]
+            text_embedding = model.encode(text[:1000])
+            pattern_embeddings = model.encode(skill_patterns)
+            
+            from numpy import dot
+            from numpy.linalg import norm
+            
+            for i, pattern in enumerate(skill_patterns):
+                sim = dot(text_embedding, pattern_embeddings[i]) / (
+                    norm(text_embedding) * norm(pattern_embeddings[i])
+                )
+                if sim > 0.3:
+                    # Ajouter le skill principal du pattern
+                    main_skill = pattern.split()[0].lower()
+                    found_skills.add(main_skill)
+        except Exception as e:
+            logger.warning("Erreur similarité sémantique: %s", e)
+
+        # 3. Fallback regex si l'IA n'a rien trouvé
+        if not found_skills:
+            logger.info("Fallback regex pour l'extraction de compétences")
+            matches = _FALLBACK_SKILL_PATTERN.findall(text)
+            for match in matches:
+                skill = match.lower().strip()
+                # Normaliser : supprimer les chiffres finaux (css3→css, html5→html)
+                skill = re.sub(r'\d+$', '', skill)
+                found_skills.add(skill)
 
         return sorted(list(found_skills))
 
@@ -204,7 +190,6 @@ class LocalResumeAnalyzer:
         try:
             model = self._load_sentence_model()
             embeddings = model.encode([text1, text2])
-            # Cosine similarity
             from numpy import dot
             from numpy.linalg import norm
             sim = dot(embeddings[0], embeddings[1]) / (norm(embeddings[0]) * norm(embeddings[1]))
