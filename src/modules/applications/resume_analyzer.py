@@ -41,7 +41,7 @@ PHONE_PATTERN = re.compile(r'[\+]?[\d\s\-\(\)]{8,}')
 # Fallback regex quand l'IA n'est pas disponible
 # Détecte les mots composés de lettres seules (langages, frameworks, outils)
 _FALLBACK_SKILL_PATTERN = re.compile(
-    r'\b(python|javascript|typescript|react|angular|vue|fastapi|django|flask|spring|'
+    r'\b(python|javascript|typescript|react[\s-]?native|react|angular|vue|fastapi|django|flask|spring|'
     r'postgresql|mysql|mongodb|redis|docker|kubernetes|aws|gcp|azure|'
     r'git|ci/cd|jenkins|terraform|ansible|graphql|rest|'
     r'machine learning|deep learning|nlp|data science|'
@@ -50,6 +50,26 @@ _FALLBACK_SKILL_PATTERN = re.compile(
     r'linux|bash|powershell|jira|agile|scrum|node\.?js)\b',
     re.IGNORECASE
 )
+
+# Mapping des skills normalisées : une skill peut avoir des alias
+# Utile quand l'IA extrait "React JS" et que le job demande "react"
+SKILL_NORMALIZATION = {
+    "reactjs": "react",
+    "react.js": "react",
+    "react js": "react",
+    "react-native": "react native",
+    "reactnative": "react native",
+    "nodejs": "node.js",
+    "golang": "go",
+    "typescript": "typescript",
+    "ts": "typescript",
+    "css3": "css",
+    "html5": "html",
+    "postgresql": "postgresql",
+    "postgres": "postgresql",
+    "k8s": "kubernetes",
+    "ml": "machine learning",
+}
 
 
 @dataclass
@@ -160,9 +180,17 @@ class LocalResumeAnalyzer:
                 skill = match.lower().strip()
                 # Normaliser : supprimer les chiffres finaux (css3→css, html5→html)
                 skill = re.sub(r'\d+$', '', skill)
+                # Appliquer le mapping de normalisation
+                skill = SKILL_NORMALIZATION.get(skill, skill)
                 found_skills.add(skill)
 
-        return sorted(list(found_skills))
+        # 4. Normaliser toutes les skills extraites (IA ou regex)
+        normalized_skills = set()
+        for skill in found_skills:
+            normalized = SKILL_NORMALIZATION.get(skill.lower().strip(), skill.lower().strip())
+            normalized_skills.add(normalized)
+
+        return sorted(list(normalized_skills))
 
     def extract_experience_level(self, text: str) -> str:
         """Détecte le niveau d'expérience depuis le texte du CV."""

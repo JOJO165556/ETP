@@ -15,7 +15,7 @@ from src.core.database import async_session_maker
 from src.modules.applications.repository import ApplicationRepository
 from src.modules.users.repository import UserProfileRepository
 from src.modules.jobs.repository import JobRepository
-from src.modules.applications.resume_analyzer import get_resume_analyzer, CONFIDENCE_THRESHOLD
+from src.modules.applications.resume_analyzer import get_resume_analyzer, CONFIDENCE_THRESHOLD, SKILL_NORMALIZATION
 
 logger = get_task_logger(__name__)
 
@@ -158,12 +158,18 @@ async def calculate_smart_match(candidate_skills: list, extracted_text: str, job
         ai_education = ai_result.education_level
 
     # 1. Récupération des compétences requises depuis le champ JSON du job
-    job_skills = []
+    # Normaliser les skills du job aussi (reactjs→react, postgres→postgresql)
+    job_skills_raw = []
     if job.required_skills:
         if isinstance(job.required_skills, list):
-            job_skills = job.required_skills
+            job_skills_raw = job.required_skills
         elif isinstance(job.required_skills, dict):
-            job_skills = list(job.required_skills.keys()) if job.required_skills else []
+            job_skills_raw = list(job.required_skills.keys()) if job.required_skills else []
+    
+    job_skills = []
+    for skill in job_skills_raw:
+        normalized = SKILL_NORMALIZATION.get(skill.lower().strip(), skill.lower().strip())
+        job_skills.append(normalized)
     
     # 2. Calcul du score de correspondance des compétences
     skill_match_score = 0
@@ -171,17 +177,15 @@ async def calculate_smart_match(candidate_skills: list, extracted_text: str, job
     matched_count = 0
     
     for skill in job_skills:
-        normalized_skill = skill.lower().strip()
+        # Match exact (les deux côtés sont normalisés)
+        is_exact_match = any(skill == cskill.lower().strip() for cskill in candidate_skills)
         
-        # Match exact (l'IA normalise déjà les sorties)
-        is_exact_match = any(normalized_skill == cskill.lower().strip() for cskill in candidate_skills)
-        
-        # Match partiel : "react" dans "reactjs", "python" dans "python3"
+        # Match partiel : "react" dans "react native", "python" dans "python3"
         is_partial_match = False
         if not is_exact_match:
             for cskill in candidate_skills:
                 cskill_lower = cskill.lower().strip()
-                if _word_match(normalized_skill, cskill_lower):
+                if _word_match(skill, cskill_lower):
                     is_partial_match = True
                     break
         
