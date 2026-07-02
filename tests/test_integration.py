@@ -61,7 +61,7 @@ class TestAuthServiceIntegration:
             current_password="old_password",
             new_password="new_password123",
         ))
-        assert "succès" in result["message"].lower()
+        assert "succes" in result["message"].lower()
 
 
 class TestResumeAnalyzerIntegration:

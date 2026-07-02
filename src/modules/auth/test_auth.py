@@ -46,13 +46,13 @@ class TestSecurityFunctions:
         from src.core.security import create_access_token, create_refresh_token
         from jose import jwt
         from src.core.config import settings
-        from src.core.security import ALGORITHM
+        from src.core.security import ALGORITHM, REFRESH_SECRET_KEY
 
         access = create_access_token("user123")
         refresh = create_refresh_token("user123")
 
         access_payload = jwt.decode(access, settings.SECRET_KEY, algorithms=[ALGORITHM])
-        refresh_payload = jwt.decode(refresh, settings.SECRET_KEY, algorithms=[ALGORITHM])
+        refresh_payload = jwt.decode(refresh, REFRESH_SECRET_KEY, algorithms=[ALGORITHM])
 
         assert access_payload["sub"] == "user123"
         assert access_payload["type"] == "access"

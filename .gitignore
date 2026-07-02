@@ -31,6 +31,7 @@ htmlcov/
 
 # Dossiers de données Docker
 postgres_data/
+backups/
 
 # Poetry
 poetry.lock
