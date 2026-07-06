@@ -139,7 +139,11 @@ export default function RegisterPage() {
       });
 
       if (res.ok) {
-        router.push("/overview");
+        if (!isRecruiter) {
+          router.push("/cv-upload");
+        } else {
+          router.push("/overview");
+        }
         router.refresh();
       } else {
         throw new Error("Erreur de session.");
