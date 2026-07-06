@@ -1,5 +1,6 @@
 "use client";
 
+import { Suspense } from "react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -87,8 +88,8 @@ function StepIndicator({ steps, current }: StepIndicatorProps) {
   );
 }
 
-/* Composant principal de la page d'inscription (gère les candidats et les recruteurs) */
-export default function RegisterPage() {
+/* Composant interne — nécessite useSearchParams() donc doit être dans un Suspense */
+function RegisterForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const role = searchParams.get("role") === "recruiter" ? "recruiter" : "candidate";
@@ -139,7 +140,11 @@ export default function RegisterPage() {
       });
 
       if (res.ok) {
-        router.push("/overview");
+        if (!isRecruiter) {
+          router.push("/cv-upload");
+        } else {
+          router.push("/overview");
+        }
         router.refresh();
       } else {
         throw new Error("Erreur de session.");
@@ -367,5 +372,14 @@ export default function RegisterPage() {
         </Link>
       </p>
     </div>
+  );
+}
+
+/* Export de la page avec Suspense boundary requis pour useSearchParams() */
+export default function RegisterPage() {
+  return (
+    <Suspense fallback={<div className="w-full max-w-[440px] animate-pulse space-y-7" />}>
+      <RegisterForm />
+    </Suspense>
   );
 }
