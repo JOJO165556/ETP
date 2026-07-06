@@ -3,10 +3,14 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   // Proxy vers le backend FastAPI en développement pour éviter les CORS
   async rewrites() {
+    let apiUrl = process.env.NEXT_PUBLIC_API_URL;
+    if (!apiUrl || apiUrl === "undefined" || apiUrl === "null") {
+      apiUrl = "http://localhost:8000";
+    }
     return [
       {
         source: "/api/:path*",
-        destination: `${process.env.NEXT_PUBLIC_API_URL}/api/:path*`,
+        destination: `${apiUrl}/api/:path*`,
       },
     ];
   },
@@ -49,9 +53,6 @@ const nextConfig: NextConfig = {
     ],
   },
 
-  experimental: {
-    typedRoutes: true,
-  },
 };
 
 export default nextConfig;

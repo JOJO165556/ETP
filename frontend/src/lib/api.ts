@@ -10,10 +10,7 @@ const API_V1 = typeof window !== "undefined" ? "/api/v1" : `${API_BASE}/api/v1`;
  * Le navigateur enverra automatiquement le cookie HttpOnly vers le proxy Next.js.
  * Le Middleware se chargera d'injecter le header Authorization vers FastAPI.
  */
-async function request<T>(
-  endpoint: string,
-  options: RequestInit = {}
-): Promise<T> {
+async function request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
   const headers: HeadersInit = {
     "Content-Type": "application/json",
     ...(options.headers as Record<string, string> | undefined),

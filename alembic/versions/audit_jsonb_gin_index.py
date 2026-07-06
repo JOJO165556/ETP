@@ -17,10 +17,14 @@ depends_on = None
 
 
 def upgrade() -> None:
-    # Index GIN sur profiles.skills pour des recherches JSONB performantes
+    # Conversion des colonnes en JSONB pour supporter GIN
+    op.execute("ALTER TABLE user_profiles ALTER COLUMN skills TYPE jsonb USING skills::jsonb")
+    op.execute("ALTER TABLE jobs ALTER COLUMN required_skills TYPE jsonb USING required_skills::jsonb")
+
+    # Index GIN sur user_profiles.skills pour des recherches JSONB performantes
     op.execute(
         "CREATE INDEX IF NOT EXISTS idx_profiles_skills_gin "
-        "ON profiles USING GIN (skills jsonb_path_ops)"
+        "ON user_profiles USING GIN (skills jsonb_path_ops)"
     )
     # Index GIN sur jobs.required_skills pour des recherches JSONB performantes
     op.execute(
@@ -30,5 +34,5 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    op.drop_index("idx_profiles_skills_gin", table_name="profiles")
+    op.drop_index("idx_profiles_skills_gin", table_name="user_profiles")
     op.drop_index("idx_jobs_required_skills_gin", table_name="jobs")
