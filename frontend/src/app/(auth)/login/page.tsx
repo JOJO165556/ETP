@@ -66,47 +66,29 @@ export default function LoginPage() {
         </p>
       </div>
 
-      {/* Boutons SSO */}
+      {/* Boutons SSO — redirections vers les endpoints OAuth du backend */}
       <div className="grid grid-cols-2 gap-3">
-        <button
-          type="button"
-          disabled
-          className="flex items-center justify-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-sm transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+        <a
+          href="http://localhost:8000/api/v1/auth/google/login"
+          className="flex items-center justify-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-sm transition hover:bg-gray-50"
         >
           <svg width="16" height="16" viewBox="0 0 48 48" aria-hidden="true">
-            <path
-              fill="#FFC107"
-              d="M43.6 20H24v8h11.3C33.6 33.2 29.3 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.9 1.1 8 3l5.7-5.7C34.5 6.4 29.5 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20c11 0 19.7-8 19.7-20 0-1.3-.1-2.7-.1-4z"
-            />
-            <path
-              fill="#FF3D00"
-              d="M6.3 14.7l6.6 4.8C14.5 16 18.9 13 24 13c3.1 0 5.9 1.1 8 3l5.7-5.7C34.5 6.4 29.5 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"
-            />
-            <path
-              fill="#4CAF50"
-              d="M24 44c5.2 0 10-1.9 13.6-5.1l-6.3-5.4C29.3 35.1 26.8 36 24 36c-5.2 0-9.6-3.3-11.3-8H6.1C9.4 38.6 16.2 44 24 44z"
-            />
-            <path
-              fill="#1976D2"
-              d="M43.6 20H24v8h11.3c-.8 2.3-2.3 4.2-4.2 5.5l6.3 5.4C41.2 35.9 44 30.4 44 24c0-1.3-.1-2.7-.4-4z"
-            />
+            <path fill="#FFC107" d="M43.6 20H24v8h11.3C33.6 33.2 29.3 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.9 1.1 8 3l5.7-5.7C34.5 6.4 29.5 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20c11 0 19.7-8 19.7-20 0-1.3-.1-2.7-.1-4z" />
+            <path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.5 16 18.9 13 24 13c3.1 0 5.9 1.1 8 3l5.7-5.7C34.5 6.4 29.5 4 24 4 16.3 4 9.7 8.3 6.3 14.7z" />
+            <path fill="#4CAF50" d="M24 44c5.2 0 10-1.9 13.6-5.1l-6.3-5.4C29.3 35.1 26.8 36 24 36c-5.2 0-9.6-3.3-11.3-8H6.1C9.4 38.6 16.2 44 24 44z" />
+            <path fill="#1976D2" d="M43.6 20H24v8h11.3c-.8 2.3-2.3 4.2-4.2 5.5l6.3 5.4C41.2 35.9 44 30.4 44 24c0-1.3-.1-2.7-.4-4z" />
           </svg>
           Google
-        </button>
-        <button
-          type="button"
-          disabled
-          className="flex items-center justify-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-sm transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+        </a>
+        <a
+          href="http://localhost:8000/api/v1/auth/linkedin/login"
+          className="flex items-center justify-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-sm transition hover:bg-gray-50"
         >
-          <svg width="16" height="16" viewBox="0 0 23 23" aria-hidden="true">
-            <path fill="#f3f3f3" d="M0 0h23v23H0z" />
-            <path fill="#f35325" d="M1 1h10v10H1z" />
-            <path fill="#81bc06" d="M12 1h10v10H12z" />
-            <path fill="#05a6f0" d="M1 12h10v10H1z" />
-            <path fill="#ffba08" d="M12 12h10v10H12z" />
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="#0A66C2" aria-hidden="true">
+            <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" />
           </svg>
-          Microsoft
-        </button>
+          LinkedIn
+        </a>
       </div>
 
       {/* Séparateur */}
@@ -158,9 +140,9 @@ export default function LoginPage() {
             <label htmlFor="password" className="block text-sm font-medium text-gray-700">
               Mot de passe
             </label>
-            <a href="#" className="text-xs font-medium text-[#1d40d9] hover:underline">
+            <Link href="/forgot-password" className="text-xs font-medium text-[#1d40d9] hover:underline">
               Oublié ?
-            </a>
+            </Link>
           </div>
           <div className="relative">
             <input

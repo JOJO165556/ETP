@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
   Search,
@@ -26,6 +26,23 @@ export default function CVReviewPage() {
     "Architecture Système",
     "GraphQL",
   ]);
+  const [profileData, setProfileData] = useState<any>(null);
+
+  useEffect(() => {
+    // Récupération des données extraites par le backend lors du CV upload
+    const storedData = sessionStorage.getItem("cv_profile_data");
+    if (storedData) {
+      try {
+        const parsed = JSON.parse(storedData);
+        setProfileData(parsed);
+        if (parsed.skills && Array.isArray(parsed.skills) && parsed.skills.length > 0) {
+          setSkills(parsed.skills);
+        }
+      } catch (e) {
+        console.error("Erreur de parsing des données du profil", e);
+      }
+    }
+  }, []);
 
   const removeSkill = (skillToRemove: string) => {
     setSkills(skills.filter((s) => s !== skillToRemove));
@@ -168,7 +185,7 @@ export default function CVReviewPage() {
                     </label>
                     <input
                       type="tel"
-                      defaultValue="+33 6 12 34 56 78"
+                      defaultValue={profileData?.phone || "+33 6 12 34 56 78"}
                       className="focus:border-primary focus:ring-primary w-full rounded-md border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white transition-colors focus:ring-1 focus:outline-none"
                     />
                   </div>

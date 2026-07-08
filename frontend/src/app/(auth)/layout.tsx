@@ -50,8 +50,8 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
           </ul>
 
           <div className="rounded-xl bg-white/10 p-5 backdrop-blur-sm">
-            <p className="text-sm leading-relaxed text-white/90 before:content-['\u201C'] after:content-['\u201D']">
-              {TESTIMONIAL.quote}
+            <p className="text-sm leading-relaxed text-white/90">
+              « {TESTIMONIAL.quote} »
             </p>
             <p className="mt-3 text-xs font-medium text-white/60">
               {TESTIMONIAL.author} &middot; {TESTIMONIAL.role}

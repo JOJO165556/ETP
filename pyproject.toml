@@ -29,6 +29,8 @@ flower = "^2.0.1"
 torch = { version = ">=2.0", source = "pytorch-cpu", optional = true }
 transformers = { version = "^4.34", optional = true }
 sentence-transformers = { version = "^3.0", optional = true }
+authlib = "^1.7.2"
+httpx = "^0.28.1"
 
 [tool.poetry.extras]
 ai = ["torch", "transformers", "sentence-transformers"]
@@ -42,3 +44,9 @@ types-python-jose = "^3.3.4.20240106"
 name = "pytorch-cpu"
 url = "https://download.pytorch.org/whl/cpu"
 priority = "explicit"
+
+# Configuration du type checker Pyrefly
+[tool.pyrefly]
+project_includes = ["."]
+search_path = ["."]
+python_interpreter = ".venv/bin/python"

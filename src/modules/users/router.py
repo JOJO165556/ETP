@@ -63,9 +63,15 @@ async def upload_candidate_cv(
             detail=f"Erreur lors du transfert vers le service de stockage : {exc}",
         ) from exc
 
-    updated_profile = await profile_repo.update_cv_key(
+    # Simulation de l'extraction par IA (OCR/NLP) pour valider l'Onboarding UI
+    mock_skills = ["React", "TypeScript", "Node.js", "Python", "FastAPI"]
+    
+    updated_profile = await profile_repo.update_by_user_id(
         user_id=str(current_user.id),
-        cv_key=file_key,
+        data={
+            "cv_key": file_key,
+            "skills": mock_skills
+        }
     )
 
     if not updated_profile:

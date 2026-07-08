@@ -1,4 +1,5 @@
 from pydantic import BaseModel, ConfigDict
+from src.modules.users.models import UserRole
 
 
 class Token(BaseModel):
@@ -26,12 +27,14 @@ class RegisterRequest(BaseModel):
             "password": "MonSecret123!",
             "first_name": "Jean",
             "last_name": "Dupont",
+            "role": "candidate",
         }
     })
     email: str
     password: str
     first_name: str | None = None
     last_name: str | None = None
+    role: UserRole | None = None
 
 
 class RefreshTokenRequest(BaseModel):

@@ -57,5 +57,11 @@ class Settings(BaseSettings):
     MINIO_BUCKET_NAME: str = "etp-documents"
     MINIO_BUCKET_CV: str = "candidats-cv"
 
+    # OAUTH (Google & LinkedIn)
+    GOOGLE_CLIENT_ID: Optional[str] = None
+    GOOGLE_CLIENT_SECRET: Optional[str] = None
+    LINKEDIN_CLIENT_ID: Optional[str] = None
+    LINKEDIN_CLIENT_SECRET: Optional[str] = None
+
 
 settings = Settings()

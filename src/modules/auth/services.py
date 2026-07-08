@@ -10,7 +10,7 @@ from src.core.security import (
     verify_refresh_token,
 )
 from src.modules.auth.schemas import Token, RegisterRequest, ChangePasswordRequest
-from src.modules.users.models import User
+from src.modules.users.models import User, UserRole
 from src.modules.users.repository import UserRepository
 
 
@@ -78,6 +78,7 @@ class AuthService:
         user = await self.user_repo.create({
             "email": data.email,
             "hashed_password": get_password_hash(data.password),
+            "role": data.role if data.role else UserRole.CANDIDATE,
         })
 
         # Mettre a jour le profil si fourni
