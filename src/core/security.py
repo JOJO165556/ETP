@@ -54,3 +54,24 @@ def get_password_hash(password: str) -> str:
         password.encode("utf-8"),
         bcrypt.gensalt(),
     ).decode("utf-8")
+
+
+def create_password_reset_token(email: str) -> str:
+    """Génère un token JWT signé pour la réinitialisation du mot de passe (15 min)."""
+    expire = datetime.now(timezone.utc) + timedelta(minutes=15)
+    to_encode = {"exp": expire, "sub": email, "type": "password_reset"}
+    return jwt.encode(to_encode, settings.SECRET_KEY, algorithm=ALGORITHM)
+
+
+def verify_password_reset_token(token: str) -> str | None:
+    """
+    Vérifie et décode un token de réinitialisation.
+    Retourne l'email si valide, None sinon.
+    """
+    try:
+        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[ALGORITHM])
+        if payload.get("type") != "password_reset":
+            return None
+        return payload.get("sub")
+    except Exception:
+        return None

@@ -16,7 +16,7 @@ const TESTIMONIAL = {
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex min-h-dvh">
-      <div className="relative hidden lg:flex lg:w-[46%] xl:w-[44%] flex-col justify-between bg-[#1d40d9] p-10 text-white overflow-hidden">
+      <div className="relative hidden flex-col justify-between overflow-hidden bg-[#1d40d9] p-10 text-white lg:flex lg:w-[46%] xl:w-[44%]">
         <div
           aria-hidden="true"
           className="pointer-events-none absolute inset-0"
@@ -34,7 +34,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
         </div>
 
         <div className="relative z-10 space-y-8">
-          <h2 className="text-[2.15rem] font-bold leading-tight tracking-tight">
+          <h2 className="text-[2.15rem] leading-tight font-bold tracking-tight">
             Là où les meilleures équipes et les meilleurs talents se rencontrent enfin.
           </h2>
 
@@ -50,8 +50,8 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
           </ul>
 
           <div className="rounded-xl bg-white/10 p-5 backdrop-blur-sm">
-            <p className="text-sm leading-relaxed text-white/90 before:content-['\u201C'] after:content-['\u201D']">
-              {TESTIMONIAL.quote}
+            <p className="text-sm leading-relaxed text-white/90">
+              « {TESTIMONIAL.quote} »
             </p>
             <p className="mt-3 text-xs font-medium text-white/60">
               {TESTIMONIAL.author} &middot; {TESTIMONIAL.role}
@@ -64,7 +64,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
         </p>
       </div>
 
-      <div className="flex flex-1 flex-col items-center justify-center px-6 py-12 sm:px-10 bg-white">
+      <div className="flex flex-1 flex-col items-center justify-center bg-white px-6 py-12 sm:px-10">
         {children}
       </div>
     </div>

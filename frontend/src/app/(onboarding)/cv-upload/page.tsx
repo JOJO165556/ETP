@@ -2,14 +2,16 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { UploadCloud, Lock, ArrowRight } from "lucide-react";
+import { UploadCloud, Lock, ArrowRight, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
+import { API_V1 } from "@/lib/api";
 
 /* Page d'upload du CV (Étape 1 de l'onboarding) */
 export default function CVUploadPage() {
   const router = useRouter();
   const [isDragging, setIsDragging] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   const [file, setFile] = useState<File | null>(null);
 
   /* Gère le dépôt (drag & drop) du fichier */
@@ -22,10 +24,34 @@ export default function CVUploadPage() {
   };
 
   /* Passe à l'étape suivante du traitement */
-  const handleContinue = () => {
+  const handleContinue = async () => {
     if (file) {
-      // Simulation du passage à l'étape de traitement IA (processing)
-      router.push("/cv-processing");
+      setIsUploading(true);
+      try {
+        const formData = new FormData();
+        formData.append("file", file);
+
+        const res = await fetch(`${API_V1}/users/profile/upload-cv`, {
+          method: "POST",
+          body: formData,
+        });
+
+        if (!res.ok) {
+          throw new Error("Erreur lors de l'upload");
+        }
+
+        const data = await res.json();
+        // On stocke temporairement les données extraites
+        sessionStorage.setItem("cv_profile_data", JSON.stringify(data));
+
+        // Passage à l'étape de traitement IA (processing)
+        router.push("/cv-processing");
+      } catch (error) {
+        console.error(error);
+        alert("Une erreur est survenue lors du téléchargement du CV.");
+      } finally {
+        setIsUploading(false);
+      }
     }
   };
 
@@ -149,10 +175,11 @@ export default function CVUploadPage() {
         </button>
         <button
           onClick={handleContinue}
-          disabled={!file}
-          className="rounded-lg border border-white/5 bg-white/5 px-8 py-3 text-sm font-semibold text-white transition-colors hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-50"
+          disabled={!file || isUploading}
+          className="flex items-center gap-2 rounded-lg border border-white/5 bg-white/5 px-8 py-3 text-sm font-semibold text-white transition-colors hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-50"
         >
-          Continuer
+          {isUploading && <Loader2 size={16} className="animate-spin" />}
+          {isUploading ? "Envoi en cours..." : "Continuer"}
         </button>
       </div>
 

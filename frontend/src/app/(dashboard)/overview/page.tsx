@@ -1,90 +1,111 @@
 "use client";
 
-import {
-  Eye,
-  Zap,
-  ClipboardList,
-  Code,
-  Compass,
-  MapPin,
-  Plus,
-  Minus,
-  Edit2,
-} from "lucide-react";
+import { useEffect, useState } from "react";
+import { Eye, Zap, ClipboardList, MapPin, Plus, Minus, Edit2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-
-/* Données simulées pour les KPI */
-const STATS = [
-  {
-    title: "VUES DU PROFIL",
-    value: "12",
-    subtext: "+3 cette semaine",
-    icon: Eye,
-    iconColor: "text-blue-500",
-    bg: "bg-[#182138]",
-  },
-  {
-    title: "NOUVEAUX MATCHS",
-    value: "5",
-    subtext: "Action requise",
-    icon: Zap,
-    iconColor: "text-orange-500",
-    bg: "bg-[#182138]",
-  },
-  {
-    title: "CANDIDATURES ACTIVES",
-    value: "3",
-    subtext: "En cours",
-    icon: ClipboardList,
-    iconColor: "text-gray-400",
-    bg: "bg-[#182138]",
-  },
-];
-
-/* Données simulées pour les offres recommandées */
-const RECOMMENDED_JOBS = [
-  {
-    id: 1,
-    role: "Ingénieur Frontend Senior",
-    company: "TechCorp Inc.",
-    location: "Paris, FR (Hybride)",
-    match: "Match 98%",
-    salary: "75k€ - 90k€",
-    posted: "Publié il y a 2j",
-    action: "Postuler",
-    actionVariant: "primary",
-    icon: Code,
-  },
-  {
-    id: 2,
-    role: "Architecte Logiciel",
-    company: "Global Systems",
-    location: "Remote",
-    match: "Match 92%",
-    salary: "85k€ - 110k€",
-    posted: "Publié il y a 5j",
-    action: "Examiner",
-    actionVariant: "secondary",
-    icon: Compass,
-  },
-];
+import { jobsService } from "@/services/jobs.service";
+import { applicationsService } from "@/services/applications.service";
+import type { Job } from "@/types/domain";
+import { JobCard } from "@/components/shared/job-card";
+import Link from "next/link";
 
 /* Composant de la page d'accueil (Vue d'ensemble) du tableau de bord */
 export default function OverviewPage() {
+  const [offresRecommandees, setOffresRecommandees] = useState<Job[]>([]);
+  const [candidaturesActives, setCandidaturesActives] = useState(0);
+  const [chargement, setChargement] = useState(true);
+
+  useEffect(() => {
+    async function chargerDonnees() {
+      try {
+        const [jobsRes, appsRes] = await Promise.all([
+          jobsService.getOffres({ size: 3 }),
+          applicationsService.getMesCandidatures(),
+        ]);
+
+        setOffresRecommandees(jobsRes.items);
+        setCandidaturesActives(
+          appsRes.items.filter((app) => app.statut !== "ARCHIVEE").length
+        );
+      } catch (erreur) {
+        console.error("Erreur de chargement", erreur);
+        // Fallback pour la démo
+        setOffresRecommandees([
+          {
+            id: "1" as any,
+            title: "Senior Geovisualization Engineer",
+            company_name: "Carto Systems",
+            company_id: "c1" as any,
+            location: "Hybride (Paris, FR)",
+            salary_range: "75k€ - 95k€",
+            tags: ["React", "Mapbox", "WebGL"],
+            match_score: 98,
+            posted_at: "Il y a 1h",
+            is_active: true,
+          },
+          {
+            id: "2" as any,
+            title: "Lead Frontend Engineer",
+            company_name: "FinFlow",
+            company_id: "c2" as any,
+            location: "Remote (Europe)",
+            salary_range: "80k€ - 110k€",
+            tags: ["TypeScript", "Next.js"],
+            match_score: 91,
+            posted_at: "Il y a 12h",
+            is_active: true,
+          },
+        ]);
+        setCandidaturesActives(2);
+      } finally {
+        setChargement(false);
+      }
+    }
+    chargerDonnees();
+  }, []);
+
+  const STATS = [
+    {
+      title: "VUES DU PROFIL",
+      value: "45",
+      subtext: "+12 cette semaine",
+      icon: Eye,
+      iconColor: "text-blue-500",
+      bg: "bg-[#182138]",
+    },
+    {
+      title: "NOUVEAUX MATCHS",
+      value: "8",
+      subtext: "Action requise",
+      icon: Zap,
+      iconColor: "text-orange-500",
+      bg: "bg-[#182138]",
+    },
+    {
+      title: "CANDIDATURES ACTIVES",
+      value: candidaturesActives.toString(),
+      subtext: "En cours",
+      icon: ClipboardList,
+      iconColor: "text-slate-400",
+      bg: "bg-[#182138]",
+    },
+  ];
+
   return (
     <div className="space-y-10 p-8 lg:p-12">
       {/* En-tête de la page */}
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
         <div className="space-y-1">
-          <p className="text-primary text-sm font-medium">Bon retour parmi nous</p>
-          <h1 className="text-3xl font-bold tracking-tight text-white">
-            Bonjour, Thomas
-          </h1>
+          <p className="text-sm font-medium text-blue-400">Bon retour parmi nous</p>
+          <h1 className="text-3xl font-bold tracking-tight text-white">Bonjour, Jane</h1>
         </div>
-        <button className="bg-secondary/50 hover:bg-secondary flex items-center gap-2 rounded-md border border-white/5 px-4 py-2.5 text-sm font-medium text-white transition-colors">
-          <Edit2 size={16} className="text-gray-400" />
+        <Link
+          href="/settings"
+          className="flex items-center gap-2 rounded-md border border-white/10 bg-white/5 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-white/10"
+        >
+          <Edit2 size={16} className="text-slate-400" />
           Mettre à jour le profil
-        </button>
+        </Link>
       </div>
 
       {/* Cartes de statistiques (KPI) */}
@@ -103,12 +124,12 @@ export default function OverviewPage() {
             </div>
 
             <div className="relative z-10 space-y-4">
-              <p className="text-xs font-semibold tracking-wider text-gray-400 uppercase">
+              <p className="text-xs font-semibold tracking-wider text-slate-400 uppercase">
                 {stat.title}
               </p>
               <div className="flex items-baseline gap-3">
                 <span className="text-4xl font-bold text-white">{stat.value}</span>
-                <span className="text-sm font-medium text-gray-500">{stat.subtext}</span>
+                <span className="text-sm font-medium text-slate-500">{stat.subtext}</span>
               </div>
             </div>
           </div>
@@ -121,60 +142,28 @@ export default function OverviewPage() {
         <div className="space-y-6 xl:col-span-2">
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-bold text-white">Offres Recommandées</h2>
-            <button className="text-primary text-sm font-medium hover:underline">
-              Tout voir
-            </button>
+            <Link
+              href="/jobs"
+              className="text-sm font-medium text-blue-400 hover:underline"
+            >
+              Voir tout le fil
+            </Link>
           </div>
 
           <div className="space-y-4">
-            {RECOMMENDED_JOBS.map((job) => (
-              <div
-                key={job.id}
-                className="flex flex-col justify-between gap-4 rounded-xl border border-white/5 bg-[#182138]/50 p-5 transition-colors hover:bg-[#182138] sm:flex-row sm:items-center"
-              >
-                <div className="flex items-start gap-4">
-                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-white/5 text-gray-400">
-                    <job.icon size={20} />
-                  </div>
-                  <div className="space-y-1.5">
-                    <h3 className="text-base font-bold text-white">{job.role}</h3>
-                    <p className="text-sm text-gray-400">
-                      {job.company} &middot; {job.location}
-                    </p>
-                    <div className="flex items-center gap-2 pt-1">
-                      <span className="bg-primary/20 text-primary inline-flex items-center rounded px-2 py-0.5 text-xs font-medium">
-                        {job.match}
-                      </span>
-                      <span className="inline-flex items-center rounded bg-white/10 px-2 py-0.5 text-xs font-medium text-gray-300">
-                        {job.salary}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex h-full flex-col justify-between gap-3 sm:items-end">
-                  <p className="text-xs font-medium text-gray-500">{job.posted}</p>
-                  <button
-                    className={cn(
-                      "rounded-md px-5 py-2 text-sm font-semibold transition-colors",
-                      job.actionVariant === "primary"
-                        ? "bg-primary text-white hover:bg-blue-600"
-                        : "bg-white/10 text-white hover:bg-white/20"
-                    )}
-                  >
-                    {job.action}
-                  </button>
-                </div>
-              </div>
-            ))}
+            {chargement ? (
+              <div className="py-8 text-slate-500">Recherche de correspondances...</div>
+            ) : (
+              offresRecommandees.map((job) => <JobCard key={job.id} offre={job} />)
+            )}
           </div>
         </div>
 
         {/* Emplacement carte des offres géolocalisées */}
         <div className="space-y-6">
           <div className="flex items-center justify-between">
-            <h2 className="text-xl font-bold text-white">Offres près de chez vous</h2>
-            <MapPin size={20} className="text-gray-400" />
+            <h2 className="text-xl font-bold text-white">Opportunités locales</h2>
+            <MapPin size={20} className="text-slate-400" />
           </div>
 
           <div className="relative h-[300px] w-full overflow-hidden rounded-xl border border-white/5 bg-[#0b1021]">
@@ -189,26 +178,26 @@ export default function OverviewPage() {
             />
 
             {/* Points sur la carte */}
-            <div className="bg-primary/20 absolute top-1/3 left-1/3 flex h-8 w-8 items-center justify-center rounded-full">
-              <div className="bg-primary h-4 w-4 rounded-full shadow-[0_0_15px_rgba(59,130,246,0.8)]" />
+            <div className="absolute top-1/3 left-1/3 flex h-8 w-8 items-center justify-center rounded-full bg-blue-500/20">
+              <div className="h-4 w-4 rounded-full bg-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.8)]" />
             </div>
 
-            <div className="bg-primary/20 absolute top-1/2 right-1/3 flex h-6 w-6 items-center justify-center rounded-full">
-              <div className="border-primary h-3 w-3 rounded-full border-2 bg-transparent" />
+            <div className="absolute top-1/2 right-1/3 flex h-6 w-6 items-center justify-center rounded-full bg-blue-500/20">
+              <div className="h-3 w-3 rounded-full border-2 border-blue-500 bg-transparent" />
             </div>
 
             {/* Badge Localisation */}
             <div className="absolute top-4 left-4 flex items-center gap-2 rounded-md border border-white/10 bg-black/50 px-3 py-1.5 text-xs font-medium text-white backdrop-blur-md">
-              <div className="bg-primary h-2 w-2 rounded-full" />
-              Région Parisienne
+              <div className="h-2 w-2 rounded-full bg-blue-500" />
+              San Francisco, CA
             </div>
 
             {/* Contrôles de zoom */}
             <div className="absolute right-4 bottom-4 flex flex-col overflow-hidden rounded-md border border-white/10 bg-black/50 backdrop-blur-md">
-              <button className="border-b border-white/10 p-2 text-gray-400 transition-colors hover:bg-white/10 hover:text-white">
+              <button className="border-b border-white/10 p-2 text-slate-400 transition-colors hover:bg-white/10 hover:text-white">
                 <Plus size={16} />
               </button>
-              <button className="p-2 text-gray-400 transition-colors hover:bg-white/10 hover:text-white">
+              <button className="p-2 text-slate-400 transition-colors hover:bg-white/10 hover:text-white">
                 <Minus size={16} />
               </button>
             </div>
