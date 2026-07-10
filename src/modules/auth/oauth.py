@@ -24,11 +24,11 @@ PROVIDERS: dict = {
         "userinfo_url": "https://www.googleapis.com/oauth2/v3/userinfo",
         "scope": "openid email profile",
     },
-    "linkedin": {
-        "authorize_url": "https://www.linkedin.com/oauth/v2/authorization",
-        "token_url": "https://www.linkedin.com/oauth/v2/accessToken",
-        "userinfo_url": "https://api.linkedin.com/v2/userinfo",
-        "scope": "openid profile email",
+    "facebook": {
+        "authorize_url": "https://www.facebook.com/v19.0/dialog/oauth",
+        "token_url": "https://graph.facebook.com/v19.0/oauth/access_token",
+        "userinfo_url": "https://graph.facebook.com/me?fields=id,name,email,first_name,last_name",
+        "scope": "email public_profile",
     },
 }
 
@@ -38,9 +38,9 @@ def _resolve_credentials(provider: str) -> tuple[str, str]:
     if provider == "google":
         client_id = settings.GOOGLE_CLIENT_ID
         client_secret = settings.GOOGLE_CLIENT_SECRET
-    elif provider == "linkedin":
-        client_id = settings.LINKEDIN_CLIENT_ID
-        client_secret = settings.LINKEDIN_CLIENT_SECRET
+    elif provider == "facebook":
+        client_id = settings.FACEBOOK_CLIENT_ID
+        client_secret = settings.FACEBOOK_CLIENT_SECRET
     else:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -105,33 +105,56 @@ async def oauth_callback(
 
     client_id, client_secret = _resolve_credentials(provider)
     redirect_uri = _build_redirect_uri(request, provider)
+    code = request.query_params.get("code")
 
-    async with AsyncOAuth2Client(
-        client_id=client_id,
-        client_secret=client_secret,
-        redirect_uri=redirect_uri,
-        scope=config["scope"],
-    ) as client:
-        # Échange du code d'autorisation contre un access token OAuth
-        try:
-            await client.fetch_token(
-                config["token_url"],
-                authorization_response=str(request.url),
-            )
-        except Exception as exc:
+    if not code:
+        raise HTTPException(status_code=400, detail="Code d'autorisation manquant.")
+
+    import httpx
+    import logging
+    logger = logging.getLogger(__name__)
+
+    async with httpx.AsyncClient() as http_client:
+        # 1. Échange du code contre un access token
+        token_resp = await http_client.post(
+            config["token_url"],
+            data={
+                "client_id": client_id,
+                "client_secret": client_secret,
+                "code": code,
+                "grant_type": "authorization_code",
+                "redirect_uri": redirect_uri,
+            },
+            headers={"Accept": "application/json"}
+        )
+
+        if token_resp.status_code != 200:
+            logger.error(f"OAuth token error: {token_resp.text}")
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Erreur lors de l'échange de token OAuth : {exc}",
-            ) from exc
+                detail=f"Erreur lors de l'échange de token OAuth : {token_resp.text}",
+            )
+        
+        token_data = token_resp.json()
+        access_token = token_data.get("access_token")
 
-        # Récupération des informations utilisateur depuis le provider
-        resp = await client.get(config["userinfo_url"])
-        if resp.status_code != 200:
+        if not access_token:
+            raise HTTPException(status_code=400, detail="Access token manquant dans la réponse du provider.")
+
+        # 2. Récupération des informations utilisateur
+        userinfo_resp = await http_client.get(
+            config["userinfo_url"],
+            headers={"Authorization": f"Bearer {access_token}"}
+        )
+
+        if userinfo_resp.status_code != 200:
+            logger.error(f"OAuth userinfo error: {userinfo_resp.text}")
             raise HTTPException(
                 status_code=status.HTTP_502_BAD_GATEWAY,
                 detail="Impossible de récupérer les informations du compte social.",
             )
-        userinfo: dict = resp.json()
+        
+        userinfo: dict = userinfo_resp.json()
 
     email: Optional[str] = userinfo.get("email")
     if not email:
@@ -179,7 +202,11 @@ async def oauth_callback(
     refresh_token = create_refresh_token(subject=str(user.id))
 
     # Détermine la page de destination selon le statut du profil candidat
-    profile_complete = user.profile and user.profile.cv_key
+    from src.modules.users.repository import UserProfileRepository
+    profile_repo = UserProfileRepository(db)
+    profile = await profile_repo.get_by_user_id(str(user.id))
+    
+    profile_complete = profile and profile.cv_key
     if user.role == UserRole.CANDIDATE and not profile_complete:
         next_page = "/cv-upload"
     else:

@@ -1,6 +1,7 @@
 from enum import Enum
 from typing import TYPE_CHECKING
-from sqlalchemy import String, Text, Boolean, ForeignKey, Enum as SQLEnum, JSON
+from sqlalchemy import String, Text, Boolean, ForeignKey, Enum as SQLEnum
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from geoalchemy2 import Geometry
 from src.core.database import Base
@@ -38,7 +39,7 @@ class Job(Base, BaseUUIDMixin, AuditMixin, SoftDeleteMixin):
 
     # INTÉGRATION RECOMMENDATION & GRAPHE
     # Matrice de compétences cibles normalisées (ex: ["Python", "FastAPI", "PostgreSQL"])
-    required_skills: Mapped[dict | list | None] = mapped_column(JSON, nullable=True, server_default="[]")
+    required_skills: Mapped[dict | list | None] = mapped_column(JSONB, nullable=True, server_default="[]")
 
     # Relations
     company: Mapped["Company"] = relationship("Company", back_populates="jobs")

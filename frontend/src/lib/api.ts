@@ -44,26 +44,32 @@ export const api = {
   get: <T>(url: string, options?: RequestInit) =>
     request<T>(url, { method: "GET", ...options }),
 
-  post: <T>(url: string, body?: unknown, options?: RequestInit) =>
-    request<T>(url, {
+  post: <T>(url: string, body?: unknown, options?: RequestInit) => {
+    const isRaw = body instanceof FormData || body instanceof URLSearchParams;
+    return request<T>(url, {
       method: "POST",
-      body: JSON.stringify(body),
+      body: isRaw ? (body as BodyInit) : JSON.stringify(body),
       ...options,
-    }),
+    });
+  },
 
-  put: <T>(url: string, body?: unknown, options?: RequestInit) =>
-    request<T>(url, {
+  put: <T>(url: string, body?: unknown, options?: RequestInit) => {
+    const isRaw = body instanceof FormData || body instanceof URLSearchParams;
+    return request<T>(url, {
       method: "PUT",
-      body: JSON.stringify(body),
+      body: isRaw ? (body as BodyInit) : JSON.stringify(body),
       ...options,
-    }),
+    });
+  },
 
-  patch: <T>(url: string, body?: unknown, options?: RequestInit) =>
-    request<T>(url, {
+  patch: <T>(url: string, body?: unknown, options?: RequestInit) => {
+    const isRaw = body instanceof FormData || body instanceof URLSearchParams;
+    return request<T>(url, {
       method: "PATCH",
-      body: JSON.stringify(body),
+      body: isRaw ? (body as BodyInit) : JSON.stringify(body),
       ...options,
-    }),
+    });
+  },
 
   delete: <T>(url: string, options?: RequestInit) =>
     request<T>(url, { method: "DELETE", ...options }),

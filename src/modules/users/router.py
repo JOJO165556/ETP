@@ -63,14 +63,15 @@ async def upload_candidate_cv(
             detail=f"Erreur lors du transfert vers le service de stockage : {exc}",
         ) from exc
 
-    # Simulation de l'extraction par IA (OCR/NLP) pour valider l'Onboarding UI
-    mock_skills = ["React", "TypeScript", "Node.js", "Python", "FastAPI"]
+    # Déclenchement de l'extraction par IA (OCR/NLP) en tâche de fond (Celery)
+    from src.modules.users.tasks import process_candidate_cv
+    process_candidate_cv.delay(str(current_user.id), file_key)
     
     updated_profile = await profile_repo.update_by_user_id(
         user_id=str(current_user.id),
         data={
-            "cv_key": file_key,
-            "skills": mock_skills
+            "cv_key": file_key
+            # Les "skills" seront ajoutées par le worker Celery
         }
     )
 

@@ -26,7 +26,7 @@ class Settings(BaseSettings):
 
     @field_validator("BACKEND_CORS_ORIGINS", mode="before")
     @classmethod
-    def assemble_cors_origins(cls, v: Any) -> List[AnyHttpUrl] | str:
+    def assemble_cors_origins(cls, v: Any) -> Any:
         if isinstance(v, str) and not v.startswith("["):
             return [i.strip() for i in v.split(",")]
         elif isinstance(v, (list, str)):
@@ -57,11 +57,11 @@ class Settings(BaseSettings):
     MINIO_BUCKET_NAME: str = "etp-documents"
     MINIO_BUCKET_CV: str = "candidats-cv"
 
-    # OAUTH (Google & LinkedIn)
+    # OAUTH (Google & Facebook)
     GOOGLE_CLIENT_ID: Optional[str] = None
     GOOGLE_CLIENT_SECRET: Optional[str] = None
-    LINKEDIN_CLIENT_ID: Optional[str] = None
-    LINKEDIN_CLIENT_SECRET: Optional[str] = None
+    FACEBOOK_CLIENT_ID: Optional[str] = None
+    FACEBOOK_CLIENT_SECRET: Optional[str] = None
 
 
 settings = Settings()

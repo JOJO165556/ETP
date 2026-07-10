@@ -17,6 +17,7 @@ celery_app.conf.update(
     enable_utc=True,
     # On autorise le chargement des tâches depuis nos différents modules
     imports=[
-        "src.modules.applications.tasks"
+        "src.modules.applications.tasks",
+        "src.modules.users.tasks"
     ]
 )
