@@ -57,12 +57,21 @@ async def change_password(
 
 
 @router.get("/me", summary="Profil de l'utilisateur connecté")
-async def get_me(current_user: User = Depends(get_current_user)):
+async def get_me(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    from src.modules.users.repository import UserProfileRepository
+    profile_repo = UserProfileRepository(db)
+    profile = await profile_repo.get_by_user_id(str(current_user.id))
+    profile_complete = bool(profile and profile.cv_key)
+
     return {
         "id": str(current_user.id),
         "email": current_user.email,
         "role": current_user.role.value,
         "is_active": current_user.is_active,
+        "profile_complete": profile_complete,
     }
 
 

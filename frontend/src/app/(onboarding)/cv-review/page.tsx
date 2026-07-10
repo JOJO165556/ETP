@@ -14,6 +14,7 @@ import {
   ArrowRight,
 } from "lucide-react";
 import { motion } from "framer-motion";
+import { api } from "@/lib/api";
 
 /* Page de validation des données extraites du CV (Étape 3 de l'onboarding) */
 export default function CVReviewPage() {
@@ -48,9 +49,17 @@ export default function CVReviewPage() {
     setSkills(skills.filter((s) => s !== skillToRemove));
   };
 
-  const handleComplete = () => {
-    // Redirection finale vers le dashboard candidat
-    router.push("/overview");
+  const handleComplete = async () => {
+    try {
+      await api.patch("/users/me", {
+        profile: {
+          skills: skills,
+        },
+      });
+      router.push("/overview");
+    } catch (e) {
+      console.error("Erreur lors de la sauvegarde du profil", e);
+    }
   };
 
   return (

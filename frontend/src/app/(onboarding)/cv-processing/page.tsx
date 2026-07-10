@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Cpu, CheckCircle2, Clock, Lock } from "lucide-react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { api } from "@/lib/api";
 
 /* Configuration des étapes du pipeline d'extraction IA */
 const STEPS = [
@@ -37,27 +38,41 @@ export default function CVProcessingPage() {
   const [activeStep, setActiveStep] = useState(1);
   const [completedSteps, setCompletedSteps] = useState<number[]>([]);
 
-  /* Simulation asynchrone du processus d'extraction pour l'UX */
+  /* Polling de l'API pour vérifier si la tâche asynchrone a complété l'extraction */
   useEffect(() => {
-    const timers: NodeJS.Timeout[] = [];
+    let isCancelled = false;
+    let pollInterval: NodeJS.Timeout;
 
-    STEPS.forEach((step) => {
-      const startTimer = setTimeout(() => {
-        setActiveStep(step.id);
-      }, step.delay);
-
-      const endTimer = setTimeout(() => {
-        setCompletedSteps((prev) => [...prev, step.id]);
-        if (step.id === STEPS.length) {
-          // Fin de toutes les étapes, on passe à l'écran de validation
-          setTimeout(() => router.push("/cv-review"), 1000);
+    const checkExtractionStatus = async () => {
+      try {
+        const res = await api.get<any>("/auth/me");
+        // Si l'utilisateur est bien candidat et que l'IA a mis à jour les compétences
+        if (res.role === "candidate" && res.profile && res.profile.skills && res.profile.skills.length > 0) {
+          if (!isCancelled) {
+            setCompletedSteps([1, 2, 3]);
+            setActiveStep(3);
+            clearInterval(pollInterval);
+            sessionStorage.setItem("cv_profile_data", JSON.stringify(res.profile));
+            setTimeout(() => router.push("/cv-review"), 1000);
+          }
         }
-      }, step.delay + step.duration);
+      } catch (err) {
+        console.error("Erreur lors de la vérification du profil:", err);
+      }
+    };
 
-      timers.push(startTimer, endTimer);
-    });
+    // Lancer une première vérification après 2 secondes, puis toutes les 3 secondes
+    const initialTimeout = setTimeout(() => {
+      setActiveStep(2);
+      checkExtractionStatus();
+      pollInterval = setInterval(checkExtractionStatus, 3000);
+    }, 2000);
 
-    return () => timers.forEach(clearTimeout);
+    return () => {
+      isCancelled = true;
+      clearTimeout(initialTimeout);
+      clearInterval(pollInterval);
+    };
   }, [router]);
 
   return (

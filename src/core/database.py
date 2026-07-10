@@ -1,6 +1,6 @@
 from typing import AsyncGenerator
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
-from sqlalchemy.orm import declarative_base, sessionmaker
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
+from sqlalchemy.orm import declarative_base
 from src.core.config import settings
 
 # Configuration du moteur async avec gestion du pool
@@ -10,11 +10,10 @@ engine = create_async_engine(
     max_overflow=10,
     pool_timeout=30,
     pool_recycle=1800,
-    pool_pre_ping=True,
     echo=False,   # En True unqiuement en debug SQL lourd
 )
 
-AsyncSessionLocal = sessionmaker(
+AsyncSessionLocal = async_sessionmaker(
     bind=engine,
     class_=AsyncSession,
     expire_on_commit=False,

@@ -1,6 +1,7 @@
 from enum import Enum
 from typing import TYPE_CHECKING
-from sqlalchemy import String, Boolean, ForeignKey, Enum as SQLEnum, JSON
+from sqlalchemy import String, Boolean, ForeignKey, Enum as SQLEnum
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from geoalchemy2 import Geometry  # Préparé pour l'extension PostGIS
 from src.core.database import Base
@@ -53,7 +54,7 @@ class Profile(Base, BaseUUIDMixin, AuditMixin, SoftDeleteMixin):
 
     # PORTION INTÉGRATION ATS & RECOMMENDATION ENGINE
     # Stockage de la structure de compétences normalisée pour les requêtes de graphes complexes et encodages vectoriels
-    skills: Mapped[list[str] | None] = mapped_column(JSON, nullable=True, server_default="[]")
+    skills: Mapped[list[str] | None] = mapped_column(JSONB, nullable=True, server_default="[]")
 
     # Relations
     user: Mapped["User"] = relationship("User", back_populates="profile")

@@ -34,6 +34,7 @@ class ProfileUpdate(BaseModel):
     last_name: str | None = None
     phone: str | None = None
     raw_address: str | None = None
+    skills: list[str] | None = None
 
     
 class UserBase(BaseModel):
