@@ -106,12 +106,31 @@ class SearchRepository:
         query: str | None = None,
         skills: list[str] | None = None,
         role: str | None = None,
+        company_id: str | None = None,
         page: int = 1,
         page_size: int = 20,
     ) -> dict:
-        """Recherche avancée de candidats."""
+        """Recherche avancée de candidats.
+
+        Si ``company_id`` est fourni, seuls les candidats ayant postulé à une
+        offre de cette entreprise sont retournés (isolation multi-tenant).
+        """
         stmt = select(User, Profile).join(Profile, Profile.user_id == User.id, isouter=True)
         stmt = stmt.where(User.role == UserRole.CANDIDATE, User.is_active == True)
+
+        if company_id:
+            candidate_subq = (
+                select(Application.candidate_id)
+                .distinct()
+                .join(Job, Application.job_id == Job.id)
+                .where(
+                    Application.is_deleted == False,
+                    Job.is_deleted == False,
+                    Job.company_id == company_id,
+                )
+                .subquery()
+            )
+            stmt = stmt.where(User.id.in_(select(candidate_subq.c.candidate_id)))
 
         if role:
             stmt = stmt.where(User.role == role)

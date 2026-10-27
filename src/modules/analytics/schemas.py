@@ -42,3 +42,13 @@ class AnalyticsDashboard(BaseModel):
     jobs: JobStats
     funnel: HiringFunnel
     top_skills: list[SkillDemand]
+
+
+class CandidateResume(BaseModel):
+    """KPI du candidat (page Overview) — dérivés uniquement de données réelles."""
+    vues_profil: int = 0
+    evolution_vues: int = 0
+    nouveaux_matchs: int = 0
+    candidatures_actives: int = 0
+    taux_entretien: float = 0.0
+    taux_offre: float = 0.0

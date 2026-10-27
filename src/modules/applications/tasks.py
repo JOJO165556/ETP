@@ -4,7 +4,6 @@ import tempfile
 import os
 import json
 import re
-import numpy as np
 from datetime import datetime
 from collections import Counter
 from celery.utils.log import get_task_logger
@@ -54,94 +53,119 @@ def _word_match(keyword: str, text: str) -> bool:
     return bool(re.search(r'\b' + re.escape(keyword) + r'\b', text))
 
 
-async def async_parse_resume_task(application_id: str, resume_key: str):
-    logger.info(f"Début du parsing pour la candidature {application_id} (Fichier: {resume_key})")
-    
-    storage = AsyncStorageService()
-    
-    # 1. Télécharger le fichier depuis MinIO vers un fichier temporaire
+async def _mark_application_failed(application_id: str, error: str) -> None:
+    """Persiste l'échec du parsing pour ne jamais laisser une candidature
+    bloquée indéfiniment en statut PROCESSING/PENDING côté base."""
     try:
+        async with async_session_maker() as session:
+            repo = ApplicationRepository(session)
+            updated = await repo.update(application_id, {
+                "celery_task_status": CELERY_TASK_FAILURE,
+                "celery_task_result": {
+                    "status": CELERY_TASK_FAILURE,
+                    "error": error[:2000],
+                },
+            })
+            if updated is not None:
+                await session.commit()
+    except Exception as exc:  # pragma: no cover - défense en profondeur
+        logger.error(
+            f"Impossible d'enregistrer l'échec du parsing pour {application_id}: {exc}"
+        )
+
+
+async def async_parse_resume_task(application_id: str, resume_key: str) -> str:
+    logger.info(f"Début du parsing pour la candidature {application_id} (Fichier: {resume_key})")
+
+    storage = AsyncStorageService()
+    temp_path: str | None = None
+
+    try:
+        # 1. Télécharger le fichier depuis MinIO vers un fichier temporaire
         with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp_file:
             temp_path = tmp_file.name
-            
+
         await storage.download_file(resume_key, temp_path)
         logger.info("PDF téléchargé avec succès.")
-    except Exception as e:
-        logger.error(f"Erreur lors du téléchargement du CV: {e}")
-        return
 
-    # 2. Extraire le texte avec pdfplumber
-    extracted_text = ""
-    try:
+        # 2. Extraire le texte avec pdfplumber
+        extracted_text = ""
         with pdfplumber.open(temp_path) as pdf:
             for page in pdf.pages:
                 text = page.extract_text()
                 if text:
                     extracted_text += text + "\n"
-    except Exception as e:
-        logger.error(f"Erreur lors de la lecture du PDF: {e}")
-        os.remove(temp_path)
-        return
-        
-    # Nettoyage
-    os.remove(temp_path)
 
-    # 3. Extraire les skills directement depuis l'analyseur IA
-    analyzer = get_resume_analyzer()
-    ai_result = analyzer.analyze(extracted_text)
-    
-    # 4. Récupérer les détails du job pour le matching
-    async with async_session_maker() as job_session:
-        job_repo = JobRepository(job_session)
-        application_repo = ApplicationRepository(job_session)
-        
-        application = await application_repo.get(application_id)
-        if not application:
-            logger.error(f"Application {application_id} non trouvée")
-            return
-            
-        job = await job_repo.get(application.job_id)
-        if not job:
-            logger.error(f"Job {application.job_id} non trouvé")
-            return
-            
-        # 5. Smart Job Matching Algorithm
-        matching_result = await calculate_smart_match(
-            ai_result.skills, extracted_text, job, ai_result
-        )
-        
-        # 6. Construire les données de parsing enrichies
-        parsed_data = {
-            "extracted_skills": ai_result.skills,
-            "experience_level": ai_result.experience_level,
-            "education_level": ai_result.education_level,
-            "ai_confidence": ai_result.confidence,
-            "text_length": len(extracted_text),
-            "matching_score": matching_result["overall_score"],
-            "skill_match_details": matching_result["skill_details"],
-            "experience_match": matching_result["experience_match"],
-            "education_match": matching_result["education_match"],
-            "recommended_stage": matching_result["recommended_stage"],
-        }
-        
-        # 7. Sauvegarder dans la base de données
-        await application_repo.update(application_id, {
-            "parsed_data": parsed_data,
-            "matching_score": matching_result["overall_score"],
-            "celery_task_status": CELERY_TASK_SUCCESS,
-            "celery_task_result": parsed_data
-        })
-        
-        # 8. Mettre à jour automatiquement le stage si le matching est élevé
-        if matching_result["overall_score"] >= 80:
-            from src.modules.applications.models import ApplicationStage
+        if not extracted_text.strip():
+            raise ValueError("Aucun texte exploitable n'a pu être extrait du CV.")
+
+        # 3. Extraire les skills directement depuis l'analyseur IA
+        analyzer = get_resume_analyzer()
+        ai_result = analyzer.analyze(extracted_text)
+
+        # 4. Récupérer les détails du job pour le matching
+        async with async_session_maker() as job_session:
+            job_repo = JobRepository(job_session)
+            application_repo = ApplicationRepository(job_session)
+
+            application = await application_repo.get(application_id)
+            if not application:
+                raise ValueError(f"Application {application_id} non trouvée")
+
+            job = await job_repo.get(application.job_id)
+            if not job:
+                raise ValueError(f"Job {application.job_id} non trouvé")
+
+            # 5. Smart Job Matching Algorithm
+            matching_result = await calculate_smart_match(
+                ai_result.skills, extracted_text, job, ai_result
+            )
+
+            # 6. Construire les données de parsing enrichies
+            parsed_data = {
+                "extracted_skills": ai_result.skills,
+                "experience_level": ai_result.experience_level,
+                "education_level": ai_result.education_level,
+                "ai_confidence": ai_result.confidence,
+                "text_length": len(extracted_text),
+                "matching_score": matching_result["overall_score"],
+                "skill_match_details": matching_result["skill_details"],
+                "experience_match": matching_result["experience_match"],
+                "education_match": matching_result["education_match"],
+                "recommended_stage": matching_result["recommended_stage"],
+            }
+
+            # 7. Sauvegarder dans la base de données
             await application_repo.update(application_id, {
-                "stage": ApplicationStage.SCREENING
+                "parsed_data": parsed_data,
+                "matching_score": matching_result["overall_score"],
+                "celery_task_status": CELERY_TASK_SUCCESS,
+                "celery_task_result": parsed_data,
             })
-            
-        await job_session.commit()
-        
-    logger.info(f"Parsing terminé pour {application_id}. Score de matching: {matching_result['overall_score']}")
+
+            # 8. Mettre à jour automatiquement le stage si le matching est élevé
+            if matching_result["overall_score"] >= 80:
+                from src.modules.applications.models import ApplicationStage
+                await application_repo.update(application_id, {
+                    "stage": ApplicationStage.SCREENING
+                })
+
+            await job_session.commit()
+
+        logger.info(
+            f"Parsing terminé pour {application_id}. "
+            f"Score de matching: {matching_result['overall_score']}"
+        )
+        return CELERY_TASK_SUCCESS
+
+    except Exception as exc:
+        logger.error(f"Échec du parsing pour la candidature {application_id}: {exc}")
+        await _mark_application_failed(application_id, str(exc))
+        raise
+
+    finally:
+        if temp_path and os.path.exists(temp_path):
+            os.remove(temp_path)
 
 
 async def calculate_smart_match(candidate_skills: list, extracted_text: str, job, ai_result=None) -> dict:
@@ -302,22 +326,43 @@ async def calculate_smart_match(candidate_skills: list, extracted_text: str, job
 def parse_resume(self, application_id: str, resume_key: str):
     """
     Tâche Celery qui extrait les données d'un CV et met à jour la candidature.
-    Retourne l'ID de la tâche pour le suivi par le frontend.
+
+    Statuts normalisés :
+    - SUCCESS : parsing et matching terminés, candidature mise à jour ;
+    - FAILURE : erreur persistée en base (la candidature ne reste jamais en
+      PROCESSING). Une nouvelle tentative est planifiée tant que
+      ``max_retries`` n'est pas épuisé.
     """
     self.update_state(state=CELERY_TASK_STARTED, meta={'status': 'Début du parsing...'})
-    
+
     try:
-        asyncio.run(async_parse_resume_task(application_id, resume_key))
-        
-        self.update_state(state=CELERY_TASK_SUCCESS, meta={'status': 'Parsing terminé', 'application_id': application_id})
-        
+        status_result = asyncio.run(
+            async_parse_resume_task(application_id, resume_key)
+        )
     except Exception as exc:
-        logger.error(f"Erreur inattendue: {exc}")
-        self.update_state(state=CELERY_TASK_FAILURE, meta={'status': f'Erreur: {str(exc)}'})
-        self.retry(exc=exc, countdown=60)
-    
+        logger.error(f"Erreur inattendue lors du parsing de {application_id}: {exc}")
+        self.update_state(
+            state=CELERY_TASK_FAILURE,
+            meta={
+                'status': CELERY_TASK_FAILURE,
+                'error': str(exc),
+                'application_id': application_id,
+            },
+        )
+        # `retry` lève une exception (Retry puis MaxRetriesExceededError) : le
+        # statut en base a déjà été positionné à FAILURE par la tâche async.
+        raise self.retry(exc=exc, countdown=60)
+
+    self.update_state(
+        state=CELERY_TASK_SUCCESS,
+        meta={
+            'status': CELERY_TASK_SUCCESS,
+            'application_id': application_id,
+        },
+    )
+
     return {
         'task_id': self.request.id,
         'application_id': application_id,
-        'status': 'PENDING'
+        'status': status_result or CELERY_TASK_SUCCESS,
     }

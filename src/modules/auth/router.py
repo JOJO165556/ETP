@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
@@ -10,13 +10,20 @@ from src.core.security import (
     verify_refresh_token,
     create_password_reset_token, verify_password_reset_token,
 )
-from src.modules.auth.schemas import Token, RegisterRequest, RefreshTokenRequest, ChangePasswordRequest
+from src.modules.auth.schemas import (
+    Token, RegisterRequest, RefreshTokenRequest, ChangePasswordRequest,
+    FirebaseLoginRequest, ForgotPasswordRequest, ResetPasswordRequest
+)
 from src.modules.auth.dependencies import get_current_user
 from src.modules.auth.services import AuthService
-from src.modules.users.models import User
+from src.core.firebase import extract_app_check_token, extract_provider, verify_app_check_token, verify_id_token
+from src.modules.users.models import User, UserRole, AuthProvider
 from src.modules.users.repository import UserRepository
 
 router = APIRouter(prefix="/auth", tags=["Authentification"])
+
+# Emails de secours pour les comptes sans email dans le provider (ex: Phone)
+_FALLBACK_EMAIL_SUFFIX = "@firebase.local"
 
 
 @router.post("/login", response_model=Token, summary="Se connecter")
@@ -56,6 +63,107 @@ async def change_password(
     return await service.change_password(str(current_user.id), body)
 
 
+@router.post("/firebase", response_model=Token, summary="Se connecter via un ID token Firebase")
+async def firebase_login(
+    body: FirebaseLoginRequest,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+) -> Token:
+    """
+    Recoit un ID token Firebase (issu du SDK client : email/password, Google,
+    Facebook ou Phone). Le verifie cote serveur avec firebase-admin, cree ou
+    lie le compte local (firebase_uid) puis emet les JWT ETP.
+    """
+    app_check_token = await extract_app_check_token(request)
+    if not verify_app_check_token(app_check_token):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Verification App Check echouee.",
+        )
+
+    claims = verify_id_token(body.id_token)
+    if claims is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="ID token Firebase invalide.",
+        )
+
+    firebase_uid: str | None = claims.get("uid")
+    email: str | None = claims.get("email")
+    if not firebase_uid:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="ID token Firebase sans identifiant utilisateur.",
+        )
+
+    # Les comptes sans email (Phone pur) utilisent un email de substitution
+    if not email:
+        email = f"{firebase_uid}{_FALLBACK_EMAIL_SUFFIX}"
+
+    provider_name = extract_provider(claims)
+    try:
+        auth_provider = AuthProvider(provider_name)
+    except ValueError:
+        auth_provider = AuthProvider.EMAIL
+
+    user_repo = UserRepository(db)
+    user = await user_repo.get_by_firebase_uid(firebase_uid)
+
+    if user is None:
+        # Lien par email si un compte local existe deja sans UID Firebase
+        user = await user_repo.get_by_email(email)
+        if user is not None:
+            user.firebase_uid = firebase_uid
+            user.auth_provider = auth_provider
+        else:
+            # Self-service (social ou email) : le role ne provient JAMAIS du
+            # client. On rejette toute tentative de role != CANDIDATE (escalade
+            # de privilege) ; recruiter/company_admin/superadmin ne sont concedes
+            # que par un admin via /users (require_roles SUPERADMIN).
+            if body.role not in (None, UserRole.CANDIDATE):
+                raise HTTPException(
+                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    detail="Role non autorise lors de la creation via Firebase.",
+                )
+            user = await user_repo.create({
+                "email": email,
+                "firebase_uid": firebase_uid,
+                "hashed_password": "",  # Auth 100% Firebase : aucun mot de passe local
+                "role": UserRole.CANDIDATE,
+                "auth_provider": auth_provider,
+            })
+
+    if not user.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Ce compte a ete desactive.",
+        )
+
+    # Inscription 100% Firebase : projection du profil (nom) si fourni.
+    # NB : UserRepository.create cree deja le profil vide automatiquement.
+    if body.first_name or body.last_name:
+        from src.modules.users.repository import UserProfileRepository
+        profile_repo = UserProfileRepository(db)
+        profile = await profile_repo.get_by_user_id(str(user.id))
+        if profile:
+            if body.first_name:
+                profile.first_name = body.first_name
+            if body.last_name:
+                profile.last_name = body.last_name
+        else:
+            await profile_repo.create({
+                "user_id": str(user.id),
+                "first_name": body.first_name,
+                "last_name": body.last_name,
+            })
+
+    await db.commit()
+
+    access_token = create_access_token(subject=str(user.id))
+    refresh_token = create_refresh_token(subject=str(user.id))
+    return Token(access_token=access_token, refresh_token=refresh_token)
+
+
 @router.get("/me", summary="Profil de l'utilisateur connecté")
 async def get_me(
     current_user: User = Depends(get_current_user),
@@ -77,7 +185,7 @@ async def get_me(
 
 @router.post("/forgot-password", status_code=200, summary="Demander la réinitialisation du mot de passe")
 async def forgot_password(
-    body: dict,
+    body: ForgotPasswordRequest,
     db: AsyncSession = Depends(get_db),
 ):
     """
@@ -88,7 +196,7 @@ async def forgot_password(
     import logging
     logger = logging.getLogger(__name__)
 
-    email: str | None = body.get("email")
+    email = str(body.email)
     if not email:
         return {"message": "Si cet email est enregistré, un lien vous a été envoyé."}
 
@@ -109,22 +217,16 @@ async def forgot_password(
 
 @router.post("/reset-password", status_code=200, summary="Réinitialiser le mot de passe via un token")
 async def reset_password(
-    body: dict,
+    body: ResetPasswordRequest,
     db: AsyncSession = Depends(get_db),
 ):
     """Accepte un token de réinitialisation valide et met à jour le mot de passe."""
-    token: str | None = body.get("token")
-    new_password: str | None = body.get("new_password")
-
-    if not token or not new_password:
-        raise HTTPException(status_code=400, detail="Token et nouveau mot de passe requis.")
+    token = body.token
+    new_password = body.new_password
 
     email = verify_password_reset_token(token)
     if not email:
         raise HTTPException(status_code=400, detail="Token invalide ou expiré.")
-
-    if len(new_password) < 8:
-        raise HTTPException(status_code=422, detail="Le mot de passe doit contenir au moins 8 caractères.")
 
     user_repo = UserRepository(db)
     user = await user_repo.get_by_email(email)

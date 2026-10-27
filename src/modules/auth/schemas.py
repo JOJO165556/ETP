@@ -1,4 +1,4 @@
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
 from src.modules.users.models import UserRole
 
 
@@ -21,20 +21,26 @@ class TokenData(BaseModel):
 
 
 class RegisterRequest(BaseModel):
-    model_config = ConfigDict(json_schema_extra={
+    """Inscription publique.
+
+    Le rôle n'est volontairement pas exposé : toute inscription self-service
+    crée un compte CANDIDATE. Les rôles privilégiés (RECRUITER, COMPANY_ADMIN,
+    SUPERADMIN) sont attribués par la route administrative protégée /users/admin.
+    ``extra="forbid"`` rejette explicitement toute tentative d'injection de
+    champ (ex: ``"role": "superadmin"``).
+    """
+    model_config = ConfigDict(extra="forbid", json_schema_extra={
         "example": {
             "email": "jean.dupont@example.com",
             "password": "MonSecret123!",
             "first_name": "Jean",
             "last_name": "Dupont",
-            "role": "candidate",
         }
     })
-    email: str
+    email: EmailStr
     password: str
     first_name: str | None = None
     last_name: str | None = None
-    role: UserRole | None = None
 
 
 class RefreshTokenRequest(BaseModel):
@@ -44,10 +50,40 @@ class RefreshTokenRequest(BaseModel):
     refresh_token: str
 
 
+class FirebaseLoginRequest(BaseModel):
+    """Echange un ID token Firebase contre une session ETP (JWT).
+
+    Les champs de profil (first_name, last_name, role) sont optionnels et
+    uniquement appliques lors d'une inscription 100% Firebase (escape
+    client-side Firebase / auth/firebase), pas lors d'une connexion simple.
+    """
+    model_config = ConfigDict(json_schema_extra={
+        "example": {"id_token": "eyJhbGciOiJSUzI1NiIs..."}
+    })
+    id_token: str
+    first_name: str | None = None
+    last_name: str | None = None
+    role: UserRole | None = None
+
+
 class ChangePasswordRequest(BaseModel):
     model_config = ConfigDict(json_schema_extra={
         "example": {"current_password": "AncienMot2Passe!", "new_password": "NouveauMot2Passe!"}
     })
     current_password: str
     new_password: str
-    
+
+
+class ForgotPasswordRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid", json_schema_extra={
+        "example": {"email": "jean.dupont@example.com"}
+    })
+    email: EmailStr
+
+
+class ResetPasswordRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid", json_schema_extra={
+        "example": {"token": "eyJhbGciOiJIUzI1NiIs...", "new_password": "NouveauMot2Passe!"}
+    })
+    token: str = Field(min_length=1)
+    new_password: str = Field(min_length=8, max_length=128)

@@ -57,11 +57,26 @@ class Settings(BaseSettings):
     MINIO_BUCKET_NAME: str = "etp-documents"
     MINIO_BUCKET_CV: str = "candidats-cv"
 
-    # OAUTH (Google & Facebook)
+    # OAUTH (Google & Facebook) — DEPRECATED, remplace par Firebase Auth
     GOOGLE_CLIENT_ID: Optional[str] = None
     GOOGLE_CLIENT_SECRET: Optional[str] = None
     FACEBOOK_CLIENT_ID: Optional[str] = None
     FACEBOOK_CLIENT_SECRET: Optional[str] = None
+
+    # FIREBASE AUTH (fournisseur d'identite unique)
+    # Jusqu'a la saisie des credentials, Firebase est desactive (mode no-op).
+    FIREBASE_PROJECT_ID: Optional[str] = None
+    FIREBASE_PRIVATE_KEY_ID: Optional[str] = None
+    FIREBASE_PRIVATE_KEY: Optional[str] = None
+    FIREBASE_CLIENT_EMAIL: Optional[str] = None
+    FIREBASE_CLIENT_ID: Optional[str] = None
+    # Chemin alternatif vers le JSON du compte de service (remplace les 5 cles ci-dessus)
+    GOOGLE_APPLICATION_CREDENTIALS: Optional[str] = None
+    # AI PARSING — Gemini (API gratuite via AI Studio)
+    # Vide = fallback regex (aucune IA)
+    GEMINI_API_KEY: Optional[str] = None
+    # Verification du jeton App Check recu dans le header X-Firebase-AppCheck
+    FIREBASE_APP_CHECK_ENABLED: bool = True
 
 
 settings = Settings()
