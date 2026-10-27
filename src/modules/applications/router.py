@@ -4,7 +4,8 @@ from sqlalchemy import select, update
 from typing import List
 
 from src.core.database import get_db
-from src.modules.auth.dependencies import get_current_user, require_roles
+from src.core.storage import AsyncStorageService
+from src.modules.auth.dependencies import get_current_user, require_roles, tenant_company_id
 from src.modules.users.models import User, UserRole
 from src.modules.applications.schemas import ApplicationResponse, ApplicationUpdateStage, ApplicationSubmitResponse, TaskStatusResponse
 from src.modules.applications.services import ApplicationService
@@ -17,6 +18,30 @@ router = APIRouter(prefix="/applications", tags=["Candidatures"])
 
 _CANDIDATE_OR_ADMIN = require_roles(UserRole.CANDIDATE, UserRole.SUPERADMIN)
 _RECRUITER_OR_ADMIN = require_roles(UserRole.RECRUITER, UserRole.COMPANY_ADMIN, UserRole.SUPERADMIN)
+
+
+def _serialize_application(app: Application) -> dict:
+    """Serialise une candidature en decorant avec les infos d'affichage
+    (titre d'offre, entreprise, dates) issues des relations eager-loaded."""
+    job = app.job if app is not None else None
+    company_name = None
+    if job is not None and job.company is not None:
+        company_name = job.company.name
+    return {
+        "id": str(app.id),
+        "job_id": str(app.job_id),
+        "candidate_id": str(app.candidate_id),
+        "stage": app.stage,
+        "resume_storage_path": app.resume_storage_path,
+        "matching_score": float(app.matching_score) if app.matching_score is not None else None,
+        "celery_task_id": app.celery_task_id,
+        "celery_task_status": app.celery_task_status,
+        "celery_task_result": app.celery_task_result,
+        "job_title": job.title if job is not None else None,
+        "company_name": company_name,
+        "created_at": app.created_at.isoformat() if app.created_at else None,
+        "updated_at": app.updated_at.isoformat() if app.updated_at else None,
+    }
 
 
 @router.post(
@@ -52,6 +77,8 @@ async def apply_to_job(
         )
         await db.commit()
 
+    repo = ApplicationRepository(db)
+    application = await repo.get_with_details(str(application.id))
     return ApplicationSubmitResponse(
         application=ApplicationResponse.model_validate(application),
         task_id=task_result.id if task_result else None,
@@ -68,7 +95,8 @@ async def get_my_applications(
     Permet à un candidat de lister toutes ses candidatures.
     """
     repo = ApplicationRepository(db)
-    return await repo.get_applications_by_candidate(str(current_user.id))
+    applications = await repo.get_applications_by_candidate(str(current_user.id))
+    return [_serialize_application(app) for app in applications]
 
 
 @router.get(
@@ -131,7 +159,76 @@ async def get_job_applications(
         )
 
     repo = ApplicationRepository(db)
-    return await repo.get_applications_by_job(job_id)
+    applications = await repo.get_applications_by_job(job_id)
+    return [_serialize_application(app) for app in applications]
+
+
+@router.get(
+    "/{app_id}/cv",
+    summary="Obtenir le lien signé du CV d'une candidature",
+    responses={403: {"description": "Accès non autorisé"}, 404: {"description": "Candidature ou CV introuvable"}},
+)
+async def get_application_cv_link(
+    app_id: str,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> dict[str, str]:
+    """Génère une URL signée temporaire pour le CV d'une candidature.
+
+    Règles de possession (anti-IDOR) :
+    - CANDIDATE : uniquement ses propres candidatures ;
+    - RECRUITER / COMPANY_ADMIN : uniquement les candidatures dont l'offre
+      appartient à son entreprise ;
+    - SUPERADMIN : accès global.
+    """
+    repo = ApplicationRepository(db)
+    application = await repo.get_with_details(app_id)
+    if not application:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Candidature introuvable.",
+        )
+
+    if current_user.role == UserRole.SUPERADMIN:
+        pass
+    elif current_user.role == UserRole.CANDIDATE:
+        if str(application.candidate_id) != str(current_user.id):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Accès non autorisé à ce fichier.",
+            )
+    elif current_user.role in (UserRole.RECRUITER, UserRole.COMPANY_ADMIN):
+        company_id = tenant_company_id(current_user)
+        job = application.job
+        if job is None or str(job.company_id) != company_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Accès non autorisé à ces données multi-tenant.",
+            )
+    else:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Accès non autorisé.",
+        )
+
+    if not application.resume_storage_path:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Aucun CV n'est associé à cette candidature.",
+        )
+
+    try:
+        secure_url = await AsyncStorageService().generate_presigned_url(
+            file_key=application.resume_storage_path,
+            expires_in=3600,
+        )
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=f"Erreur lors de la génération du lien sécurisé : {exc}",
+        ) from exc
+
+    return {"download_url": secure_url}
 
 
 @router.patch("/{app_id}/stage", response_model=ApplicationResponse, summary="Modifier le statut d'une candidature")
@@ -157,4 +254,5 @@ async def update_application_stage(
         is_superadmin=is_superadmin
     )
     await db.commit()
-    return application
+    repo = ApplicationRepository(db)
+    return await repo.get_with_details(str(application.id))

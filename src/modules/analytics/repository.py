@@ -11,22 +11,28 @@ class AnalyticsRepository:
     def __init__(self, session: AsyncSession):
         self.session = session
 
-    async def get_pipeline_stats(self) -> dict:
-        """Statistiques globales du pipeline de candidatures."""
-        total_result = await self.session.execute(
-            select(func.count(Application.id))
-        )
+    async def get_pipeline_stats(self, company_id: str | None = None) -> dict:
+        """Statistiques du pipeline de candidatures, filtrées par tenant si
+        company_id est fourni (cas recruteur/company_admin)."""
+        base = select(func.count(Application.id))
+        if company_id:
+            base = base.join(Application.job).where(Job.company_id == company_id)
+        total_result = await self.session.execute(base)
         total_applications = total_result.scalar() or 0
 
-        stage_result = await self.session.execute(
+        stage_base = (
             select(Application.stage, func.count(Application.id))
             .group_by(Application.stage)
         )
+        if company_id:
+            stage_base = stage_base.join(Application.job).where(Job.company_id == company_id)
+        stage_result = await self.session.execute(stage_base)
         by_stage = {row[0].value: row[1] for row in stage_result.all()}
 
-        avg_result = await self.session.execute(
-            select(func.avg(Application.matching_score))
-        )
+        avg_base = select(func.avg(Application.matching_score))
+        if company_id:
+            avg_base = avg_base.join(Application.job).where(Job.company_id == company_id)
+        avg_result = await self.session.execute(avg_base)
         avg_score = avg_result.scalar()
 
         return {
@@ -35,31 +41,40 @@ class AnalyticsRepository:
             "avg_matching_score": round(float(avg_score), 2) if avg_score else None,
         }
 
-    async def get_job_stats(self) -> dict:
-        """Statistiques globales des offres."""
-        total_result = await self.session.execute(
-            select(func.count(Job.id))
-        )
+    async def get_job_stats(self, company_id: str | None = None) -> dict:
+        """Statistiques des offres, filtrées par tenant si company_id est fourni."""
+        total_base = select(func.count(Job.id))
+        if company_id:
+            total_base = total_base.where(Job.company_id == company_id)
+        total_result = await self.session.execute(total_base)
         total_jobs = total_result.scalar() or 0
 
         active_result = await self.session.execute(
-            select(func.count(Job.id)).where(Job.status == JobStatus.ACTIVE)
+            select(func.count(Job.id))
+            .where(Job.status == JobStatus.ACTIVE)
+            .where(Job.company_id == company_id) if company_id
+            else select(func.count(Job.id)).where(Job.status == JobStatus.ACTIVE)
         )
         active_jobs = active_result.scalar() or 0
 
         closed_result = await self.session.execute(
-            select(func.count(Job.id)).where(Job.status == JobStatus.CLOSED)
+            select(func.count(Job.id))
+            .where(Job.status == JobStatus.CLOSED)
+            .where(Job.company_id == company_id) if company_id
+            else select(func.count(Job.id)).where(Job.status == JobStatus.CLOSED)
         )
         closed_jobs = closed_result.scalar() or 0
 
+        subq = (
+            select(Job.id, func.count(Application.id).label("app_count"))
+            .join(Application, Application.job_id == Job.id, isouter=True)
+            .group_by(Job.id)
+        )
+        if company_id:
+            subq = subq.where(Job.company_id == company_id)
+        subq = subq.subquery()
         avg_result = await self.session.execute(
-            select(func.avg(subq.c.app_count))
-            .select_from(
-                select(Job.id, func.count(Application.id).label("app_count"))
-                .join(Application, Application.job_id == Job.id, isouter=True)
-                .group_by(Job.id)
-                .subquery()
-            )
+            select(func.avg(subq.c.app_count)).select_from(subq)
         )
         avg_apps = avg_result.scalar()
 
@@ -70,12 +85,15 @@ class AnalyticsRepository:
             "avg_applications_per_job": round(float(avg_apps), 2) if avg_apps else 0,
         }
 
-    async def get_hiring_funnel(self) -> dict:
-        """Entonnoir de recrutement complet."""
-        result = await self.session.execute(
+    async def get_hiring_funnel(self, company_id: str | None = None) -> dict:
+        """Entonnoir de recrutement, filtré par tenant si company_id est fourni."""
+        base = (
             select(Application.stage, func.count(Application.id))
             .group_by(Application.stage)
         )
+        if company_id:
+            base = base.join(Application.job).where(Job.company_id == company_id)
+        result = await self.session.execute(base)
         counts = {row[0].value: row[1] for row in result.all()}
         return {
             "applied": counts.get(ApplicationStage.APPLIED, 0),
@@ -86,12 +104,14 @@ class AnalyticsRepository:
             "rejected": counts.get(ApplicationStage.REJECTED, 0),
         }
 
-    async def get_top_skills(self, limit: int = 10) -> list[dict]:
-        """Compétences les plus demandées dans les offres."""
+    async def get_top_skills(self, limit: int = 10, company_id: str | None = None) -> list[dict]:
+        """Compétences les plus demandées dans les offres, filtrées par tenant
+        si company_id est fourni."""
         from collections import Counter
-        result = await self.session.execute(
-            select(Job.required_skills).where(Job.required_skills.isnot(None))
-        )
+        base = select(Job.required_skills).where(Job.required_skills.isnot(None))
+        if company_id:
+            base = base.where(Job.company_id == company_id)
+        result = await self.session.execute(base)
         all_skills: list[str] = []
         for row in result.all():
             skills = row[0]
@@ -108,7 +128,7 @@ class AnalyticsRepository:
         ]
 
     async def get_company_stats(self, company_id: str) -> dict:
-        """Statistiques pour une entreprise spécifique."""
+        """Statistiques pour une entreprise spécifique (déjà filtrée)."""
         jobs_result = await self.session.execute(
             select(func.count(Job.id)).where(Job.company_id == company_id)
         )

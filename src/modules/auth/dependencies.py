@@ -10,8 +10,47 @@ from src.core.database import get_db
 from src.core.security import verify_access_token, ALGORITHM
 from src.modules.auth.schemas import TokenData
 from src.modules.users.models import User, UserRole
+from sqlalchemy.orm import selectinload
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl=f"{settings.API_V1_STR}/auth/login")
+
+
+async def get_current_user_optional(
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+) -> User | None:
+    """
+    Variante de `get_current_user` qui ne leve jamais d'erreur : si aucun token
+    (Authorization/Cookie) n'est fourni ou s'il est invalide, retourne None.
+
+    Utilisee pour les endpoints publics qui peuvent personnaliser la reponse
+    (ex: match_score des offres) sans exiger de connexion.
+    """
+    authorization = request.headers.get("authorization", "")
+    token = None
+    if authorization.lower().startswith("bearer "):
+        token = authorization[7:]
+    if not token:
+        token = request.cookies.get("etp_access_token")
+
+    if not token:
+        return None
+
+    try:
+        payload = verify_access_token(token)
+        user_id: str | None = payload.get("sub")
+        if user_id is None:
+            return None
+    except JWTError:
+        return None
+
+    result = await db.execute(
+        select(User).options(selectinload(User.profile)).where(User.id == user_id)
+    )
+    user = result.scalars().first()
+    if user is None or not user.is_active:
+        return None
+    return user
 
 
 async def get_current_user(
@@ -20,8 +59,8 @@ async def get_current_user(
     token: str = Depends(oauth2_scheme),
 ) -> User:
     """
-    Dependance centrale d'authentification.
-    Decode le JWT, valide la signature et retourne l'utilisateur actif correspondant.
+    Dépendance centrale d'authentification.
+    Décode le JWT, valide la signature et retourne l'utilisateur actif correspondant.
     """
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
@@ -48,6 +87,44 @@ async def get_current_user(
     request.state.current_user = user
 
     return user
+
+
+def get_tenant_company_id(current_user: User) -> str:
+    """
+    Extrait le company_id du locataire depuis le user connecté.
+    Levée si le user n'a pas de company_id assigné (cas recruteur sans entreprise).
+    """
+    if not current_user.company_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Accès non autorisé à ces données multi-tenant.",
+        )
+    return str(current_user.company_id)
+
+
+def tenant_company_id(current_user: User) -> str:
+    """
+    Retourne le company_id du locataire actuel depuis l'utilisateur connecté.
+
+    Les rôles métier (COMPANY_ADMIN, RECRUITER) doivent appartenir à une entreprise.
+    Les superadmins peuvent avoir company_id=None (cas administrateur global) —
+    dans ce cas, aucune isolation multi-tenant n'est appliquée et l'accès est
+    autorisé sur l'ensemble des données.
+
+    Raises
+    ------
+    HTTPException 403 si un rôle métier n'a pas de company_id assigné.
+    """
+    if current_user.role in (UserRole.COMPANY_ADMIN, UserRole.RECRUITER):
+        if not current_user.company_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Compte de recruteur/company_admin sans entreprise assignée.",
+            )
+        return str(current_user.company_id)
+
+    # SUPERADMIN : pas de filtrage multi-tenant (accès global)
+    return str(current_user.company_id) if current_user.company_id else ""
 
 
 def require_roles(*roles: UserRole):

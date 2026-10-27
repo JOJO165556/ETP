@@ -9,6 +9,7 @@ from src.core.security import (
     create_access_token, create_refresh_token,
     verify_refresh_token,
 )
+from src.core.firebase import provision_user
 from src.modules.auth.schemas import Token, RegisterRequest, ChangePasswordRequest
 from src.modules.users.models import User, UserRole
 from src.modules.users.repository import UserRepository
@@ -67,7 +68,11 @@ class AuthService:
         return Token(access_token=new_access, refresh_token=new_refresh)
 
     async def register(self, data: RegisterRequest) -> Token:
-        """Inscrit un nouvel utilisateur et retourne les tokens."""
+        """Inscrit un nouvel utilisateur et retourne les tokens.
+
+        Le rôle est *toujours* CANDIDATE : aucun rôle ne peut être fourni par
+        le client (RegisterRequest n'expose pas de champ role).
+        """
         existing = await self.user_repo.get_by_email(data.email)
         if existing:
             raise HTTPException(
@@ -78,7 +83,7 @@ class AuthService:
         user = await self.user_repo.create({
             "email": data.email,
             "hashed_password": get_password_hash(data.password),
-            "role": data.role if data.role else UserRole.CANDIDATE,
+            "role": UserRole.CANDIDATE,
         })
 
         # Mettre a jour le profil si fourni
@@ -89,6 +94,24 @@ class AuthService:
                 "first_name": data.first_name,
                 "last_name": data.last_name,
             })
+
+        # Provisionner le compte dans Firebase (email/password). Echec non bloquant.
+        display_name = None
+        if data.first_name or data.last_name:
+            display_name = " ".join(filter(None, [data.first_name, data.last_name]))
+        firebase_uid = await provision_user(
+            email=data.email,
+            password=data.password,
+            user_id=str(user.id),
+            display_name=display_name,
+        )
+
+        if firebase_uid:
+            user.firebase_uid = firebase_uid
+            user.auth_provider = "email"
+            await self.db.flush()
+
+        await self.db.commit()
 
         access_token = create_access_token(subject=str(user.id))
         refresh_token = create_refresh_token(subject=str(user.id))
