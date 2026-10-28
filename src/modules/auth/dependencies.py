@@ -8,6 +8,7 @@ from sqlalchemy.future import select
 from src.core.config import settings
 from src.core.database import get_db
 from src.core.security import verify_access_token, ALGORITHM
+from src.modules.auth.constants import UNVERIFIED_EMAIL_DETAIL
 from src.modules.auth.schemas import TokenData
 from src.modules.users.models import User, UserRole
 from sqlalchemy.orm import selectinload
@@ -82,6 +83,14 @@ async def get_current_user(
 
     if user is None or not user.is_active:
         raise credentials_exception
+
+    # Verification d'email obligatoire : un token emis a l'inscription ne doit
+    # pas permettre de contourner la confirmation de l'adresse email.
+    if not user.is_verified:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=UNVERIFIED_EMAIL_DETAIL,
+        )
 
     # Stocker l'utilisateur dans request.state pour modified_by
     request.state.current_user = user

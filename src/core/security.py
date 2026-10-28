@@ -1,4 +1,5 @@
 """Gestion securisee des tokens JWT et mots de passe."""
+import uuid
 from datetime import datetime, timedelta, timezone
 from typing import Any, Union, Optional
 import bcrypt
@@ -24,9 +25,18 @@ def create_access_token(subject: Union[str, Any], expires_delta: Optional[timede
 
 
 def create_refresh_token(subject: Union[str, Any]) -> str:
-    """Genere un refresh token avec une cle separee."""
+    """Genere un refresh token avec une cle separee.
+
+    Un identifiant unique (``jti``) est embarque afin de pouvoir revoquer
+    individuellement un token (logout) sans invalider les autres sessions.
+    """
     expire = datetime.now(timezone.utc) + timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS)
-    to_encode = {"exp": expire, "sub": str(subject), "type": "refresh"}
+    to_encode = {
+        "exp": expire,
+        "sub": str(subject),
+        "type": "refresh",
+        "jti": uuid.uuid4().hex,
+    }
     return jwt.encode(to_encode, REFRESH_SECRET_KEY, algorithm=ALGORITHM)
 
 
@@ -54,6 +64,44 @@ def get_password_hash(password: str) -> str:
         password.encode("utf-8"),
         bcrypt.gensalt(),
     ).decode("utf-8")
+
+
+def create_email_verification_token(
+    subject: Union[str, Any],
+    expires_delta: Optional[timedelta] = None,
+) -> str:
+    """Genere un token JWT signe de verification d'adresse email.
+
+    Duree de validite stricte de 24h par defaut. Le token est de type
+    ``email_verification`` et ne peut donc pas etre utilise comme access ou
+    refresh token.
+    """
+    if expires_delta is None:
+        expires_delta = timedelta(hours=settings.EMAIL_VERIFICATION_EXPIRE_HOURS)
+    expire = datetime.now(timezone.utc) + expires_delta
+    to_encode = {
+        "exp": expire,
+        "sub": str(subject),
+        "type": "email_verification",
+        "jti": uuid.uuid4().hex,
+    }
+    return jwt.encode(to_encode, settings.SECRET_KEY, algorithm=ALGORITHM)
+
+
+def verify_email_verification_token(token: str) -> str | None:
+    """Verifie un token de verification email.
+
+    Retourne l'identifiant utilisateur (``sub``) si le token est valide, sinon
+    ``None`` (token malforme, expire ou d'un autre type).
+    """
+    try:
+        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[ALGORITHM])
+        if payload.get("type") != "email_verification":
+            return None
+        subject = payload.get("sub")
+        return str(subject) if subject else None
+    except Exception:
+        return None
 
 
 def create_password_reset_token(email: str) -> str:

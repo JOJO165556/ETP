@@ -46,7 +46,11 @@ class RateLimiter:
         pipe.zadd(key, {str(now): now})
         pipe.zcard(key)
         pipe.expire(key, window)
-        results = await pipe.execute()
+        try:
+            results = await pipe.execute()
+        except Exception as e:
+            logger.warning("Redis indisponible, rate limiting desactive: %s", e)
+            return False, {"limit": limit, "remaining": limit, "reset": 0}
 
         request_count = results[2]
         remaining = max(0, limit - request_count)

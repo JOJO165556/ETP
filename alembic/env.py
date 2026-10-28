@@ -20,6 +20,7 @@ from src.modules.users.models import User, Profile
 from src.modules.companies.models import Company
 from src.modules.jobs.models import Job
 from src.modules.applications.models import Application
+from src.modules.notifications.models import Notification
 
 target_metadata = Base.metadata
 

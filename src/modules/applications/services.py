@@ -51,7 +51,7 @@ class ApplicationService:
 
         return await self.repo.create(app_data)
 
-    async def update_stage(self, app_id: str, new_stage: ApplicationStage, recruiter_company_id: str, is_superadmin: bool = False) -> Application:
+    async def update_stage(self, app_id: str, new_stage: ApplicationStage, recruiter_company_id: str, is_superadmin: bool = False, modified_by: str | None = None) -> Application:
         """
         Modifie le statut d'une candidature.
         Vérifie que le recruteur a le droit (l'offre appartient à son entreprise).
@@ -71,4 +71,8 @@ class ApplicationService:
                     detail="Vous n'êtes pas autorisé à gérer cette candidature."
                 )
 
-        return await self.repo.update(app_id, {"stage": new_stage})
+        update_data = {"stage": new_stage}
+        if modified_by is not None:
+            update_data["modified_by"] = str(modified_by)
+
+        return await self.repo.update(app_id, update_data)

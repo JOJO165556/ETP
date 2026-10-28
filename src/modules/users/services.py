@@ -27,14 +27,27 @@ class UserService:
         # Préparer le modèle
         user_data = user_in.model_dump(exclude={"password"})
         user_data["hashed_password"] = get_password_hash(user_in.password)
+
+        # Un compte cree par un administrateur est directement verifie (pas de
+        # parcours de confirmation email). L'inscription publique, elle, exige
+        # la verification de l'adresse email.
+        is_admin_creation = isinstance(user_in, UserAdminCreate)
+        user_data["is_verified"] = is_admin_creation
+        user_data["is_active"] = True
         
         # Créer l'entité
         # Si c'est un UserAdminCreate on va juste passer company_id,
         # Si UserCreate, pas de company_id
         new_user = await self.repo.create(user_data)
+
+        if not is_admin_creation:
+            # Envoi asynchrone du lien de confirmation (non bloquant).
+            from src.modules.auth.services import AuthService
+
+            AuthService(self.repo.session)._enqueue_verification_email(new_user)
         return new_user
 
-    async def update_user(self, user_id: str, user_in: UserUpdate) -> User:
+    async def update_user(self, user_id: str, user_in: UserUpdate, modified_by: str | None = None) -> User:
         """Mise à jour d'un utilisateur (Admin)"""
         user = await self.repo.get(user_id)
         if not user:
@@ -46,10 +59,13 @@ class UserService:
             if existing and str(existing.id) != user_id:
                 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email déjà utilisé.")
                 
+        if modified_by is not None:
+            update_data["modified_by"] = str(modified_by)
+
         updated_user = await self.repo.update(user_id, update_data)
         return updated_user
 
-    async def update_me(self, user_id: str, data_in: UserMeUpdate) -> User:
+    async def update_me(self, user_id: str, data_in: UserMeUpdate, modified_by: str | None = None) -> User:
         """Mise à jour de son propre profil"""
         user = await self.repo.get(user_id)
         if not user:
@@ -60,6 +76,8 @@ class UserService:
         # Gestion du profil
         if "profile" in update_data:
             profile_data = update_data.pop("profile")
+            if modified_by is not None:
+                profile_data["modified_by"] = str(modified_by)
             await self.profile_repo.update_by_user_id(user_id, profile_data)
             
         # Gestion du mot de passe
@@ -73,6 +91,9 @@ class UserService:
             if existing and str(existing.id) != user_id:
                 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email déjà utilisé.")
                 
+        if modified_by is not None:
+            update_data["modified_by"] = str(modified_by)
+
         if update_data:
             updated_user = await self.repo.update(user_id, update_data)
         else:

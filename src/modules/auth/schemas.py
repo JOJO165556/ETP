@@ -81,6 +81,14 @@ class ForgotPasswordRequest(BaseModel):
     email: EmailStr
 
 
+class ResendVerificationRequest(BaseModel):
+    """Demande de renvoi du lien de verification d'email."""
+    model_config = ConfigDict(extra="forbid", json_schema_extra={
+        "example": {"email": "jean.dupont@example.com"}
+    })
+    email: EmailStr
+
+
 class ResetPasswordRequest(BaseModel):
     model_config = ConfigDict(extra="forbid", json_schema_extra={
         "example": {"token": "eyJhbGciOiJIUzI1NiIs...", "new_password": "NouveauMot2Passe!"}

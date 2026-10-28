@@ -251,7 +251,8 @@ async def update_application_stage(
         app_id=app_id, 
         new_stage=stage_update.stage, 
         recruiter_company_id=company_id, 
-        is_superadmin=is_superadmin
+        is_superadmin=is_superadmin,
+        modified_by=str(current_user.id),
     )
     await db.commit()
     repo = ApplicationRepository(db)

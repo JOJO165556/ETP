@@ -23,7 +23,7 @@ class JobService:
 
         return await self.repo.create(job_data)
 
-    async def update_job(self, job_id: str, job_in: JobUpdate, company_id: str, is_superadmin: bool = False) -> Job:
+    async def update_job(self, job_id: str, job_in: JobUpdate, company_id: str, is_superadmin: bool = False, modified_by: str | None = None) -> Job:
         """
         Met à jour une offre d'emploi.
         Vérifie que l'offre appartient bien à l'entreprise du recruteur (sauf pour le Superadmin).
@@ -48,5 +48,9 @@ class JobService:
         lat = updated_data.pop("latitude", None)
         if lon is not None and lat is not None:
             updated_data["job_location"] = f"POINT({lon} {lat})"
+
+        # Audit trail : qui a effectue la modification
+        if modified_by is not None:
+            updated_data["modified_by"] = str(modified_by)
             
         return await self.repo.update(job_id, updated_data)

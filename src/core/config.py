@@ -21,6 +21,22 @@ class Settings(BaseSettings):
     SECRET_KEY: str = _generate_secret()
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60  # 1 heure
 
+    # URL publique du frontend (liens de confirmation / redirections)
+    FRONTEND_URL: str = "http://localhost:3000"
+
+    # VERIFICATION D'EMAIL
+    EMAIL_VERIFICATION_EXPIRE_HOURS: int = 24
+
+    # SMTP (dev : MailHog / Mailpit sur le port 1025)
+    SMTP_HOST: str = "localhost"
+    SMTP_PORT: int = 1025
+    SMTP_USER: Optional[str] = None
+    SMTP_PASSWORD: Optional[str] = None
+    SMTP_FROM_EMAIL: str = "noreply@etp-platform.com"
+    SMTP_TLS: bool = False
+    SMTP_SSL: bool = False
+    SMTP_TIMEOUT: int = 15
+
     # CORS
     BACKEND_CORS_ORIGINS: List[AnyHttpUrl] = []
 

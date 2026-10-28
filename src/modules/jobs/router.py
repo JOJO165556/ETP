@@ -105,7 +105,9 @@ async def update_job(
     company_id = str(current_user.company_id) if current_user.company_id else ""
     
     service = JobService(db)
-    job = await service.update_job(job_id, job_in, company_id, is_superadmin)
+    job = await service.update_job(
+        job_id, job_in, company_id, is_superadmin, modified_by=str(current_user.id)
+    )
     await db.commit()
     return job
 

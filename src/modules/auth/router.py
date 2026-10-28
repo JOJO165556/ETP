@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
@@ -12,8 +12,10 @@ from src.core.security import (
 )
 from src.modules.auth.schemas import (
     Token, RegisterRequest, RefreshTokenRequest, ChangePasswordRequest,
-    FirebaseLoginRequest, ForgotPasswordRequest, ResetPasswordRequest
+    FirebaseLoginRequest, ForgotPasswordRequest, ResetPasswordRequest,
+    ResendVerificationRequest
 )
+from src.modules.auth.constants import UNVERIFIED_EMAIL_DETAIL
 from src.modules.auth.dependencies import get_current_user
 from src.modules.auth.services import AuthService
 from src.core.firebase import extract_app_check_token, extract_provider, verify_app_check_token, verify_id_token
@@ -51,6 +53,40 @@ async def refresh_token(
 ) -> Token:
     service = AuthService(db)
     return await service.refresh_access_token(body.refresh_token)
+
+
+@router.post("/logout", status_code=200, summary="Se déconnecter (révoque le refresh token)")
+async def logout(
+    body: RefreshTokenRequest,
+    db: AsyncSession = Depends(get_db),
+):
+    """Inscrit le refresh token en blacklist Redis jusqu'à son expiration."""
+    service = AuthService(db)
+    return await service.logout(body.refresh_token)
+
+
+@router.get("/verify-email", status_code=200, summary="Vérifier son adresse email")
+async def verify_email(
+    token: str = Query(..., description="Token de vérification reçu par email"),
+    db: AsyncSession = Depends(get_db),
+):
+    """Active le compte à partir du token signé envoyé par email (24h)."""
+    service = AuthService(db)
+    return await service.verify_email(token)
+
+
+@router.post(
+    "/resend-verification",
+    status_code=200,
+    summary="Renvoyer le lien de vérification d'email",
+)
+async def resend_verification(
+    body: ResendVerificationRequest,
+    db: AsyncSession = Depends(get_db),
+):
+    """Réponse générique (anti-énumération) et envoi limité en fréquence."""
+    service = AuthService(db)
+    return await service.resend_verification(str(body.email))
 
 
 @router.post("/change-password", summary="Changer de mot de passe")
@@ -106,6 +142,14 @@ async def firebase_login(
     except ValueError:
         auth_provider = AuthProvider.EMAIL
 
+    # Les providers sociaux et Phone verifient deja l'identite a la source.
+    # Pour email/password (Firebase), on se fie au claim email_verified.
+    email_verified = bool(claims.get("email_verified")) or auth_provider in (
+        AuthProvider.GOOGLE,
+        AuthProvider.FACEBOOK,
+        AuthProvider.PHONE,
+    )
+
     user_repo = UserRepository(db)
     user = await user_repo.get_by_firebase_uid(firebase_uid)
 
@@ -115,6 +159,8 @@ async def firebase_login(
         if user is not None:
             user.firebase_uid = firebase_uid
             user.auth_provider = auth_provider
+            if email_verified:
+                user.is_verified = True
         else:
             # Self-service (social ou email) : le role ne provient JAMAIS du
             # client. On rejette toute tentative de role != CANDIDATE (escalade
@@ -131,12 +177,21 @@ async def firebase_login(
                 "hashed_password": "",  # Auth 100% Firebase : aucun mot de passe local
                 "role": UserRole.CANDIDATE,
                 "auth_provider": auth_provider,
+                "is_verified": email_verified,
             })
 
     if not user.is_active:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Ce compte a ete desactive.",
+        )
+
+    # Le bypass d'authentification Firebase ne doit pas contourner la
+    # verification d'email obligatoire pour les comptes email/password.
+    if not user.is_verified:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=UNVERIFIED_EMAIL_DETAIL,
         )
 
     # Inscription 100% Firebase : projection du profil (nom) si fourni.
@@ -179,6 +234,7 @@ async def get_me(
         "email": current_user.email,
         "role": current_user.role.value,
         "is_active": current_user.is_active,
+        "is_verified": current_user.is_verified,
         "profile_complete": profile_complete,
     }
 
