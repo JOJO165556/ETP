@@ -121,21 +121,21 @@ class TestNotificationIntegration:
         assert "interview" in body
         assert "sélectionné" in body
 
-    def test_notification_service_creation(self):
-        """Test création de notification."""
+    @pytest.mark.asyncio
+    async def test_notification_service_creation(self):
+        """Test création de notification persistée."""
         from src.modules.notifications.services import NotificationService
 
         mock_db = AsyncMock()
         service = NotificationService(mock_db)
-        # Vérifie que create retourne un dict valide
-        import asyncio
-        notification = asyncio.run(service.create(
-            recipient_id="user-123",
-            subject="Test",
-            body="Corps du message",
-        ))
-        assert notification["recipient_id"] == "user-123"
-        assert notification["read"] is False
+        notification = await service.create(
+            user_id="user-123",
+            title="Test",
+            message="Corps du message",
+        )
+        assert str(notification.user_id) == "user-123"
+        assert notification.title == "Test"
+        assert notification.is_read is False
 
 
 class TestSearchIntegration:

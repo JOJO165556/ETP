@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Mise à jour de votre candidature</title>
+</head>
+<body style="margin:0;padding:0;background-color:#f4f5f7;font-family:Arial,Helvetica,sans-serif;color:#1f2937;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4f5f7;padding:32px 16px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background-color:#ffffff;border-radius:8px;overflow:hidden;">
+          <tr>
+            <td style="padding:24px 32px;background-color:#111827;color:#ffffff;font-size:18px;font-weight:bold;">
+              Enterprise Talent Platform
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:32px;">
+              <h1 style="margin:0 0 16px;font-size:22px;line-height:1.3;color:#111827;">Votre candidature a évolué</h1>
+              <p style="margin:0 0 16px;font-size:15px;line-height:1.6;">Bonjour,</p>
+              <p style="margin:0 0 16px;font-size:15px;line-height:1.6;">
+                Votre candidature pour le poste <strong>{{ job_title }}</strong> est maintenant au stage
+                <strong>{{ new_stage }}</strong>.
+              </p>
+              {% if message %}<p style="margin:0 0 16px;font-size:15px;line-height:1.6;">{{ message }}</p>{% endif %}
+              <p style="margin:0;font-size:15px;line-height:1.6;">Cordialement,<br>L'équipe ETP</p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>

@@ -34,6 +34,10 @@ class User(Base, BaseUUIDMixin, AuditMixin, SoftDeleteMixin):
     hashed_password: Mapped[str] = mapped_column(String(255), nullable=False)
     role: Mapped[UserRole] = mapped_column(SQLEnum(UserRole), default=UserRole.CANDIDATE, nullable=False)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, server_default="true")
+    # Verification obligatoire de l'adresse email a l'inscription
+    is_verified: Mapped[bool] = mapped_column(
+        Boolean, default=False, server_default="false", nullable=False
+    )
 
     # Identifiant Firebase (verified id token) — lie le compte local au provider d'identite
     firebase_uid: Mapped[str | None] = mapped_column(String(128), unique=True, nullable=True, index=True)

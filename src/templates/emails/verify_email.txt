@@ -1,0 +1,13 @@
+Confirmez votre adresse email
+
+Bonjour{% if first_name %} {{ first_name }}{% endif %},
+
+Merci de votre inscription sur Enterprise Talent Platform.
+
+Pour activer votre compte, confirmez votre adresse email en ouvrant le lien suivant :
+{{ verification_url }}
+
+Ce lien est valable pendant {{ expires_hours | default(24) }} heures.
+Si vous n'etes pas a l'origine de cette inscription, vous pouvez ignorer cet email.
+
+Cet email a ete envoye automatiquement, merci de ne pas y repondre.

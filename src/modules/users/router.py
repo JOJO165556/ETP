@@ -342,7 +342,9 @@ async def update_my_profile(
     Permet à l'utilisateur connecté de modifier ses informations et son profil.
     """
     service = UserService(db)
-    user = await service.update_me(str(current_user.id), data_in)
+    user = await service.update_me(
+        str(current_user.id), data_in, modified_by=str(current_user.id)
+    )
     await db.commit()
     return user
 
@@ -564,7 +566,9 @@ async def update_user_by_admin(
     Permet à un Superadmin de modifier les données de base d'un utilisateur.
     """
     service = UserService(db)
-    user = await service.update_user(user_id, user_in)
+    user = await service.update_user(
+        user_id, user_in, modified_by=str(current_admin.id)
+    )
     await db.commit()
     return user
 

@@ -1,43 +1,64 @@
-from pydantic import BaseModel, ConfigDict
+"""Schemas de notifications in-app."""
+from datetime import datetime
+from uuid import UUID
+
+from pydantic import BaseModel, ConfigDict, Field
+
+from src.modules.notifications.models import NotificationType
 
 
 class NotificationCreate(BaseModel):
-    model_config = ConfigDict(json_schema_extra={
-        "example": {
-            "recipient_id": "user-123",
-            "subject": "Candidature reçue",
-            "body": "Votre candidature pour Dev Python a été enregistrée.",
-            "notification_type": "success",
-        }
-    })
-    recipient_id: str
-    subject: str
-    body: str
-    notification_type: str = "info"
+    """Creation interne (service a service), jamais exposee telle quelle."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    user_id: UUID
+    title: str = Field(min_length=1, max_length=255)
+    message: str = Field(min_length=1)
+    type: NotificationType = NotificationType.SYSTEM
+    link: str | None = Field(default=None, max_length=512)
 
 
 class NotificationResponse(BaseModel):
-    model_config = ConfigDict(json_schema_extra={
+    model_config = ConfigDict(from_attributes=True, json_schema_extra={
         "example": {
-            "id": "notif-456",
-            "recipient_id": "user-123",
-            "subject": "Candidature reçue",
-            "body": "Votre candidature a été enregistrée.",
-            "notification_type": "success",
-            "read": False,
-            "created_at": "2026-06-24T10:00:00Z",
+            "id": "3f2b8c1e-6a4d-4b5e-9c7f-1a2b3c4d5e6f",
+            "user_id": "1a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d",
+            "title": "Candidature reçue",
+            "message": "Votre candidature a été enregistrée.",
+            "type": "application_status",
+            "is_read": False,
+            "link": "/applications/123",
+            "created_at": "2026-10-28T10:00:00Z",
         }
     })
-    id: str
-    recipient_id: str
-    subject: str
-    body: str
-    notification_type: str
-    read: bool
-    created_at: str | None = None
+
+    id: UUID
+    user_id: UUID
+    title: str
+    message: str
+    type: NotificationType
+    is_read: bool
+    link: str | None = None
+    created_at: datetime
 
 
-class EmailNotification(BaseModel):
-    to: str
-    subject: str
-    html_body: str
+class NotificationListResponse(BaseModel):
+    """Liste paginee des notifications de l'utilisateur connecte."""
+
+    notifications: list[NotificationResponse]
+    total: int
+    unread_count: int
+    limit: int
+    offset: int
+
+
+class NotificationMarkedResponse(BaseModel):
+    message: str
+    id: UUID
+    is_read: bool = True
+
+
+class NotificationReadAllResponse(BaseModel):
+    message: str
+    updated: int
