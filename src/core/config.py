@@ -91,6 +91,15 @@ class Settings(BaseSettings):
     # AI PARSING — Gemini (API gratuite via AI Studio)
     # Vide = fallback regex (aucune IA)
     GEMINI_API_KEY: Optional[str] = None
+    GEMINI_MODEL: str = "gemini-2.5-flash"
+    GEMINI_API_BASE: str = "https://generativelanguage.googleapis.com/v1beta"
+    # AI PARSING — Hugging Face Inference Providers (fournisseur prioritaire)
+    HF_API_KEY: Optional[str] = None
+    HF_MODEL: str = "mistralai/Mistral-7B-Instruct-v0.3"
+    HF_API_BASE: str = "https://router.huggingface.co/v1"
+    # Garde-fous d'appel (delai borne, taille de CV transmise au modele)
+    AI_REQUEST_TIMEOUT: float = 30.0
+    AI_MAX_CV_CHARS: int = 12000
     # Verification du jeton App Check recu dans le header X-Firebase-AppCheck
     FIREBASE_APP_CHECK_ENABLED: bool = True
 
