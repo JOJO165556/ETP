@@ -8,18 +8,14 @@ from src.modules.users.repository import UserRepository
 from src.modules.analytics.repository import AnalyticsRepository
 from src.modules.gdpr.router import _require_target_in_tenant_scope
 from src.modules.auth.dependencies import tenant_company_id
-from src.modules.applications.models import Application, ApplicationStage
-from src.modules.jobs.models import Job, JobStatus
+
 
 # Enregistre le mapper Company (relation User.company) avant toute configuration
 # SQLAlchemy : les tests importent les modèles unitairement.
 import src.modules.companies.models  # noqa: F401,E402
 
-# ----------------------------------------------------------------------
+
 # Helpers
-# ----------------------------------------------------------------------
-
-
 def _mock_user(
     role: UserRole = UserRole.RECRUITER,
     company_id: str | None = "company-A",
@@ -47,11 +43,7 @@ def _mock_execute_scalars_all(mock_db: AsyncMock, rows):
     mock_db.execute = AsyncMock(return_value=result)
 
 
-# ----------------------------------------------------------------------
 # Tests auth / dépendances
-# ----------------------------------------------------------------------
-
-
 def test_tenant_company_id_extracts_company_id():
     user = _mock_user(company_id="comp-123")
     assert tenant_company_id(user) == "comp-123"
@@ -74,11 +66,7 @@ def test_tenant_company_id_missing_company_raises():
     )
 
 
-# ----------------------------------------------------------------------
 # Tests repository users
-# ----------------------------------------------------------------------
-
-
 @pytest.mark.asyncio
 async def test_user_repository_get_candidates_tenant_builds_query():
     mock_db = AsyncMock()
@@ -125,11 +113,7 @@ async def test_user_repository_get_candidates_tenant_uses_company_id_filter():
     assert mock_db.execute.call_count >= 1
 
 
-# ----------------------------------------------------------------------
 # Tests repository analytics
-# ----------------------------------------------------------------------
-
-
 @pytest.mark.asyncio
 async def test_analytics_repository_get_pipeline_stats_filters_by_company():
     mock_db = AsyncMock()
@@ -195,11 +179,7 @@ async def test_analytics_repository_get_company_stats_uses_company_id():
     assert mock_db.execute.called
 
 
-# ----------------------------------------------------------------------
 # Tests GDPR : isolation multi-tenant sur export / suppression / anonymisation
-# ----------------------------------------------------------------------
-
-
 @pytest.mark.asyncio
 async def test_gdpr_require_target_in_tenant_scope_same_company():
     mock_db = AsyncMock()

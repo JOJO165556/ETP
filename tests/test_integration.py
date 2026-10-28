@@ -12,7 +12,6 @@ class TestAuthServiceIntegration:
         """Test complet: inscription puis authentification."""
         from src.modules.auth.services import AuthService
         from src.modules.auth.schemas import RegisterRequest
-        from src.core.security import create_access_token, verify_password
 
         mock_db = AsyncMock()
         mock_user = MagicMock()
@@ -68,10 +67,11 @@ class TestResumeAnalyzerIntegration:
     """Tests d'intégration pour l'analyseur de CV."""
 
     def test_full_analysis_pipeline(self):
-        """Test complet du pipeline d'analyse de CV."""
-        from src.modules.applications.resume_analyzer import LocalResumeAnalyzer
+        """Test complet du pipeline d'analyse de CV (fallback regex local)."""
+        from src.modules.applications.resume_analyzer import RemoteResumeAnalyzer
 
-        analyzer = LocalResumeAnalyzer()
+        analyzer = RemoteResumeAnalyzer()
+        analyzer.client = None  # force le fallback déterministe, sans appel réseau
         text = """
         Jean Dupont - Développeur Full Stack Senior
         
@@ -96,9 +96,10 @@ class TestResumeAnalyzerIntegration:
 
     def test_fallback_on_empty_text(self):
         """Test fallback sur texte vide."""
-        from src.modules.applications.resume_analyzer import LocalResumeAnalyzer
+        from src.modules.applications.resume_analyzer import RemoteResumeAnalyzer
 
-        analyzer = LocalResumeAnalyzer()
+        analyzer = RemoteResumeAnalyzer()
+        analyzer.client = None
         result = analyzer.analyze("")
         assert result.confidence == 0.0
         assert result.extraction_method == "empty"
@@ -109,7 +110,7 @@ class TestNotificationIntegration:
 
     def test_email_rendering_pipeline(self):
         """Test complet du rendu d'emails."""
-        from src.modules.notifications.services import render_email, NotificationService
+        from src.modules.notifications.services import render_email
 
         # Rendu de template
         subject, body = render_email("stage_changed", {

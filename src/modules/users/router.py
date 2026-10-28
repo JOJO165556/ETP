@@ -77,8 +77,8 @@ async def _candidate_visible_by_tenant(
         .where(
             Application.candidate_id == candidate_id,
             Job.company_id == company_id,
-            Application.is_deleted == False,
-            Job.is_deleted == False,
+            not Application.is_deleted,
+            not Job.is_deleted,
         )
         .limit(1)
     )
