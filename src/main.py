@@ -20,6 +20,7 @@ from src.modules.analytics.router import router as analytics_router
 from src.modules.gdpr.router import router as gdpr_router
 from src.modules.notifications.router import router as notifications_router
 from src.modules.search.router import router as search_router
+from src.modules.ai.router import router as ai_router
 
 
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
@@ -88,6 +89,7 @@ app.include_router(analytics_router, prefix=settings.API_V1_STR)
 app.include_router(gdpr_router, prefix=settings.API_V1_STR)
 app.include_router(notifications_router, prefix=settings.API_V1_STR)
 app.include_router(search_router, prefix=settings.API_V1_STR)
+app.include_router(ai_router, prefix=settings.API_V1_STR)
 
 # Rate limiting (optionnel, necessite Redis)
 try:
