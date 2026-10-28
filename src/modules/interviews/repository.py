@@ -4,11 +4,11 @@ from typing import List, Optional
 from sqlalchemy import and_, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.core.repository import BaseRepository
+from src.core.repository import BaseAsyncRepository
 from src.modules.interviews.models import Interview, InterviewStatus
 
 
-class InterviewRepository(BaseRepository[Interview]):
+class InterviewRepository(BaseAsyncRepository[Interview]):
     def __init__(self):
         super().__init__(Interview)
 
