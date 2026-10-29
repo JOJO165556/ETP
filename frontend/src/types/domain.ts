@@ -146,25 +146,135 @@ export interface ProfilCandidat {
   recherchable: boolean;
 }
 
-// Vivier de talents (vue recruteur)
+// Vivier de talents (vue recruteur) — aligné sur UserBriefResponse du backend
 
 export interface CandidatVivier {
   id: UserId;
-  nom_complet: string;
-  titre?: string;
-  avatar_url?: string;
-  localisation?: string;
-  annees_experience?: number;
-  langues?: string[];
-  score_correspondance?: number;
-  libelle_correspondance?: string;
-  tags_correspondance?: string[];
-  experiences: ExperienceProfessionnelle[];
-  competences: Competence[];
-  activite_plateforme?: {
-    entretiens: number;
-    offres: number;
+  email: string;
+  nom_complet: string | null;
+  titre?: string | null;
+  localisation?: string | null;
+  skills: string[];
+  has_cv: boolean;
+  profil_public: boolean;
+  recherchable: boolean;
+  created_at?: string | null;
+  experiences: ExperienceResume[];
+  formations: FormationResume[];
+}
+
+// --- Types alignés sur les réponses réelles du backend FastAPI ---
+
+export interface ProfileResponse {
+  id: string;
+  user_id: string;
+  first_name: string | null;
+  last_name: string | null;
+  phone: string | null;
+  raw_address: string | null;
+  cv_key: string | null;
+  skills: string[] | null;
+  is_profile_public: boolean;
+  is_searchable: boolean;
+  experiences: ExperiencePro[] | null;
+  formations: FormationPro[] | null;
+}
+
+export interface ExperiencePro {
+  id: string;
+  profile_id: string;
+  entreprise: string;
+  poste: string;
+  type_contrat: string | null;
+  date_debut: string;
+  date_fin: string | null;
+  en_cours: boolean;
+  description: string | null;
+  ordre: number;
+}
+
+export interface FormationPro {
+  id: string;
+  profile_id: string;
+  etablissement: string;
+  diplome: string;
+  domaine: string | null;
+  annee: number;
+  ordre: number;
+}
+
+export interface ExperiencePayload {
+  entreprise: string;
+  poste: string;
+  type_contrat?: string | null;
+  date_debut: string;
+  date_fin?: string | null;
+  en_cours?: boolean;
+  description?: string | null;
+}
+
+export interface FormationPayload {
+  etablissement: string;
+  diplome: string;
+  domaine?: string | null;
+  annee: number;
+}
+
+export interface ExperienceResume {
+  poste: string;
+  entreprise: string;
+  type_contrat?: string | null;
+  date_debut: string | null;
+  date_fin: string | null;
+  en_cours: boolean;
+  description?: string | null;
+}
+
+export interface FormationResume {
+  diplome: string;
+  etablissement: string;
+  domaine?: string | null;
+  annee: number | null;
+}
+
+export interface UserProfil {
+  id: string;
+  email: string;
+  role: string;
+  is_active: boolean;
+  company_id: string | null;
+  profile: ProfileResponse | null;
+}
+
+export interface MiseAJourProfilPayload {
+  email?: string;
+  password?: string;
+  profile?: {
+    first_name?: string | null;
+    last_name?: string | null;
+    phone?: string | null;
+    raw_address?: string | null;
+    skills?: string[];
+    is_profile_public?: boolean;
+    is_searchable?: boolean;
   };
+}
+
+/* Candidature telle que renvoyée par GET /applications/me */
+export interface CandidatureAPI {
+  id: string;
+  job_id: string;
+  candidate_id: string;
+  stage: string;
+  resume_storage_path: string | null;
+  matching_score: number | null;
+  celery_task_id: string | null;
+  celery_task_status: string | null;
+  celery_task_result: Record<string, unknown> | null;
+  job_title: string | null;
+  company_name: string | null;
+  created_at: string | null;
+  updated_at: string | null;
 }
 
 // Analytiques

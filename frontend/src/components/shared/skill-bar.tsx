@@ -9,20 +9,20 @@ const CONFIG_STATUTS: Record<
 > = {
   validee: {
     libelle: "Validée",
-    couleurBarre: "bg-emerald-500",
-    couleurTexte: "text-emerald-400",
+    couleurBarre: "bg-success",
+    couleurTexte: "text-success",
     largeur: "w-full",
   },
   manquante: {
     libelle: "Écart détecté",
-    couleurBarre: "bg-amber-500",
-    couleurTexte: "text-amber-400",
+    couleurBarre: "bg-warning",
+    couleurTexte: "text-warning",
     largeur: "w-1/3",
   },
   partielle: {
     libelle: "Partielle",
-    couleurBarre: "bg-blue-500",
-    couleurTexte: "text-blue-400",
+    couleurBarre: "bg-primary",
+    couleurTexte: "text-primary",
     largeur: "w-3/4",
   },
 };
@@ -41,12 +41,12 @@ export function SkillBar({ libelle, statut, note, className }: BarreCompetencePr
   return (
     <div className={cn("space-y-1.5", className)}>
       <div className="flex items-center justify-between">
-        <span className="text-sm font-medium text-slate-200">{libelle}</span>
+        <span className="text-sm font-medium text-foreground/90">{libelle}</span>
         <span className={cn("text-xs font-semibold", config.couleurTexte)}>
           {config.libelle}
         </span>
       </div>
-      <div className="h-1.5 w-full rounded-full bg-white/10">
+      <div className="h-1.5 w-full rounded-full bg-muted">
         <div
           className={cn(
             "h-full rounded-full transition-all duration-700",
@@ -55,7 +55,7 @@ export function SkillBar({ libelle, statut, note, className }: BarreCompetencePr
           )}
         />
       </div>
-      {note && <p className="text-xs leading-snug text-slate-500">{note}</p>}
+      {note && <p className="text-xs leading-snug text-muted-foreground">{note}</p>}
     </div>
   );
 }

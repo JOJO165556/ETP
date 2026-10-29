@@ -23,8 +23,8 @@ export function ToggleSwitch({
       disabled={disabled}
       onClick={() => onChange(!actif)}
       className={cn(
-        "relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-[#161b22]",
-        actif ? "bg-blue-600" : "bg-slate-700",
+        "relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+        actif ? "bg-primary" : "bg-muted",
         disabled && "cursor-not-allowed opacity-50",
         className
       )}

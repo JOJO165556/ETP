@@ -4,12 +4,19 @@ import { Suspense } from "react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import * as z from "zod";
 
 import { api } from "@/lib/api";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  isFirebaseConfigured,
+  createAccountWithEmail,
+  exchangeFirebaseSession,
+} from "@/lib/firebase";
 import type { AuthTokens } from "@/types";
 
 /* Schéma de validation Zod pour l'étape de création de compte */
@@ -19,7 +26,7 @@ const accountSchema = z.object({
   email: z.string().email("Adresse email invalide."),
   password: z
     .string()
-    .min(8, "Au moins 8 caractères.")
+    .min(6, "Au moins 6 caractères.")
     .regex(/[A-Za-z]/, "Doit contenir une lettre.")
     .regex(/[0-9]/, "Doit contenir un chiffre."),
 });
@@ -41,10 +48,10 @@ function StepIndicator({ steps, current }: StepIndicatorProps) {
             <div
               className={`flex h-6 w-6 items-center justify-center rounded-full text-xs font-semibold transition-colors ${
                 i < current
-                  ? "bg-[#1d40d9] text-white"
+                  ? "bg-primary text-primary-foreground"
                   : i === current
-                    ? "border-2 border-[#1d40d9] bg-white text-[#1d40d9]"
-                    : "border border-gray-200 bg-white text-gray-400"
+                    ? "border-2 border-primary bg-background text-primary"
+                    : "border border-border bg-background text-muted-foreground"
               }`}
             >
               {i < current ? (
@@ -69,7 +76,7 @@ function StepIndicator({ steps, current }: StepIndicatorProps) {
             </div>
             <span
               className={`text-xs font-medium ${
-                i === current ? "text-gray-900" : "text-gray-400"
+                i === current ? "text-foreground" : "text-muted-foreground"
               }`}
             >
               {label}
@@ -78,7 +85,7 @@ function StepIndicator({ steps, current }: StepIndicatorProps) {
           {i < steps.length - 1 && (
             <div
               className={`mx-2 h-px w-8 transition-colors ${
-                i < current ? "bg-[#1d40d9]" : "bg-gray-200"
+                i < current ? "bg-primary" : "bg-border"
               }`}
             />
           )}
@@ -91,13 +98,9 @@ function StepIndicator({ steps, current }: StepIndicatorProps) {
 /* Composant interne — nécessite useSearchParams() donc doit être dans un Suspense */
 function RegisterForm() {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const role = searchParams.get("role") === "recruiter" ? "recruiter" : "candidate";
-
-  const isRecruiter = role === "recruiter";
-  const steps = isRecruiter
-    ? ["Informations légales", "Profil entreprise"]
-    : ["Compte", "Résumé", "Localisation"];
+  // Politique de rôles : l'inscription publique crée toujours un compte CANDIDATE.
+  // Les comptes recruteur / entreprise sont créés par un superadmin.
+  const steps = ["Compte", "Résumé", "Localisation"];
 
   const [step, setStep] = useState(0);
   const [error, setError] = useState<string | null>(null);
@@ -118,37 +121,41 @@ function RegisterForm() {
     setStep((s) => s + 1);
   });
 
-  /* Soumission finale des données vers l'API et création du cookie de session */
+  /* Soumission finale : création du compte dans Firebase puis échange de session */
   const onSubmit = async () => {
     setError(null);
     const data = getValues();
     try {
-      const payload = {
-        first_name: data.first_name,
-        last_name: data.last_name,
-        email: data.email,
-        password: data.password,
-        role: isRecruiter ? "recruiter" : "candidate",
-      };
-
-      const tokens = await api.post<AuthTokens>("/auth/register", payload);
-
-      const res = await fetch("/api/auth/set-cookie", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(tokens),
-      });
-
-      if (res.ok) {
-        if (!isRecruiter) {
-          router.push("/cv-upload");
-        } else {
-          router.push("/overview");
-        }
-        router.refresh();
+      const intendedRole = "candidate";
+      if (isFirebaseConfigured()) {
+        // 100% Firebase : le compte et le mot de passe sont gérés par Firebase
+        const user = await createAccountWithEmail(data.email, data.password);
+        const ok = await exchangeFirebaseSession(user, {
+          first_name: data.first_name,
+          last_name: data.last_name,
+          role: intendedRole,
+        });
+        if (!ok) throw new Error("Echange de session Firebase échoué.");
       } else {
-        throw new Error("Erreur de session.");
+        // Mode dégradé : avant la migration Firebase
+        const tokens = await api.post<AuthTokens>("/auth/register", {
+          first_name: data.first_name,
+          last_name: data.last_name,
+          email: data.email,
+          password: data.password,
+          role: intendedRole,
+        });
+
+        const res = await fetch("/api/auth/set-cookie", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(tokens),
+        });
+        if (!res.ok) throw new Error("Erreur de session.");
       }
+
+      router.push("/cv-upload");
+      router.refresh();
     } catch {
       setError(
         "Une erreur est survenue. Vérifiez vos informations ou tentez de vous connecter."
@@ -161,110 +168,90 @@ function RegisterForm() {
   const renderStepAccount = () => (
     <div className="space-y-4">
       {/* Prénom + Nom */}
-      {!isRecruiter && (
-        <div className="grid grid-cols-2 gap-3">
-          <div className="space-y-1.5">
-            <label
-              htmlFor="first_name"
-              className="block text-sm font-medium text-gray-700"
-            >
-              Prénom
-            </label>
-            <input
-              id="first_name"
-              type="text"
-              autoComplete="given-name"
-              placeholder="Jean"
-              {...register("first_name")}
-              className="block w-full rounded-lg border border-gray-200 bg-white px-3.5 py-2.5 text-sm text-gray-900 transition placeholder:text-gray-400 focus:border-[#1d40d9] focus:ring-2 focus:ring-[#1d40d9]/20 focus:outline-none"
-            />
-            {errors.first_name && (
-              <p className="text-xs text-red-600">{errors.first_name.message}</p>
-            )}
-          </div>
-          <div className="space-y-1.5">
-            <label
-              htmlFor="last_name"
-              className="block text-sm font-medium text-gray-700"
-            >
-              Nom
-            </label>
-            <input
-              id="last_name"
-              type="text"
-              autoComplete="family-name"
-              placeholder="Dupont"
-              {...register("last_name")}
-              className="block w-full rounded-lg border border-gray-200 bg-white px-3.5 py-2.5 text-sm text-gray-900 transition placeholder:text-gray-400 focus:border-[#1d40d9] focus:ring-2 focus:ring-[#1d40d9]/20 focus:outline-none"
-            />
-            {errors.last_name && (
-              <p className="text-xs text-red-600">{errors.last_name.message}</p>
-            )}
-          </div>
-        </div>
-      )}
-
-      {isRecruiter && (
+      <div className="grid grid-cols-2 gap-3">
         <div className="space-y-1.5">
-          <label htmlFor="first_name" className="block text-sm font-medium text-gray-700">
-            Nom légal de l'entreprise
+          <label
+            htmlFor="first_name"
+            className="block text-sm font-medium text-foreground"
+          >
+            Prénom
           </label>
-          <input
+          <Input
             id="first_name"
             type="text"
-            placeholder="Northwind Labs SAS"
+            autoComplete="given-name"
+            placeholder="Jean"
             {...register("first_name")}
-            className="block w-full rounded-lg border border-gray-200 bg-white px-3.5 py-2.5 text-sm text-gray-900 transition placeholder:text-gray-400 focus:border-[#1d40d9] focus:ring-2 focus:ring-[#1d40d9]/20 focus:outline-none"
+            className="h-auto px-3.5 py-2.5"
           />
           {errors.first_name && (
-            <p className="text-xs text-red-600">{errors.first_name.message}</p>
+            <p className="text-xs text-destructive">{errors.first_name.message}</p>
           )}
         </div>
-      )}
+        <div className="space-y-1.5">
+          <label
+            htmlFor="last_name"
+            className="block text-sm font-medium text-foreground"
+          >
+            Nom
+          </label>
+          <Input
+            id="last_name"
+            type="text"
+            autoComplete="family-name"
+            placeholder="Dupont"
+            {...register("last_name")}
+            className="h-auto px-3.5 py-2.5"
+          />
+          {errors.last_name && (
+            <p className="text-xs text-destructive">{errors.last_name.message}</p>
+          )}
+        </div>
+      </div>
 
       {/* Email */}
       <div className="space-y-1.5">
-        <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-          {isRecruiter ? "Email professionnel" : "Email"}
+        <label htmlFor="email" className="block text-sm font-medium text-foreground">
+          Email
         </label>
-        <input
+        <Input
           id="email"
           type="email"
           autoComplete="email"
-          placeholder={isRecruiter ? "vous@entreprise.com" : "vous@exemple.com"}
+          placeholder="vous@exemple.com"
           {...register("email")}
-          className="block w-full rounded-lg border border-gray-200 bg-white px-3.5 py-2.5 text-sm text-gray-900 transition placeholder:text-gray-400 focus:border-[#1d40d9] focus:ring-2 focus:ring-[#1d40d9]/20 focus:outline-none"
+          className="h-auto px-3.5 py-2.5"
         />
-        {errors.email && <p className="text-xs text-red-600">{errors.email.message}</p>}
+        {errors.email && <p className="text-xs text-destructive">{errors.email.message}</p>}
       </div>
 
       {/* Mot de passe */}
       <div className="space-y-1.5">
-        <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+        <label htmlFor="password" className="block text-sm font-medium text-foreground">
           Mot de passe
         </label>
         <div className="relative">
-          <input
+          <Input
             id="password"
             type={showPassword ? "text" : "password"}
             autoComplete="new-password"
-            placeholder="Au moins 8 caractères"
+            placeholder="Au moins 6 caractères"
             {...register("password")}
-            className="block w-full rounded-lg border border-gray-200 bg-white py-2.5 pr-10 pl-3.5 text-sm text-gray-900 transition placeholder:text-gray-400 focus:border-[#1d40d9] focus:ring-2 focus:ring-[#1d40d9]/20 focus:outline-none"
+            className="h-auto py-2.5 pr-10 pl-3.5"
           />
           <button
             type="button"
             onClick={() => setShowPassword((v) => !v)}
-            className="absolute top-1/2 right-3 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+            className="absolute top-1/2 right-3 -translate-y-1/2 text-muted-foreground hover:text-foreground"
             aria-label={showPassword ? "Masquer" : "Afficher"}
           >
             {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
           </button>
         </div>
         {errors.password ? (
-          <p className="text-xs text-red-600">{errors.password.message}</p>
+          <p className="text-xs text-destructive">{errors.password.message}</p>
         ) : (
-          <p className="text-xs text-gray-400">8+ caractères avec lettres et chiffres.</p>
+          <p className="text-xs text-muted-foreground">6+ caractères avec lettres et chiffres.</p>
         )}
       </div>
     </div>
@@ -272,13 +259,11 @@ function RegisterForm() {
   /* Rendu générique pour les étapes futures (CV, Localisation, etc.) */
   const renderStepPlaceholder = () => (
     <div className="space-y-4">
-      <div className="rounded-xl border border-dashed border-gray-200 bg-gray-50 p-6 text-center">
-        <p className="text-sm text-gray-500">
-          {step === 1 && !isRecruiter
+      <div className="rounded-xl border border-dashed border-border bg-background p-6 text-center">
+        <p className="text-sm text-muted-foreground">
+          {step === 1
             ? "Ajout du CV et des compétences — disponible après la création du compte."
-            : step === 2 && !isRecruiter
-              ? "Localisation et préférences de mobilité — disponible après la création du compte."
-              : "Profil entreprise — disponible après la création du compte."}
+            : "Localisation et préférences de mobilité — disponible après la création du compte."}
         </p>
       </div>
     </div>
@@ -288,15 +273,13 @@ function RegisterForm() {
     <div className="w-full max-w-[440px] space-y-7">
       {/* En-tête */}
       <div className="space-y-1">
-        <p className="text-xs font-semibold tracking-widest text-[#1d40d9] uppercase">
-          {isRecruiter ? "Inscription entreprise" : "Inscription candidat"}
+        <p className="text-xs font-semibold tracking-widest text-primary uppercase">
+          Inscription candidat
         </p>
-        <h1 className="text-2xl font-bold tracking-tight text-gray-900">
-          {isRecruiter
-            ? "Configurez votre espace recrutement"
-            : "Créez votre profil talent"}
+        <h1 className="text-2xl font-bold tracking-tight text-foreground">
+          Créez votre profil talent
         </h1>
-        <p className="text-sm text-gray-400">
+        <p className="text-sm text-muted-foreground">
           Étape {step + 1} sur {steps.length} — prend environ deux minutes.
         </p>
       </div>
@@ -308,7 +291,7 @@ function RegisterForm() {
       {error && (
         <div
           role="alert"
-          className="rounded-lg bg-red-50 px-4 py-3 text-sm font-medium text-red-700"
+          className="rounded-lg bg-destructive/10 px-4 py-3 text-sm font-medium text-destructive"
         >
           {error}
         </div>
@@ -334,10 +317,10 @@ function RegisterForm() {
 
         {/* Bouton principal */}
         <div className="mt-6">
-          <button
+          <Button
             type="submit"
             disabled={isSubmitting}
-            className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#1d40d9] px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-[#1635c4] focus:ring-2 focus:ring-[#1d40d9]/30 focus:outline-none disabled:cursor-not-allowed disabled:opacity-60"
+            className="w-full gap-2 px-4 py-3 text-sm font-semibold"
           >
             {isSubmitting && (
               <Loader2 size={16} className="animate-spin" aria-hidden="true" />
@@ -360,14 +343,14 @@ function RegisterForm() {
                 />
               </svg>
             )}
-          </button>
+          </Button>
         </div>
       </form>
 
       {/* Lien connexion */}
-      <p className="text-center text-sm text-gray-500">
+      <p className="text-center text-sm text-muted-foreground">
         Déjà un compte ?{" "}
-        <Link href="/login" className="font-medium text-[#1d40d9] hover:underline">
+        <Link href="/login" className="font-medium text-primary hover:underline">
           Se connecter
         </Link>
       </p>

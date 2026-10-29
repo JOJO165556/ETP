@@ -2,8 +2,9 @@
 package-mode = false
 name = "etp_platform"
 version = "0.1.0"
-description = ""
+description = "Enterprise Talent Platform (ETP)"
 authors = ["JOJO <hounkpatijosue2020@gmail.com>"]
+license = "MIT"
 
 [tool.poetry.dependencies]
 python = ">=3.12"

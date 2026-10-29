@@ -6,6 +6,7 @@ import { UploadCloud, Lock, ArrowRight, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 import { API_V1 } from "@/lib/api";
+import { Button } from "@/components/ui/button";
 
 /* Page d'upload du CV (Étape 1 de l'onboarding) */
 export default function CVUploadPage() {
@@ -41,8 +42,12 @@ export default function CVUploadPage() {
         }
 
         const data = await res.json();
-        // On stocke temporairement les données extraites
+        // Stocker le task_id Celery pour le polling de la page suivante
+        if (data.task_id) {
+          sessionStorage.setItem("cv_task_id", data.task_id);
+        }
         sessionStorage.setItem("cv_profile_data", JSON.stringify(data));
+        sessionStorage.setItem("cv_filename", file.name);
 
         // Passage à l'étape de traitement IA (processing)
         router.push("/cv-processing");
@@ -65,8 +70,8 @@ export default function CVUploadPage() {
       <div className="flex w-full flex-col items-center space-y-4">
         <div className="flex items-center gap-2">
           <div className="bg-primary h-1 w-12 rounded-full" />
-          <div className="h-1 w-12 rounded-full bg-white/10" />
-          <div className="h-1 w-12 rounded-full bg-white/10" />
+          <div className="h-1 w-12 rounded-full bg-muted" />
+          <div className="h-1 w-12 rounded-full bg-muted" />
         </div>
         <p className="text-primary text-xs font-bold tracking-widest uppercase">
           Étape 1 sur 3
@@ -75,10 +80,10 @@ export default function CVUploadPage() {
 
       {/* En-tête */}
       <div className="space-y-4">
-        <h1 className="text-4xl font-bold tracking-tight text-white">
+        <h1 className="text-4xl font-bold tracking-tight text-foreground" style={{ fontFamily: 'var(--font-heading)' }}>
           Téléchargez votre Curriculum Vitae
         </h1>
-        <p className="mx-auto max-w-lg text-base leading-relaxed text-gray-400">
+        <p className="mx-auto max-w-lg text-base leading-relaxed text-muted-foreground">
           Pour construire votre profil entreprise, commencez par uploader votre dernier
           CV. Nous analyserons automatiquement votre expérience.
         </p>
@@ -92,7 +97,7 @@ export default function CVUploadPage() {
             "absolute -inset-1 rounded-2xl opacity-0 blur-md transition-opacity duration-500",
             isDragging
               ? "bg-primary/30 opacity-100"
-              : "group-hover:bg-white/5 group-hover:opacity-100"
+              : "group-hover:bg-muted group-hover:opacity-100"
           )}
         />
 
@@ -104,18 +109,18 @@ export default function CVUploadPage() {
           onDragLeave={() => setIsDragging(false)}
           onDrop={handleDrop}
           className={cn(
-            "relative flex flex-col items-center justify-center rounded-2xl border border-dashed bg-[#13192f]/50 p-16 backdrop-blur-sm transition-all duration-300",
+            "relative flex flex-col items-center justify-center rounded-2xl border border-dashed bg-background/50 p-16 backdrop-blur-sm transition-all duration-300",
             isDragging
               ? "border-primary bg-primary/5"
-              : "border-white/10 hover:border-white/20",
-            file ? "border-green-500/50 bg-green-500/5" : ""
+              : "border-border hover:border-border",
+            file ? "border-success/50 bg-success/5" : ""
           )}
         >
           <div
             className={cn(
-              "mb-6 flex h-16 w-16 items-center justify-center rounded-xl bg-white/5 text-gray-400 transition-colors duration-300",
+              "mb-6 flex h-16 w-16 items-center justify-center rounded-xl bg-muted text-muted-foreground transition-colors duration-300",
               isDragging ? "text-primary" : "",
-              file ? "bg-green-400/10 text-green-400" : ""
+              file ? "bg-success/10 text-success" : ""
             )}
           >
             <UploadCloud size={28} />
@@ -123,10 +128,10 @@ export default function CVUploadPage() {
 
           {!file ? (
             <>
-              <h3 className="mb-2 text-lg font-semibold text-white">
+              <h3 className="mb-2 text-lg font-semibold text-foreground">
                 Glissez & déposez votre fichier ici
               </h3>
-              <p className="mb-8 text-sm text-gray-500">
+              <p className="mb-8 text-sm text-muted-foreground">
                 ou{" "}
                 <button className="text-primary hover:underline">
                   cliquez pour parcourir
@@ -134,21 +139,21 @@ export default function CVUploadPage() {
                 votre appareil
               </p>
               <div className="flex items-center gap-2">
-                <span className="rounded bg-white/5 px-2 py-1 font-mono text-xs text-gray-400">
+                <span className="rounded bg-muted px-2 py-1 font-mono text-xs text-muted-foreground">
                   PDF
                 </span>
-                <span className="rounded bg-white/5 px-2 py-1 font-mono text-xs text-gray-400">
+                <span className="rounded bg-muted px-2 py-1 font-mono text-xs text-muted-foreground">
                   DOCX
                 </span>
-                <span className="rounded bg-white/5 px-2 py-1 font-mono text-xs text-gray-400">
+                <span className="rounded bg-muted px-2 py-1 font-mono text-xs text-muted-foreground">
                   Max 10MB
                 </span>
               </div>
             </>
           ) : (
             <>
-              <h3 className="mb-2 text-lg font-semibold text-white">{file.name}</h3>
-              <p className="mb-8 text-sm text-green-400">
+              <h3 className="mb-2 text-lg font-semibold text-foreground">{file.name}</h3>
+              <p className="mb-8 text-sm text-success">
                 Prêt pour l'analyse ({(file.size / 1024 / 1024).toFixed(2)} MB)
               </p>
               <button
@@ -156,7 +161,7 @@ export default function CVUploadPage() {
                   e.stopPropagation();
                   setFile(null);
                 }}
-                className="text-xs text-gray-500 transition-colors hover:text-white"
+                className="text-xs text-muted-foreground transition-colors hover:text-foreground"
               >
                 Supprimer le fichier
               </button>
@@ -169,22 +174,23 @@ export default function CVUploadPage() {
       <div className="flex w-full items-center justify-between pt-4">
         <button
           onClick={() => router.push("/overview")}
-          className="flex items-center gap-2 text-sm font-medium text-gray-400 transition-colors hover:text-white"
+          className="flex items-center gap-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
         >
           Passer pour le moment <ArrowRight size={16} />
         </button>
-        <button
+        <Button
+          variant="secondary"
           onClick={handleContinue}
           disabled={!file || isUploading}
-          className="flex items-center gap-2 rounded-lg border border-white/5 bg-white/5 px-8 py-3 text-sm font-semibold text-white transition-colors hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-50"
+          className="gap-2 px-8 py-3 text-sm font-semibold"
         >
           {isUploading && <Loader2 size={16} className="animate-spin" />}
           {isUploading ? "Envoi en cours..." : "Continuer"}
-        </button>
+        </Button>
       </div>
 
       {/* Pied de page de sécurité */}
-      <div className="flex items-center gap-2 pt-8 text-xs font-medium text-gray-500">
+      <div className="flex items-center gap-2 pt-8 text-xs font-medium text-muted-foreground">
         <Lock size={12} />
         Stockage chiffré de bout en bout. Nous ne partageons jamais vos données.
       </div>

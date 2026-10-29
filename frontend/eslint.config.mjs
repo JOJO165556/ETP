@@ -1,10 +1,15 @@
 import { defineConfig, globalIgnores } from "eslint/config";
-import nextVitals from "eslint-config-next/core-web-vitals";
-import nextTs from "eslint-config-next/typescript";
+import { FlatCompat } from "@eslint/eslintrc";
+
+// eslint-config-next exporte ici une config legacy ("extends") : on la
+// convertit en flat config compatible avec ESLint 9.
+const compat = new FlatCompat({
+  baseDirectory: import.meta.dirname,
+  resolvePluginsRelativeTo: import.meta.dirname,
+});
 
 const eslintConfig = defineConfig([
-  ...nextVitals,
-  ...nextTs,
+  ...compat.extends("next/core-web-vitals", "next/typescript"),
   // Override default ignores of eslint-config-next.
   globalIgnores([
     // Default ignores of eslint-config-next:
@@ -13,6 +18,13 @@ const eslintConfig = defineConfig([
     "build/**",
     "next-env.d.ts",
   ]),
+  {
+    // Le contenu de l'application est en français : les apostrophes typographiques
+    // sont excessives. On tolère les apostrophes simples dans le texte JSX.
+    rules: {
+      "react/no-unescaped-entities": "off",
+    },
+  },
 ]);
 
 export default eslintConfig;

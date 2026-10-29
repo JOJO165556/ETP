@@ -9,9 +9,9 @@ from src.core.storage import AsyncStorageService
 from src.core.logging_config import setup_logging
 from src.core.health import health_check
 
-# Logging structure (JSON)
-setup_logging()
+setup_logging()  # Must be called before router imports for proper logging configuration
 
+# Router imports after setup_logging
 from src.modules.auth.router import router as auth_router
 from src.modules.users.router import router as users_router
 from src.modules.companies.router import router as companies_router
@@ -53,6 +53,9 @@ async def lifespan(app: FastAPI):
     storage_service = AsyncStorageService()
     await storage_service.initialize_buckets()
 
+    # Instrumentation Prometheus
+    Instrumentator().instrument(app).expose(app)
+
     yield
 
     # Couper proprement les connexions du pool SQL
@@ -66,9 +69,6 @@ app = FastAPI(
     docs_url="/docs",
     redoc_url="/redoc",
 )
-
-# Prometheus exposed au niveau module pour être disponible dès l'import (tests inclus)
-Instrumentator().instrument(app).expose(app, endpoint="/metrics")
 
 # Security headers
 app.add_middleware(SecurityHeadersMiddleware)
@@ -111,5 +111,5 @@ async def health_check_endpoint():
 
 @app.get("/health/ready", tags=["Infrastructure"], summary="Probe de préparation (simple)")
 async def readiness_check():
-    """Probe de préparation simple."""
+    """Probe de préparation simple"""
     return {"status": "ready", "service": settings.PROJECT_NAME}

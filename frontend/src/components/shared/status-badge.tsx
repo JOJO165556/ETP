@@ -7,15 +7,15 @@ const CONFIG_STATUTS: Record<StatutCandidature, { libelle: string; className: st
   {
     ACTIVE: {
       libelle: "ACTIVE",
-      className: "border-emerald-500/30 bg-emerald-500/10 text-emerald-400",
+      className: "border-success/30 bg-success/10 text-success",
     },
     ACTION_REQUISE: {
       libelle: "ACTION REQUISE",
-      className: "border-amber-500/30 bg-amber-500/10 text-amber-400",
+      className: "border-warning/30 bg-warning/10 text-warning",
     },
     ARCHIVEE: {
       libelle: "ARCHIVÉE",
-      className: "border-slate-500/30 bg-slate-500/10 text-slate-400",
+      className: "border-muted-foreground/30 bg-muted/50 text-muted-foreground",
     },
   };
 

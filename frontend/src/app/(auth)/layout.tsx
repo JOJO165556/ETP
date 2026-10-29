@@ -1,4 +1,6 @@
+import Image from "next/image";
 import { Check } from "lucide-react";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 const FEATURES = [
   "IA de matching qui classe les talents par adéquation réelle",
@@ -27,9 +29,14 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
         />
 
         <div className="relative z-10 flex items-center gap-2.5">
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-white/20 text-sm font-bold">
-            E
-          </div>
+          <Image
+            src="/etp_logo.webp"
+            alt="ETP"
+            width={32}
+            height={32}
+            priority
+            className="h-8 w-8 rounded-full object-cover ring-1 ring-white/20"
+          />
           <span className="text-base font-semibold tracking-wide">ETP</span>
         </div>
 
@@ -64,7 +71,10 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
         </p>
       </div>
 
-      <div className="flex flex-1 flex-col items-center justify-center bg-white px-6 py-12 sm:px-10">
+      <div className="bg-background relative flex flex-1 flex-col items-center justify-center px-6 py-12 sm:px-10">
+        <div className="absolute top-5 right-5">
+          <ThemeToggle />
+        </div>
         {children}
       </div>
     </div>

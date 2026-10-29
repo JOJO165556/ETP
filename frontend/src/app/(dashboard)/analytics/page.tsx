@@ -1,332 +1,297 @@
 "use client";
 
+import { useEffect, useMemo, useState } from "react";
 import {
-  Clock,
-  RefreshCcw,
-  ClipboardList,
-  Zap,
-  Calendar,
-  Download,
+  Briefcase,
+  Eye,
+  Sparkles,
   TrendingUp,
-  Info,
+  UserCheck,
+  FileText,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { ProgressBar } from "@/components/ui/progress-bar";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { analyticsService } from "@/services/analytics.service";
+import { applicationsService } from "@/services/applications.service";
+import type { CandidatureAPI, ResumeAnalytiques } from "@/types/domain";
 
-const KPIS = [
-  {
-    titre: "DÉLAI D'EMBAUCHE MOYEN",
-    valeur: "18",
-    unite: "jours",
-    tendance: "+2j",
-    statut: "hausse", // "hausse" = mauvais pour le délai, mais on mettra une icône de trend
-    icone: Clock,
-  },
-  {
-    titre: "TAUX DE CONVERSION",
-    valeur: "24.5",
-    unite: "%",
-    tendance: "+3.2%",
-    statut: "positif",
-    icone: RefreshCcw,
-  },
-  {
-    titre: "OFFRES ACTIVES",
-    valeur: "42",
-    unite: "",
-    tendance: "Stable",
-    statut: "neutre",
-    icone: ClipboardList,
-  },
-  {
-    titre: "SCORE D'EFFICACITÉ",
-    valeur: "88",
-    unite: "/100",
-    tendance: "+12",
-    statut: "positif",
-    icone: Zap,
-  },
-];
+const ETAPES_PIPELINE = [
+  { cle: "applied", libelle: "Postulé" },
+  { cle: "screening", libelle: "Pré-évaluation" },
+  { cle: "interview", libelle: "Entretien" },
+  { cle: "offer", libelle: "Offre" },
+  { cle: "hired", libelle: "Embauché" },
+  { cle: "rejected", libelle: "Refusé" },
+] as const;
 
-const FUNNEL = [
-  { etape: "Sourcing", valeur: 1240, dropout: null, pourcentage: 100 },
-  { etape: "Sélectionnés", valeur: 580, dropout: "-53% Rejetés", pourcentage: 46 },
-  { etape: "Entretiens", valeur: 142, dropout: "-75% Rejetés", pourcentage: 11 },
-  { etape: "Offres", valeur: 38, dropout: "-73% Rejetés", pourcentage: 3 },
-  {
-    etape: "Embauches",
-    valeur: 32,
-    dropout: "84% Acceptation",
-    pourcentage: 2.5,
-    succes: true,
-  },
-];
+const VARIANTE_STAGE: Record<string, "secondary" | "info" | "brand" | "warning" | "success" | "destructive"> = {
+  applied: "secondary",
+  screening: "info",
+  interview: "brand",
+  offer: "warning",
+  hired: "success",
+  rejected: "destructive",
+};
+
+function formaterDateRelie(iso: string | null): string {
+  if (!iso) return "—";
+  try {
+    const date = new Date(iso);
+    const diffJours = Math.floor((Date.now() - date.getTime()) / 86400000);
+    if (diffJours < 1) return "aujourd'hui";
+    if (diffJours === 1) return "hier";
+    if (diffJours < 7) return `il y a ${diffJours}j`;
+    return date.toLocaleDateString("fr-FR");
+  } catch {
+    return "—";
+  }
+}
+
+function CarteKPI({
+  Icone,
+  titre,
+  valeur,
+  unite,
+  note,
+  accent,
+}: {
+  Icone: React.ComponentType<{ size?: number; className?: string }>;
+  titre: string;
+  valeur: number | string;
+  unite?: string;
+  note?: string;
+  accent: string;
+}) {
+  return (
+    <Card className="p-0">
+      <CardContent className="flex flex-col justify-between gap-6">
+        <div className="flex items-start justify-between">
+          <div
+            className={cn(
+              "flex h-10 w-10 items-center justify-center rounded-lg",
+              accent
+            )}
+          >
+            <Icone size={20} />
+          </div>
+        </div>
+        <div>
+          <p className="mb-1 text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
+            {titre}
+          </p>
+          <div className="flex items-baseline gap-1">
+            <span className="text-4xl font-bold text-foreground">{valeur}</span>
+            {unite && (
+              <span className="text-sm font-medium text-muted-foreground">
+                {unite}
+              </span>
+            )}
+          </div>
+          {note && <p className="mt-1 text-xs leading-snug text-muted-foreground">{note}</p>}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
 
 export default function AnalyticsPage() {
+  const [resume, setResume] = useState<ResumeAnalytiques | null>(null);
+  const [candidatures, setCandidatures] = useState<CandidatureAPI[]>([]);
+  const [chargement, setChargement] = useState(true);
+  const [erreur, setErreur] = useState(false);
+
+  useEffect(() => {
+    let annule = false;
+    Promise.all([analyticsService.getMonResume(), applicationsService.getMesCandidatures()])
+      .then(([r, apps]) => {
+        if (annule) return;
+        setResume(r);
+        setCandidatures(apps);
+      })
+      .catch(() => {
+        if (annule) return;
+        setErreur(true);
+      })
+      .finally(() => {
+        if (annule) return;
+        setChargement(false);
+      });
+    return () => {
+      annule = true;
+    };
+  }, []);
+
+  const distribution = useMemo(() => {
+    const comptes: Record<string, number> = {};
+    for (const app of candidatures) {
+      comptes[app.stage] = (comptes[app.stage] ?? 0) + 1;
+    }
+    const total = Math.max(candidatures.length, 1);
+    return ETAPES_PIPELINE.map((etape) => ({
+      ...etape,
+      count: comptes[etape.cle] ?? 0,
+      pourcent: Math.round(((comptes[etape.cle] ?? 0) / total) * 100),
+    }));
+  }, [candidatures]);
+
+  const recentes = useMemo(
+    () => [...candidatures].sort((a, b) => (b.created_at ?? "").localeCompare(a.created_at ?? "")).slice(0, 5),
+    [candidatures]
+  );
+
+  if (chargement) {
+    return (
+      <div className="space-y-6 p-8 lg:p-12">
+        <div className="h-8 w-72 animate-pulse rounded-md bg-muted" />
+        <div className="h-4 w-96 max-w-full animate-pulse rounded-md bg-muted" />
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          {[0, 1, 2, 3].map((i) => (
+            <div key={i} className="h-44 animate-pulse rounded-xl bg-muted/70" />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (erreur || !resume) {
+    return (
+      <div className="p-8 lg:p-12">
+        <Card className="border-destructive/20 p-0">
+          <CardContent>
+            <p className="text-sm text-destructive">
+              Impossible de charger vos statistiques pour le moment.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-8 p-8 lg:p-12">
       {/* En-tête */}
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <div>
-          <h1 className="text-2xl font-bold text-white">Analytiques & Performance</h1>
-          <p className="mt-1 text-sm text-slate-400">
-            Insights stratégiques pour l'acquisition de talents en entreprise.
+          <h1 className="text-2xl font-bold text-[var(--color-foreground)]">Mon activité</h1>
+          <p className="mt-1 text-sm text-[var(--color-muted-foreground)]">
+            Indicateurs de votre recherche calculés à partir de vos données réelles.
           </p>
         </div>
-        <div className="flex gap-3">
-          <button className="flex items-center gap-2 rounded-md border border-white/10 bg-[#161b22] px-4 py-2 text-sm font-medium text-slate-300 hover:bg-white/5">
-            <Calendar size={16} className="text-slate-500" /> 30 Derniers Jours
-          </button>
-          <button className="flex items-center gap-2 rounded-md bg-white/10 px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-white/20">
-            <Download size={16} /> Exporter
-          </button>
-        </div>
+        <Badge variant="secondary" className="gap-1.5">
+          <TrendingUp size={12} aria-hidden="true" /> En direct
+        </Badge>
       </div>
 
       {/* Cartes KPI */}
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-        {KPIS.map((kpi) => (
-          <div
-            key={kpi.titre}
-            className="group relative flex flex-col justify-between overflow-hidden rounded-xl border border-white/5 bg-[#161b22] p-6"
-          >
-            <div className="mb-6 flex items-start justify-between">
-              <div className="flex h-10 w-10 items-center justify-center rounded bg-slate-800 text-slate-400">
-                <kpi.icone size={20} />
-              </div>
-              <div className="flex items-center gap-1 text-xs font-bold text-slate-300">
-                {kpi.statut === "positif" ? (
-                  <TrendingUp size={14} className="text-emerald-400" />
-                ) : kpi.statut === "hausse" ? (
-                  <TrendingUp size={14} className="text-orange-400" />
-                ) : null}
-                {kpi.tendance}
-              </div>
-            </div>
-
-            <div>
-              <p className="mb-1 text-[10px] font-bold tracking-wider text-slate-500 uppercase">
-                {kpi.titre}
-              </p>
-              <div className="flex items-baseline gap-1">
-                <span className="text-4xl font-bold text-white">{kpi.valeur}</span>
-                <span className="text-sm font-medium text-slate-400">{kpi.unite}</span>
-              </div>
-            </div>
-          </div>
-        ))}
+        <CarteKPI
+          Icone={Briefcase}
+          titre="Candidatures actives"
+          valeur={resume.candidatures_actives}
+          note="Candidatures en cours, hors refus."
+          accent="bg-[var(--color-primary)]/15 text-[var(--color-primary)]"
+        />
+        <CarteKPI
+          Icone={Sparkles}
+          titre="Nouveaux matchs"
+          valeur={resume.nouveaux_matchs}
+          note="Offres actives partageant au moins une de vos compétences."
+          accent="bg-[var(--color-info)]/15 text-[var(--color-info)]"
+        />
+        <CarteKPI
+          Icone={Eye}
+          titre="Vues de profil"
+          valeur={resume.vues_profil}
+          note={
+            resume.evolution_vues > 0
+              ? `+${resume.evolution_vues} par rapport à la veille.`
+              : "Le suivi des vues arrive bientôt."
+          }
+          accent="bg-[var(--color-warning)]/15 text-[var(--color-warning)]"
+        />
+        <CarteKPI
+          Icone={UserCheck}
+          titre="Taux d'entretien"
+          valeur={resume.taux_entretien}
+          unite="%"
+          note={`Taux d'offre reçue : ${resume.taux_offre}%`}
+          accent="bg-[var(--color-success)]/15 text-[var(--color-success)]"
+        />
       </div>
 
-      {/* Recruitment Funnel */}
-      <section className="rounded-xl border border-white/5 bg-[#161b22] p-8">
-        <div className="mb-10 flex items-center justify-between">
-          <div>
-            <h2 className="text-lg font-bold text-white">Entonnoir de recrutement</h2>
-            <p className="mt-1 text-sm text-slate-400">
-              Taux de conversion des candidats sur cycle complet par étape.
-            </p>
-          </div>
-          <div className="text-right">
-            <p className="mb-1 text-xs font-bold tracking-wider text-slate-500 uppercase">
-              TOTAL SOURCÉ
-            </p>
-            <p className="text-2xl font-bold text-white">1,240</p>
-          </div>
-        </div>
-
-        <div className="flex h-[280px] w-full items-end gap-2 lg:gap-4">
-          {FUNNEL.map((etape, i) => (
-            <div
-              key={etape.etape}
-              className="group relative flex h-full flex-1 flex-col justify-end"
-            >
-              {/* Barre */}
-              <div
-                className="relative w-full rounded-t-sm border border-b-0 border-white/5 bg-[#21262d] transition-colors group-hover:bg-[#30363d]"
-                style={{ height: `${Math.max(15, (etape.valeur / 1240) * 100)}%` }}
-              >
-                <div className="absolute inset-x-0 bottom-4 px-2 text-center">
-                  <p className="mb-1 hidden text-xs text-slate-400 sm:block">
-                    {etape.etape}
-                  </p>
-                  <p className="text-sm font-bold text-white lg:text-xl">
-                    {etape.valeur.toLocaleString()}
-                  </p>
-                </div>
-              </div>
-
-              {/* Ligne inférieure */}
-              <div className="h-2 w-full bg-[#0d1117]" />
-
-              {/* Barre de % remplissage visuel */}
-              <div className="mt-1 h-3 w-full overflow-hidden rounded-sm bg-slate-800">
-                <div
-                  className={cn("h-full", i === 0 ? "bg-blue-400" : "bg-slate-500")}
-                  style={{ width: `${etape.pourcentage}%` }}
-                />
-              </div>
-
-              {/* Stat de Dropout */}
-              <div className="mt-3 text-center">
-                {etape.dropout ? (
-                  <p
-                    className={cn(
-                      "text-xs font-medium",
-                      etape.succes ? "text-emerald-400" : "text-orange-400"
-                    )}
-                  >
-                    {etape.dropout}
-                  </p>
-                ) : (
-                  <p className="text-xs font-medium text-slate-500">100%</p>
-                )}
-              </div>
+      {/* Pipeline réel */}
+      <section>
+        <CardHeader className="gap-0">
+          <CardTitle className="text-lg font-bold text-[var(--color-foreground)]">Répartition de mes candidatures</CardTitle>
+          <p className="mt-1 text-sm text-[var(--color-muted-foreground)]">
+            Position de vos candidatures dans le processus de recrutement.
+          </p>
+        </CardHeader>
+        <CardContent>
+          {candidatures.length === 0 ? (
+            <div className="flex flex-col items-center gap-3 rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-card)] p-10 text-center">
+              <FileText size={28} className="text-[var(--color-muted-foreground)]" aria-hidden="true" />
+              <p className="text-sm text-[var(--color-muted-foreground)]">
+                Aucune candidature pour l'instant. Postulez à une offre pour alimenter
+                ces statistiques.
+              </p>
             </div>
-          ))}
-        </div>
+          ) : (
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-6">
+              {distribution.map((etape) => (
+                <div key={etape.cle} className="flex flex-col gap-2 rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-card)] p-4 transition-shadow duration-200 hover:shadow-md">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-medium text-[var(--color-foreground)]/85">{etape.libelle}</span>
+                    <span className="text-lg font-bold text-[var(--color-foreground)]">{etape.count}</span>
+                  </div>
+                  <div className="h-1.5 w-full overflow-hidden rounded-full bg-[var(--surface-popover)]">
+                    <div
+                      className="h-full rounded-full bg-[var(--color-primary)] transition-all duration-700"
+                      style={{ width: `${Math.max(4, etape.pourcent)}%` }}
+                    />
+                  </div>
+                  <span className="text-[10px] font-semibold tracking-wider text-[var(--color-muted-foreground)] uppercase">
+                    {etape.pourcent}% du total
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
       </section>
 
-      {/* Ligne du bas : Canaux, Time-to-hire, AI Insights */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        {/* Canaux de Sourcing */}
-        <section className="rounded-xl border border-white/5 bg-[#161b22] p-6">
-          <h2 className="mb-6 text-lg font-bold text-white">Performances des Canaux</h2>
-          <div className="space-y-5">
-            <div>
-              <div className="mb-1.5 flex justify-between text-sm font-medium text-slate-300">
-                <span>LinkedIn Recruiter</span>
-                <span className="font-mono text-xs">42% (528)</span>
-              </div>
-              <ProgressBar
-                valeur={42}
-                couleurBarre="bg-indigo-400"
-                couleurFond="bg-[#0d1117]"
-              />
-            </div>
-            <div>
-              <div className="mb-1.5 flex justify-between text-sm font-medium text-slate-300">
-                <span>Cooptation interne</span>
-                <span className="font-mono text-xs">28% (347)</span>
-              </div>
-              <ProgressBar
-                valeur={28}
-                couleurBarre="bg-blue-400"
-                couleurFond="bg-[#0d1117]"
-              />
-            </div>
-            <div>
-              <div className="mb-1.5 flex justify-between text-sm font-medium text-slate-300">
-                <span>Job Boards (Indeed/Welcome...)</span>
-                <span className="font-mono text-xs">18% (223)</span>
-              </div>
-              <ProgressBar
-                valeur={18}
-                couleurBarre="bg-purple-400"
-                couleurFond="bg-[#0d1117]"
-              />
-            </div>
-            <div>
-              <div className="mb-1.5 flex justify-between text-sm font-medium text-slate-300">
-                <span>Matching IA interne</span>
-                <span className="font-mono text-xs">12% (150)</span>
-              </div>
-              <ProgressBar
-                valeur={12}
-                couleurBarre="bg-slate-400"
-                couleurFond="bg-[#0d1117]"
-              />
-            </div>
-          </div>
-        </section>
-
-        {/* Délai d'embauche par Dpt */}
-        <section className="flex flex-col rounded-xl border border-white/5 bg-[#161b22] p-6">
-          <div className="mb-6 flex items-center justify-between">
-            <h2 className="text-lg font-bold text-white">Délai d'embauche par Dpt</h2>
-            <div className="flex items-center gap-2">
-              <div className="h-2 w-2 rounded-full bg-slate-500" />
-              <span className="text-[10px] font-bold tracking-wider text-slate-400 uppercase">
-                MOYENNE
-              </span>
-            </div>
-          </div>
-
-          <div className="relative flex h-[150px] flex-1 items-end justify-between gap-2 border-b border-white/10 px-4 pb-4">
-            {/* Ligne moyenne simulée */}
-            <div className="absolute top-[40%] right-0 left-0 border-t border-dashed border-slate-600/50" />
-
-            <div className="flex w-1/4 flex-col items-center gap-2">
-              <div className="h-[90%] w-8 rounded-t bg-blue-500" />
-              <span className="text-xs text-slate-400">Tech</span>
-            </div>
-            <div className="flex w-1/4 flex-col items-center gap-2">
-              <div className="h-[40%] w-8 rounded-t bg-slate-700" />
-              <span className="text-xs text-slate-400">Produit</span>
-            </div>
-            <div className="flex w-1/4 flex-col items-center gap-2">
-              <div className="h-[60%] w-8 rounded-t bg-slate-700" />
-              <span className="text-xs text-slate-400">Vente</span>
-            </div>
-            <div className="flex w-1/4 flex-col items-center gap-2">
-              <div className="h-[45%] w-8 rounded-t bg-slate-700" />
-              <span className="text-xs text-slate-400">Design</span>
-            </div>
-          </div>
-
-          <div className="mt-4 flex items-start gap-3 rounded-lg border border-white/5 bg-[#0d1117] p-3 text-sm text-slate-400 italic">
-            <Info size={16} className="mt-0.5 shrink-0 text-blue-400" />
-            <p>
-              Les rôles techniques prennent systématiquement{" "}
-              <strong className="text-white not-italic">30% plus de temps</strong> à être
-              pourvus.
+      {/* Dernières candidatures */}
+      <section>
+        <CardHeader className="gap-0">
+          <CardTitle className="text-lg font-bold text-[var(--color-foreground)]">Dernières candidatures</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {recentes.length === 0 ? (
+            <p className="rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-card)] p-6 text-sm text-[var(--color-muted-foreground)]">
+              Vos candidatures apparaîtront ici dès que vous en aurez.
             </p>
-          </div>
-        </section>
-
-        {/* Diversité & AI Insights */}
-        <div className="flex flex-col gap-6">
-          <section className="rounded-xl border border-white/5 bg-[#161b22] p-6">
-            <h2 className="mb-4 text-sm font-bold text-white">Indicateur de Diversité</h2>
-            <div className="flex justify-between">
-              <div>
-                <p className="mb-1 text-[10px] font-bold tracking-wider text-slate-500 uppercase">
-                  GENRE
-                </p>
-                <div className="mb-1 h-1 w-12 rounded-full bg-orange-400" />
-                <p className="text-xs font-medium text-slate-300">48 / 52</p>
-              </div>
-              <div>
-                <p className="mb-1 text-[10px] font-bold tracking-wider text-slate-500 uppercase">
-                  ETHNIE
-                </p>
-                <div className="mb-1 h-1 w-12 rounded-full bg-orange-400" />
-                <p className="text-xs font-medium text-slate-300">Élevé</p>
-              </div>
-              <div>
-                <p className="mb-1 text-[10px] font-bold tracking-wider text-slate-500 uppercase">
-                  ÉCART ÂGE
-                </p>
-                <div className="mb-1 h-1 w-12 rounded-full bg-slate-600" />
-                <p className="text-xs font-medium text-slate-300">Minime</p>
-              </div>
-            </div>
-          </section>
-
-          <section className="flex-1 rounded-xl border border-blue-500/20 bg-gradient-to-br from-[#161b22] to-[#1a2333] p-6 shadow-[0_0_20px_rgba(59,130,246,0.05)]">
-            <h2 className="mb-3 flex items-center gap-2 text-base font-bold text-white">
-              <Sparkles size={16} className="text-blue-400" /> Insights IA
-            </h2>
-            <p className="text-sm leading-relaxed text-slate-300">
-              D'après le rythme actuel, vous atteindrez vos objectifs de recrutement Q3
-              avec <strong>12 jours d'avance</strong>. Envisagez d'accélérer le
-              remplacement des <strong>Développeurs Frontend</strong>.
-            </p>
-            <button className="mt-4 flex items-center gap-1 text-xs font-bold text-blue-400 hover:underline">
-              Voir le plan d'optimisation &rarr;
-            </button>
-          </section>
-        </div>
-      </div>
+          ) : (
+            <ul className="divide-y divide-[var(--border-subtle)]">
+              {recentes.map((app) => (
+                <li key={app.id} className="flex flex-wrap items-center justify-between gap-3 py-3">
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-semibold text-[var(--color-foreground)]">
+                      {app.job_title ?? "Poste sans intitulé"}
+                    </p>
+                    <p className="truncate text-xs text-[var(--color-muted-foreground)]">
+                      {app.company_name ?? "Entreprise inconnue"} · modifiée {formaterDateRelie(app.updated_at ?? app.created_at)}
+                    </p>
+                  </div>
+                  <Badge variant={VARIANTE_STAGE[app.stage] ?? "secondary"}>
+                    {ETAPES_PIPELINE.find((e) => e.cle === app.stage)?.libelle ?? app.stage}
+                  </Badge>
+                </li>
+              ))}
+            </ul>
+          )}
+        </CardContent>
+      </section>
     </div>
   );
 }

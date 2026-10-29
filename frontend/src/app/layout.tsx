@@ -1,9 +1,26 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, Geist } from "next/font/google";
+import { Plus_Jakarta_Sans, Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { cn } from "@/lib/utils";
+import { ThemeProvider, THEME_STORAGE_KEY } from "@/components/theme-provider";
 
-const geist = Geist({ subsets: ["latin"], variable: "--font-sans" });
+const plusJakartaSans = Plus_Jakarta_Sans({
+  subsets: ["latin"],
+  variable: "--font-heading",
+  display: "swap",
+});
+
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-body",
+  display: "swap",
+});
+
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ["latin"],
+  variable: "--font-mono",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: {
@@ -19,7 +36,7 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
+    { media: "(prefers-color-scheme: light)", color: "#f8fafc" },
     { media: "(prefers-color-scheme: dark)", color: "#0f172a" },
   ],
   width: "device-width",
@@ -32,9 +49,17 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="fr" className={cn("font-sans", geist.variable)} suppressHydrationWarning>
-      <body className="flex min-h-dvh flex-col bg-[var(--color-bg)] text-[var(--color-text-primary)] antialiased">
-        {children}
+    <html lang="fr" className={cn(plusJakartaSans.variable, inter.variable, jetbrainsMono.variable)} suppressHydrationWarning>
+      <head>
+        {/* Applique le thème avant le premier paint pour éviter tout flash. Clair par défaut. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var t=localStorage.getItem('${THEME_STORAGE_KEY}');if(t==='dark'){document.documentElement.classList.add('dark')}}catch(e){}})();`,
+          }}
+        />
+      </head>
+      <body className="flex min-h-dvh flex-col antialiased" style={{fontFamily: 'var(--font-body)'}}>
+        <ThemeProvider>{children}</ThemeProvider>
       </body>
     </html>
   );

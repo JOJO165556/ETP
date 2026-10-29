@@ -7,11 +7,18 @@ export type Email = string & { readonly _brand: "Email" };
 // Rôles utilisateur alignés sur le modèle backend
 export type UserRole = "superadmin" | "company_admin" | "recruiter" | "candidate";
 
-// Réponse d'authentification retournée par /auth/login et /auth/register
+// Réponse d'authentification retournée par /auth/login, /auth/register, /auth/firebase
 export interface AuthTokens {
   access_token: string;
   refresh_token: string;
   token_type: "bearer";
+}
+
+// Session Firebase-side : utilisateur authentifie cote client mais pas encore d'ETP JWT
+export interface FirebaseSessionUser {
+  uid: string;
+  email: string | null;
+  displayName: string | null;
 }
 
 // Profil utilisateur retourné par /users/me
