@@ -3,14 +3,15 @@ from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sess
 from sqlalchemy.orm import declarative_base
 from src.core.config import settings
 
-# Configuration du moteur async avec gestion du pool
+# Configuration du moteur async avec gestion du pool (compatible Neon / serverless)
 engine = create_async_engine(
     str(settings.DATABASE_URL),
     pool_size=20,
     max_overflow=10,
     pool_timeout=30,
-    pool_recycle=1800,
-    echo=False,   # En True unqiuement en debug SQL lourd
+    pool_recycle=300,   # Recycle les connexions inactives toutes les 5 min (idéal pour Neon)
+    pool_pre_ping=True,  # Teste la connexion avant utilisation pour éviter les erreurs de reconnexion
+    echo=False,          # En True uniquement en debug SQL lourd
 )
 
 AsyncSessionLocal = async_sessionmaker(

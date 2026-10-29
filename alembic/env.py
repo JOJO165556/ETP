@@ -25,11 +25,14 @@ from src.modules.ai.models import AIAuditLog, AIJobConfig, AIProviderConfig
 
 target_metadata = Base.metadata
 
-# Réutilisation de DATABASE_URL si définie (Docker), sinon reconstruction depuis les variables
+# Réutilisation de DATABASE_URL si définie (Docker / Neon), sinon reconstruction depuis les variables
 _raw_url = os.getenv("DATABASE_URL", "")
 if _raw_url:
     # Alembic requiert un driver synchrone — on convertit asyncpg -> psycopg2
     DATABASE_URL = _raw_url.replace("postgresql+asyncpg://", "postgresql+psycopg2://")
+    # Neon fournit souvent ssl=require ou sslmode=require, psycopg2 a besoin de sslmode=require
+    if "ssl=require" in DATABASE_URL and "sslmode=require" not in DATABASE_URL:
+        DATABASE_URL = DATABASE_URL.replace("ssl=require", "sslmode=require")
 else:
     DATABASE_URL = (
         f"postgresql+psycopg2://{os.getenv('POSTGRES_USER')}:{os.getenv('POSTGRES_PASSWORD')}"
@@ -79,6 +82,15 @@ def run_migrations_online() -> None:
     connectable = create_engine(DATABASE_URL)
 
     with connectable.connect() as connection:
+        # Assure la présence des extensions requises (PostGIS & btree_gist pour Neon/cloud)
+        try:
+            from sqlalchemy import text
+            connection.execute(text("CREATE EXTENSION IF NOT EXISTS postgis;"))
+            connection.execute(text("CREATE EXTENSION IF NOT EXISTS btree_gist;"))
+            connection.commit()
+        except Exception:
+            pass  # Non bloquant si déjà créées ou gérées en amont
+
         context.configure(
             connection=connection, 
             target_metadata=target_metadata,
