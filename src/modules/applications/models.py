@@ -81,7 +81,7 @@ class ApplicationNote(Base, BaseUUIDMixin, AuditMixin):
     author: Mapped["User"] = relationship("User")
 
 
-class ApplicationStageHistory(Base, BaseUUIDMixin):
+class ApplicationStageHistory(Base, BaseUUIDMixin, AuditMixin):
     __tablename__ = "application_stage_history"
 
     application_id: Mapped[str] = mapped_column(
