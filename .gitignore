@@ -35,3 +35,11 @@ backups/
 
 # Poetry
 poetry.lock
+# Secrets Firebase — compte de service (jamais committer)
+src/core/*.json
+
+# Fichiers et dossiers d'agents IA et configuration locale
+.agents/
+.omo/
+AGENTS.md
+.env.test

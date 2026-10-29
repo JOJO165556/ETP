@@ -27,7 +27,7 @@ export function FilterBar({
   return (
     <div
       className={cn(
-        "flex flex-wrap items-center gap-2 rounded-xl border border-white/5 bg-[#161b22] px-4 py-3",
+        "flex flex-wrap items-center gap-2 rounded-xl border border-border bg-card px-4 py-3",
         className
       )}
     >
@@ -38,14 +38,14 @@ export function FilterBar({
       {chips.map((chip) => (
         <span
           key={chip.cle}
-          className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-medium text-slate-300"
+          className="inline-flex items-center gap-1.5 rounded-full border border-border bg-muted px-3 py-1 text-xs font-medium text-foreground/85"
         >
           {chip.libelle}
           <button
             type="button"
             onClick={() => onSupprimer(chip.cle)}
             aria-label={`Supprimer le filtre : ${chip.libelle}`}
-            className="text-slate-500 transition-colors hover:text-white"
+            className="text-muted-foreground transition-colors hover:text-foreground"
           >
             <X size={12} />
           </button>
@@ -57,7 +57,7 @@ export function FilterBar({
         <button
           type="button"
           onClick={onToutEffacer}
-          className="ml-auto text-xs font-medium text-slate-500 transition-colors hover:text-white"
+          className="ml-auto text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
         >
           Tout effacer
         </button>

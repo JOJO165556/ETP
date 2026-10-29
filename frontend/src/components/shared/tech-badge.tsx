@@ -11,7 +11,7 @@ export function TechBadge({ libelle, className }: TechBadgeProps) {
     <span
       className={cn(
         "inline-flex items-center rounded px-2 py-0.5 text-xs font-medium",
-        "border border-white/10 bg-white/5 text-slate-300",
+        "border border-border bg-muted text-foreground/85",
         className
       )}
     >

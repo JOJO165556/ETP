@@ -1,350 +1,400 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import {
-  Search,
-  Download,
-  Plus,
-  MapPin,
-  Globe,
-  Briefcase,
-  ChevronRight,
-  BarChart,
-  Users,
-  TrendingUp,
-  Zap,
-  Calendar,
-} from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { Search, Download, MapPin, Mail, FileText, Eye, UserCheck, Briefcase, GraduationCap, Columns } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { usersService } from "@/services/users.service";
-import { MatchScoreRing } from "@/components/shared/match-score-ring";
-import type { CandidatVivier } from "@/types/domain";
+import type { CandidatVivier, FormationResume } from "@/types/domain";
 
-/* Page Vivier de Talents (Vue Recruteur) */
+type ViewMode = "list" | "kanban";
+
+/* Page Vivier de Talents (Vue Recruteur) — données réelles du backend */
 export default function TalentPoolPage() {
+  const [candidats, setCandidats] = useState<CandidatVivier[]>([]);
   const [candidatActif, setCandidatActif] = useState<CandidatVivier | null>(null);
+  const [recherche, setRecherche] = useState("");
   const [chargement, setChargement] = useState(true);
+  const [telechargement, setTelechargement] = useState<string | null>(null);
+  const [vueMode, setVueMode] = useState<ViewMode>("list");
 
   useEffect(() => {
-    async function chargerCandidat() {
-      try {
-        // En mode démo on force la récupération d'un candidat ou un mock
-        const data = await usersService.getCandidats();
-        if (data.items.length > 0) {
-          setCandidatActif(data.items[0]);
-        } else {
-          throw new Error("Empty list");
+    let vivant = true;
+    usersService
+      .getCandidats({ limit: 50 })
+      .then((data) => {
+        if (vivant) {
+          setCandidats(data);
+          setCandidatActif(data[0] ?? null);
         }
-      } catch (erreur) {
-        console.error("Erreur de chargement du candidat", erreur);
-        // Fallback mock
-        setCandidatActif({
-          id: "u1" as any,
-          nom_complet: "Jane Doe",
-          titre: "Senior Product Designer",
-          localisation: "San Francisco, CA",
-          annees_experience: 8,
-          langues: ["English", "German"],
-          score_correspondance: 94,
-          libelle_correspondance: "Senior Product Designer",
-          tags_correspondance: ["FINTECH EXP", "REACT CORE"],
-          experiences: [
-            {
-              id: "e1",
-              entreprise: "Stripe",
-              poste: "Lead Product Designer",
-              type_contrat: "Remote",
-              date_debut: "JAN 2021",
-              en_cours: true,
-              description:
-                "Dirige l'équipe design system pour les composants globaux de checkout. Migration réussie de plus de 400 instances d'UI historiques vers une architecture token-driven.",
-            },
-            {
-              id: "e2",
-              entreprise: "Airbnb",
-              poste: "Senior Product Designer",
-              type_contrat: "San Francisco",
-              date_debut: "JUN 2018",
-              date_fin: "DEC 2020",
-              en_cours: false,
-              description:
-                "A mené la refonte de 'Host Experience' qui a conduit à une augmentation de 15% de la rétention des hôtes au cours des 6 premiers mois.",
-            },
-          ],
-          competences: [
-            { id: "s1", nom: "Product Strategy", niveau: "EXPERT" },
-            { id: "s2", nom: "UI/Interaction Design", niveau: "EXPERT" },
-            { id: "s3", nom: "Design Systems", niveau: "EXPERT" },
-          ],
-          activite_plateforme: {
-            entretiens: 12,
-            offres: 3,
-          },
-        });
-      } finally {
-        setChargement(false);
-      }
-    }
-    chargerCandidat();
+      })
+      .catch((erreur) =>
+        console.error("Erreur de chargement du vivier", erreur)
+      )
+      .finally(() => vivant && setChargement(false));
+    return () => {
+      vivant = false;
+    };
   }, []);
 
-  if (chargement) return <div className="p-10 text-slate-500">Chargement...</div>;
-  if (!candidatActif)
-    return <div className="p-10 text-red-500">Candidat introuvable.</div>;
+  const candidatsFiltres = useMemo(() => {
+    const terme = recherche.trim().toLowerCase();
+    if (!terme) return candidats;
+    return candidats.filter((c) =>
+      [
+        c.nom_complet ?? "",
+        c.email,
+        ...(c.skills ?? []),
+        ...(c.experiences ?? []).map((e) => `${e.poste} ${e.entreprise}`),
+        ...(c.formations ?? []).map((f) => `${f.diplome} ${f.etablissement}`),
+      ]
+        .join(" ")
+        .toLowerCase()
+        .includes(terme)
+    );
+  }, [candidats, recherche]);
 
-  return (
-    <div className="flex h-full bg-[#0d1117]">
-      {/* Sidebar Recruiter (Gauche) */}
-      <aside className="hidden w-64 border-r border-white/5 bg-[#161b22] p-5 xl:flex xl:flex-col">
-        <div className="mb-6 flex flex-col">
-          <div className="flex h-10 w-10 items-center justify-center rounded bg-blue-600 text-white">
-            <BarChart size={20} />
-          </div>
-          <h2 className="mt-3 font-bold text-white">Recruiter Hub</h2>
-          <span className="text-[10px] font-medium tracking-wider text-slate-500 uppercase">
-            Enterprise Edition
-          </span>
-        </div>
+  const telechargerCV = async (candidat: CandidatVivier) => {
+    if (!candidat.has_cv) return;
+    setTelechargement(candidat.id);
+    try {
+      const { download_url } = await usersService.getLienCV(candidat.id);
+      window.open(download_url, "_blank", "noopener,noreferrer");
+    } catch (erreur) {
+      console.error("Erreur de téléchargement du CV", erreur);
+    } finally {
+      setTelechargement(null);
+    }
+  };
 
-        <button className="mb-6 flex w-full items-center justify-center gap-2 rounded bg-blue-600/20 py-2.5 text-sm font-bold text-blue-500 hover:bg-blue-600/30">
-          <Search size={16} /> Nouvelle recherche
-        </button>
+  const formaterPeriode = (debut: string | null, fin: string | null, enCours: boolean): string => {
+    const fmt = (iso: string | null) => {
+      if (!iso) return "";
+      return new Date(iso).toLocaleDateString("fr-FR", { year: "numeric", month: "short" });
+    };
+    const debutFmt = fmt(debut);
+    if (!debutFmt) return fin ? `${fmt(fin)} (antérieur)` : "";
+    return `${debutFmt} — ${enCours ? "Aujourd'hui" : fin ? fmt(fin) : "à ce jour"}`;
+  };
 
-        <nav className="space-y-1">
-          <button className="flex w-full items-center gap-3 rounded bg-blue-600 px-3 py-2 text-sm font-medium text-white">
-            <Users size={18} className="text-white" /> Vivier de talents
-          </button>
-          <button className="flex w-full items-center gap-3 rounded px-3 py-2 text-sm font-medium text-slate-400 hover:bg-white/5 hover:text-white">
-            <TrendingUp size={18} /> Pipelines
-          </button>
-          <button className="flex w-full items-center gap-3 rounded px-3 py-2 text-sm font-medium text-slate-400 hover:bg-white/5 hover:text-white">
-            <Zap size={18} /> Match IA
-          </button>
-          <button className="flex w-full items-center gap-3 rounded px-3 py-2 text-sm font-medium text-slate-400 hover:bg-white/5 hover:text-white">
-            <Calendar size={18} /> Entretiens
-          </button>
-        </nav>
-      </aside>
+  if (chargement) {
+    return (
+      <div className="p-10 text-[var(--color-muted-foreground)]">
+        <div className="h-8 w-56 animate-pulse rounded-md bg-[var(--surface-popover)]" />
+        <div className="mt-4 h-32 animate-pulse rounded-2xl bg-[var(--surface-popover)]/70" />
+      </div>
+    );
+  }
 
-      {/* Contenu principal (Centre) */}
-      <div className="flex-1 overflow-y-auto p-6 lg:p-10">
-        {/* Top Header */}
-        <div className="mb-6 flex items-center justify-between">
-          <div className="flex space-x-6 text-sm font-medium">
-            <span className="border-b-2 border-blue-500 pb-1 text-white">
-              Vivier de talents
-            </span>
-            <span className="text-slate-400 hover:text-slate-300">Pipelines</span>
-            <span className="text-slate-400 hover:text-slate-300">Entretiens</span>
-          </div>
-          <div className="flex w-64 items-center gap-2 rounded-lg border border-white/10 bg-[#161b22] px-3 py-2">
-            <Search size={16} className="text-slate-500" />
-            <input
-              type="text"
-              placeholder="Rechercher des talents..."
-              className="w-full bg-transparent text-sm text-white placeholder-slate-500 outline-none"
-            />
-          </div>
-        </div>
-
-        {/* Action Header */}
-        <div className="mb-6 flex items-center justify-between">
-          <div className="text-sm font-medium text-slate-400">
-            Vivier de talents &gt; Design &gt;{" "}
-            <span className="text-white">{candidatActif.nom_complet}</span>
-          </div>
-          <div className="flex gap-3">
-            <button className="flex items-center gap-2 rounded-lg border border-white/20 bg-transparent px-4 py-2 text-sm font-medium text-white hover:bg-white/5">
-              <Download size={16} /> Télécharger le CV
-            </button>
-            <button className="flex items-center gap-2 rounded-lg bg-blue-100 px-4 py-2 text-sm font-medium text-blue-900 hover:bg-blue-200">
-              <Plus size={16} /> Ajouter au Pipeline
-            </button>
-          </div>
-        </div>
-
-        {/* Profil Carte */}
-        <div className="mb-6 flex flex-col gap-6 rounded-2xl border border-white/5 bg-[#161b22] p-8 md:flex-row">
-          <div className="h-32 w-32 shrink-0 overflow-hidden rounded-xl bg-slate-800">
-            {candidatActif.avatar_url ? (
-              <img
-                src={candidatActif.avatar_url}
-                alt=""
-                className="h-full w-full object-cover"
-              />
-            ) : (
-              <div className="flex h-full w-full items-center justify-center text-4xl font-bold text-white">
-                {candidatActif.nom_complet.charAt(0)}
-              </div>
-            )}
-          </div>
-          <div className="flex-1 space-y-3">
-            <h1 className="text-3xl font-bold text-white">{candidatActif.nom_complet}</h1>
-            <p className="text-lg text-slate-300">{candidatActif.titre}</p>
-            <div className="flex flex-wrap gap-6 pt-2 text-sm text-slate-400">
-              <span className="flex items-center gap-2">
-                <MapPin size={16} /> {candidatActif.localisation}
-              </span>
-              <span className="flex items-center gap-2">
-                <Briefcase size={16} /> {candidatActif.annees_experience}+ Années
-                d'expérience
-              </span>
-              <span className="flex items-center gap-2">
-                <Globe size={16} /> {candidatActif.langues?.join(", ")}
-              </span>
-            </div>
-          </div>
-          <div className="flex flex-col justify-center gap-3">
-            <button className="w-48 rounded bg-blue-600 py-2.5 text-sm font-bold text-white hover:bg-blue-500">
-              Planifier un entretien
-            </button>
-            <div className="flex gap-2">
-              <button className="flex flex-1 justify-center rounded border border-white/10 bg-white/5 py-2 text-white hover:bg-white/10">
-                <ChevronRight size={18} />
-              </button>
-              <button className="flex flex-1 justify-center rounded border border-white/10 bg-white/5 py-2 text-white hover:bg-white/10">
-                <ChevronRight size={18} />
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <div className="grid gap-6 lg:grid-cols-2">
-          {/* Expérience */}
-          <section className="rounded-2xl border border-white/5 bg-[#161b22] p-6">
-            <h2 className="mb-6 flex items-center gap-2 text-lg font-bold text-white">
-              Expérience Professionnelle
-            </h2>
-            <div className="space-y-6">
-              {candidatActif.experiences.map((exp) => (
-                <div
-                  key={exp.id}
-                  className="relative pl-10 before:absolute before:top-2 before:bottom-0 before:left-[19px] before:w-px before:bg-white/10"
-                >
-                  <div className="absolute top-2 left-2 h-4 w-4 rounded-full border-2 border-white/20 bg-[#161b22]" />
-                  <div className="mb-1 flex items-start justify-between">
-                    <h3 className="font-bold text-white">{exp.poste}</h3>
-                    <span className="font-mono text-xs text-slate-500">
-                      {exp.date_debut} — {exp.en_cours ? "PRÉSENT" : exp.date_fin}
-                    </span>
-                  </div>
-                  <p className="mb-2 text-sm font-medium text-slate-400">
-                    {exp.entreprise} • {exp.type_contrat}
-                  </p>
-                  <p className="text-sm leading-relaxed text-slate-300">
-                    {exp.description}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </section>
-
-          {/* Compétences techniques */}
-          <section className="rounded-2xl border border-white/5 bg-[#161b22] p-6">
-            <h2 className="mb-6 flex items-center gap-2 text-lg font-bold text-white">
-              Maîtrise Technique
-            </h2>
-            <div className="space-y-4">
-              {candidatActif.competences.map((comp) => (
-                <div key={comp.id}>
-                  <div className="mb-1 flex justify-between text-sm">
-                    <span className="font-medium text-white">{comp.nom}</span>
-                    <span className="text-slate-400">{comp.niveau}</span>
-                  </div>
-                  <div className="h-2 w-full rounded-full bg-white/10">
-                    <div
-                      className="h-full rounded-full bg-blue-500"
-                      style={{ width: comp.niveau === "EXPERT" ? "95%" : "70%" }}
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
-          </section>
+  if (candidats.length === 0) {
+    return (
+      <div className="flex h-full items-center justify-center p-10">
+        <div className="text-center text-[var(--color-muted-foreground)]">
+          <Search size={40} className="mx-auto mb-4 opacity-40" aria-hidden="true" />
+          <p>Aucun candidat pour le moment.</p>
         </div>
       </div>
+    );
+  }
 
-      {/* Sidebar Analytique (Droite) */}
-      <aside className="hidden w-80 overflow-y-auto border-l border-white/5 bg-[#0d1117] p-6 lg:block">
-        {/* Match IA */}
-        <div className="mb-6 rounded-2xl border border-white/5 bg-[#161b22] p-6 text-center">
-          <div className="mx-auto mb-4 w-24">
-            <MatchScoreRing
-              score={candidatActif.score_correspondance || 0}
-              taille={100}
-              epaisseur={6}
-            />
+  if (vueMode === "kanban") {
+    // Vue Kanban du pipeline ATS
+    const KANBAN_COLUMNS = [
+      { id: "applied", label: "Postulé", color: "var(--stage-applied)" },
+      { id: "screening", label: "Présélection", color: "var(--stage-screening)" },
+      { id: "interview", label: "Entretien", color: "var(--stage-interview)" },
+      { id: "offer", label: "Offre", color: "var(--stage-offer)" },
+      { id: "hired", label: "Embauché", color: "var(--stage-hired)" },
+    ];
+
+    return (
+      <div className="flex h-full flex-col p-6 lg:p-10">
+        {/* En-tête Kanban */}
+        <header className="mb-6 flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight text-[var(--color-foreground)]">
+              Pipeline ATS
+            </h1>
+            <p className="mt-1 text-sm text-[var(--color-muted-foreground)]">
+              Vue Kanban des candidatures par étape.
+            </p>
           </div>
-          <h3 className="mb-2 font-bold text-white">
-            {candidatActif.libelle_correspondance}
-          </h3>
-          <p className="mb-4 text-xs leading-relaxed text-slate-400">
-            Alignement exceptionnel avec la réflexion systémique et les flux de travail
-            design-to-code.
-          </p>
-          <div className="flex flex-wrap justify-center gap-2">
-            {candidatActif.tags_correspondance?.map((tag) => (
-              <span
-                key={tag}
-                className="rounded bg-white/10 px-2 py-1 text-[10px] font-bold text-slate-300"
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setVueMode("list")}
+              className="transition-colors duration-150 active:scale-[0.98] @media/hover:hover:scale-100"
+            >
+              Liste
+            </Button>
+            <Button
+              variant="default"
+              onClick={() => setVueMode("kanban")}
+              className="transition-colors duration-150 active:scale-[0.98] @media/hover:hover:scale-100"
+            >
+              <Columns size={16} className="mr-2" />
+              Kanban
+            </Button>
+          </div>
+        </header>
+
+        {/* Grille Kanban */}
+        <div className="flex-1 overflow-x-auto">
+          <div className="flex gap-4 h-full min-w-max">
+            {KANBAN_COLUMNS.map((col) => (
+              <div
+                key={col.id}
+                className="w-80 flex flex-col rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-card)]"
               >
-                {tag}
-              </span>
+                {/* En-tête de colonne */}
+                <div className="border-b border-[var(--border-subtle)] p-4">
+                  <div className="flex items-center gap-2">
+                    <div
+                      className="h-3 w-3 rounded-full"
+                      style={{ backgroundColor: col.color }}
+                    />
+                    <h3 className="font-bold text-[var(--color-foreground)]">{col.label}</h3>
+                    <Badge variant="secondary" className="ml-auto">
+                      0
+                    </Badge>
+                  </div>
+                </div>
+
+                {/* Contenu de la colonne */}
+                <div className="flex-1 overflow-y-auto p-3 space-y-2">
+                  <p className="text-center text-sm text-[var(--color-muted-foreground)] py-8">
+                    Aucune candidature
+                  </p>
+                </div>
+              </div>
             ))}
           </div>
         </div>
+      </div>
+    );
+  }
 
-        {/* Notes recruteur */}
-        <div className="mb-6 rounded-2xl border border-white/5 bg-[#161b22] p-6">
-          <div className="mb-4 flex items-center justify-between">
-            <h3 className="font-bold text-white">Notes du recruteur</h3>
-            <span className="rounded bg-slate-800 px-2 py-0.5 text-[10px] font-bold text-slate-400">
-              PRIVÉ
-            </span>
+  return (
+    <div className="flex h-full">
+      {/* Liste des candidats (Gauche) */}
+      <aside className="flex w-72 shrink-0 flex-col border-r border-[var(--border-subtle)] bg-[var(--surface-card)]">
+        <div className="border-b border-[var(--border-subtle)] p-4">
+          <div className="flex items-center gap-2 rounded-lg border border-[var(--border-subtle)] bg-[var(--surface-canvas)] px-3 py-2">
+            <Search size={16} className="shrink-0 text-[var(--color-muted-foreground)]" aria-hidden="true" />
+            <input
+              type="text"
+              value={recherche}
+              onChange={(e) => setRecherche(e.target.value)}
+              placeholder="Rechercher des talents..."
+              className="w-full bg-transparent text-sm text-[var(--color-foreground)] placeholder:text-[var(--color-muted-foreground)] outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]/30 rounded transition-colors duration-150"
+            />
           </div>
-          <div className="mb-4 rounded-lg bg-slate-900/50 p-4 text-sm text-slate-300 italic">
-            "Jane possède une combinaison incroyablement rare de design visuel haut de
-            gamme et d'une compréhension profonde de l'ingénierie front-end. Recommandée
-            par notre CTO."
-            <div className="mt-2 flex justify-between text-xs text-slate-500 not-italic">
-              <span>— Marcus (Recruiting Mgr)</span>
-              <span>Il y a 2j</span>
-            </div>
-          </div>
-          <textarea
-            placeholder="Ajouter une nouvelle note d'évaluation..."
-            className="mb-3 w-full rounded-lg border border-white/10 bg-slate-900/50 p-3 text-sm text-white placeholder-slate-500 outline-none focus:border-blue-500"
-            rows={3}
-          />
-          <button className="w-full rounded-lg bg-white/10 py-2 text-sm font-bold text-white hover:bg-white/20">
-            Enregistrer la note
-          </button>
         </div>
 
-        {/* Activité */}
-        <div className="rounded-2xl border border-white/5 bg-[#161b22] p-6">
-          <h3 className="mb-4 flex items-center justify-between font-bold text-white">
-            Activité sur la plateforme <BarChart size={16} className="text-slate-400" />
-          </h3>
-          <div className="flex gap-4">
-            <div className="flex-1 rounded-xl bg-slate-900/50 p-4 text-center">
-              <div className="text-2xl font-bold text-white">
-                {candidatActif.activite_plateforme?.entretiens}
-              </div>
-              <div className="text-[10px] font-bold tracking-wider text-slate-500 uppercase">
-                Entretiens
-              </div>
-            </div>
-            <div className="flex-1 rounded-xl bg-slate-900/50 p-4 text-center">
-              <div className="text-2xl font-bold text-white">
-                {candidatActif.activite_plateforme?.offres}
-              </div>
-              <div className="text-[10px] font-bold tracking-wider text-slate-500 uppercase">
-                Offres
-              </div>
-            </div>
-          </div>
+        <div className="flex-1 overflow-y-auto p-3">
+          {candidatsFiltres.length === 0 ? (
+            <p className="p-4 text-center text-sm text-[var(--color-muted-foreground)]">
+              Aucun résultat pour votre recherche.
+            </p>
+          ) : (
+            candidatsFiltres.map((candidat) => (
+              <button
+                key={candidat.id}
+                onClick={() => setCandidatActif(candidat)}
+                className={`mb-2 w-full rounded-lg border p-3 text-left transition-colors duration-150 active:scale-[0.98] @media/hover:hover:scale-100 ${
+                  candidatActif?.id === candidat.id
+                    ? "border-[var(--color-primary)]/40 bg-[var(--color-primary)]/10"
+                    : "border-[var(--border-subtle)] bg-[var(--surface-canvas)] hover:border-[var(--color-foreground)]/15"
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[var(--surface-popover)] text-sm font-bold text-[var(--color-foreground)]">
+                    {(candidat.nom_complet ?? "?").charAt(0).toUpperCase()}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-semibold text-[var(--color-foreground)]">
+                      {candidat.nom_complet ?? "Candidat"}
+                    </p>
+                    <p className="truncate text-xs text-[var(--color-muted-foreground)]">{candidat.email}</p>
+                  </div>
+                </div>
+              </button>
+            ))
+          )}
         </div>
       </aside>
+
+      {/* Profil du candidat (Centre) */}
+      <div className="flex-1 overflow-y-auto p-6 lg:p-10">
+        <div className="mb-6 flex items-center justify-between">
+          <div className="text-sm font-medium text-[var(--color-muted-foreground)]">
+            Vivier de talents <span className="text-[var(--color-foreground)]/30">&gt;</span>{" "}
+            <span className="text-[var(--color-foreground)]">{candidatActif?.nom_complet}</span>
+          </div>
+          <div className="flex gap-2">
+            <Button
+              variant="default"
+              onClick={() => setVueMode("list")}
+              size="sm"
+              className="transition-colors duration-150 active:scale-[0.98] @media/hover:hover:scale-100"
+            >
+              Liste
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => setVueMode("kanban")}
+              size="sm"
+              className="transition-colors duration-150 active:scale-[0.98] @media/hover:hover:scale-100"
+            >
+              <Columns size={16} className="mr-2" />
+              Kanban
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => candidatActif && telechargerCV(candidatActif)}
+              disabled={!candidatActif?.has_cv || telechargement === candidatActif?.id}
+              className="gap-2 transition-colors duration-150 active:scale-[0.98] @media/hover:hover:scale-100"
+            >
+              <Download size={16} aria-hidden="true" />
+              {candidatActif?.has_cv
+                ? telechargement === candidatActif?.id
+                  ? "Génération du lien..."
+                  : "Télécharger le CV"
+                : "Pas de CV"}
+            </Button>
+          </div>
+        </div>
+
+        {candidatActif && (
+          <>
+            {/* Carte profil */}
+            <div className="mb-6 flex flex-col gap-6 rounded-2xl border border-[var(--border-subtle)] bg-[var(--surface-card)] p-8 sm:flex-row transition-shadow duration-200 hover:shadow-md">
+              <div className="flex h-24 w-24 shrink-0 items-center justify-center rounded-xl bg-[var(--surface-popover)] text-4xl font-bold text-[var(--color-foreground)]">
+                {(candidatActif.nom_complet ?? "?").charAt(0).toUpperCase()}
+              </div>
+              <div className="flex-1 space-y-3">
+                <h1 className="text-3xl font-bold text-[var(--color-foreground)]">
+                  {candidatActif.nom_complet ?? "Candidat"}
+                </h1>
+                <div className="flex flex-wrap gap-4 text-sm">
+                  {candidatActif.localisation && (
+                    <span className="flex items-center gap-2 text-[var(--color-muted-foreground)]">
+                      <MapPin size={16} aria-hidden="true" /> {candidatActif.localisation}
+                    </span>
+                  )}
+                  <span className="flex items-center gap-2 text-[var(--color-muted-foreground)]">
+                    <Mail size={16} aria-hidden="true" /> {candidatActif.email}
+                  </span>
+                </div>
+
+                {candidatActif.skills.length > 0 && (
+                  <div className="flex flex-wrap gap-2 pt-2">
+                    {candidatActif.skills.map((skill) => (
+                      <Badge key={skill} variant="secondary">{skill}</Badge>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Indicateurs */}
+            <div className="mb-8 grid gap-6 sm:grid-cols-3">
+              <div className="rounded-2xl border border-[var(--border-subtle)] bg-[var(--surface-card)] p-5 transition-shadow duration-200 hover:shadow-md">
+                <div className="mb-2 flex items-center gap-2 text-[var(--color-muted-foreground)]">
+                  <FileText size={16} aria-hidden="true" />
+                  <span className="text-xs font-semibold tracking-wider uppercase">CV déposé</span>
+                </div>
+                <p className="text-sm font-medium text-[var(--color-foreground)]">
+                  {candidatActif.has_cv ? "Disponible" : "Non téléversé"}
+                </p>
+              </div>
+
+              <div className="rounded-2xl border border-[var(--border-subtle)] bg-[var(--surface-card)] p-5 transition-shadow duration-200 hover:shadow-md">
+                <div className="mb-2 flex items-center gap-2 text-[var(--color-muted-foreground)]">
+                  <Eye size={16} aria-hidden="true" />
+                  <span className="text-xs font-semibold tracking-wider uppercase">Profil public</span>
+                </div>
+                <p className="text-sm font-medium text-[var(--color-foreground)]">
+                  {candidatActif.profil_public ? "Visible" : "Masqué"}
+                </p>
+              </div>
+
+              <div className="rounded-2xl border border-[var(--border-subtle)] bg-[var(--surface-card)] p-5 transition-shadow duration-200 hover:shadow-md">
+                <div className="mb-2 flex items-center gap-2 text-[var(--color-muted-foreground)]">
+                  <UserCheck size={16} aria-hidden="true" />
+                  <span className="text-xs font-semibold tracking-wider uppercase">Recherchable</span>
+                </div>
+                <p className="text-sm font-medium text-[var(--color-foreground)]">
+                  {candidatActif.recherchable ? "Oui" : "Non"}
+                </p>
+              </div>
+            </div>
+
+            {/* Parcours professionnel */}
+            <section className="mb-8">
+              <h2 className="mb-4 flex items-center gap-2 text-xl font-bold text-[var(--color-foreground)]">
+                <Briefcase size={20} className="text-[var(--color-muted-foreground)]" aria-hidden="true" /> Parcours professionnel
+              </h2>
+              {(candidatActif.experiences ?? []).length === 0 ? (
+                <div className="rounded-xl border border-dashed border-[var(--border-subtle)] bg-[var(--surface-card)] p-8 text-center text-sm text-[var(--color-muted-foreground)]">
+                  Aucune expérience renseignée.
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {(candidatActif.experiences ?? []).map((exp, idx) => (
+                    <div key={`${exp.poste}-${exp.entreprise}-${idx}`} className="rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-card)] p-5 transition-shadow duration-200 hover:shadow-md">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="text-base font-bold text-[var(--color-foreground)]">{exp.poste}</span>
+                        {exp.type_contrat && <Badge variant="secondary">{exp.type_contrat}</Badge>}
+                        {exp.en_cours && <Badge variant="success">En cours</Badge>}
+                      </div>
+                      <p className="mt-1 text-sm font-medium text-[var(--color-foreground)]/80">{exp.entreprise}</p>
+                      <p className="mt-0.5 text-xs text-[var(--color-muted-foreground)]">
+                        {formaterPeriode(exp.date_debut, exp.date_fin ?? null, exp.en_cours)}
+                      </p>
+                      {exp.description && (
+                        <p className="mt-2 text-sm leading-relaxed text-[var(--color-foreground)]/70">
+                          {exp.description}
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </section>
+
+            {/* Formations */}
+            <section>
+              <h2 className="mb-4 flex items-center gap-2 text-xl font-bold text-[var(--color-foreground)]">
+                <GraduationCap size={20} className="text-[var(--color-muted-foreground)]" aria-hidden="true" /> Formations
+              </h2>
+              {(candidatActif.formations ?? []).length === 0 ? (
+                <div className="rounded-xl border border-dashed border-[var(--border-subtle)] bg-[var(--surface-card)] p-8 text-center text-sm text-[var(--color-muted-foreground)]">
+                  Aucune formation renseignée.
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {(candidatActif.formations ?? []).map((formation: FormationResume, idx) => (
+                    <div key={`${formation.diplome}-${formation.etablissement}-${idx}`} className="flex items-start justify-between gap-4 rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-card)] p-5 transition-shadow duration-200 hover:shadow-md">
+                      <div className="space-y-1">
+                        <div className="text-base font-bold text-[var(--color-foreground)]">{formation.diplome}</div>
+                        <p className="text-sm font-medium text-[var(--color-foreground)]/80">
+                          {formation.etablissement}
+                        </p>
+                        {formation.domaine && (
+                          <p className="text-xs text-[var(--color-muted-foreground)]">{formation.domaine}</p>
+                        )}
+                      </div>
+                      <Badge variant="outline">{formation.annee}</Badge>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </section>
+          </>
+        )}
+      </div>
     </div>
   );
 }

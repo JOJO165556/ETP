@@ -7,6 +7,8 @@ import Link from "next/link";
 import { Loader2, Mail, ArrowLeft, CheckCircle } from "lucide-react";
 import * as z from "zod";
 
+import { isFirebaseConfigured, sendPasswordReset } from "@/lib/firebase";
+
 /* Schéma de validation pour l'adresse email */
 const schema = z.object({
   email: z.string().email("Adresse email invalide"),
@@ -28,18 +30,22 @@ function ForgotPasswordForm() {
   const onSubmit = async (data: FormValues) => {
     setError(null);
     try {
-      const res = await fetch("/api/v1/auth/forgot-password", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: data.email }),
-      });
-
-      /* On affiche toujours le message de succès même si l'email n'existe pas
-         (sécurité : éviter l'énumération d'emails) */
-      if (res.ok || res.status === 404) {
+      if (isFirebaseConfigured()) {
+        // Le lien de réinitialisation est géré par Firebase (sendPasswordResetEmail)
+        await sendPasswordReset(data.email);
         setSent(true);
       } else {
-        throw new Error("Erreur lors de l'envoi");
+        // Mode dégradé : avant la migration Firebase
+        const res = await fetch("/api/v1/auth/forgot-password", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: data.email }),
+        });
+        if (res.ok || res.status === 404) {
+          setSent(true);
+        } else {
+          throw new Error("Erreur lors de l'envoi");
+        }
       }
     } catch {
       setError("Une erreur est survenue. Veuillez réessayer.");

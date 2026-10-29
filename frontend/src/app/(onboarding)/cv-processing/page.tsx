@@ -37,35 +37,65 @@ export default function CVProcessingPage() {
   const router = useRouter();
   const [activeStep, setActiveStep] = useState(1);
   const [completedSteps, setCompletedSteps] = useState<number[]>([]);
+  const [nomFichier, setNomFichier] = useState("CV.pdf");
+
+  useEffect(() => {
+    setNomFichier(sessionStorage.getItem("cv_filename") ?? "CV.pdf");
+  }, []);
 
   /* Polling de l'API pour vérifier si la tâche asynchrone a complété l'extraction */
   useEffect(() => {
     let isCancelled = false;
     let pollInterval: NodeJS.Timeout;
 
-    const checkExtractionStatus = async () => {
+    const taskId = sessionStorage.getItem("cv_task_id");
+
+    const checkStatus = async () => {
       try {
-        const res = await api.get<any>("/auth/me");
-        // Si l'utilisateur est bien candidat et que l'IA a mis à jour les compétences
-        if (res.role === "candidate" && res.profile && res.profile.skills && res.profile.skills.length > 0) {
-          if (!isCancelled) {
-            setCompletedSteps([1, 2, 3]);
-            setActiveStep(3);
-            clearInterval(pollInterval);
-            sessionStorage.setItem("cv_profile_data", JSON.stringify(res.profile));
-            setTimeout(() => router.push("/cv-review"), 1000);
+        if (taskId) {
+          // Polling ciblé sur le statut de la tâche Celery
+          const res = await api.get<{
+            task_id: string;
+            application_id: string;
+            status: string;
+            result?: Record<string, unknown>;
+          }>(`/applications/tasks/${taskId}/status`);
+
+          if (res.status === "SUCCESS" || res.status === "FAILURE") {
+            if (!isCancelled) {
+              setCompletedSteps([1, 2, 3]);
+              setActiveStep(3);
+              clearInterval(pollInterval);
+              sessionStorage.removeItem("cv_task_id");
+              setTimeout(() => router.push("/cv-review"), 1000);
+            }
+          }
+        } else {
+          // Fallback : vérifier si le profil a des compétences extraites
+          const res = await api.get<{
+            role?: string;
+            profile?: { skills?: string[] } | null;
+          }>("/users/me");
+          if (res.profile?.skills && res.profile.skills.length > 0) {
+            if (!isCancelled) {
+              setCompletedSteps([1, 2, 3]);
+              setActiveStep(3);
+              clearInterval(pollInterval);
+              sessionStorage.setItem("cv_profile_data", JSON.stringify(res.profile));
+              setTimeout(() => router.push("/cv-review"), 1000);
+            }
           }
         }
       } catch (err) {
-        console.error("Erreur lors de la vérification du profil:", err);
+        console.error("Erreur lors de la vérification du statut:", err);
       }
     };
 
-    // Lancer une première vérification après 2 secondes, puis toutes les 3 secondes
+    // Première vérification après 2 secondes, puis toutes les 3 secondes
     const initialTimeout = setTimeout(() => {
       setActiveStep(2);
-      checkExtractionStatus();
-      pollInterval = setInterval(checkExtractionStatus, 3000);
+      checkStatus();
+      pollInterval = setInterval(checkStatus, 3000);
     }, 2000);
 
     return () => {
@@ -85,28 +115,28 @@ export default function CVProcessingPage() {
       <div className="flex w-full flex-col lg:w-1/2">
         <div className="mb-4 flex items-center justify-between">
           <div>
-            <h2 className="text-sm font-bold text-white">Document Source</h2>
-            <p className="text-xs text-gray-500">mon_cv_2024.pdf</p>
+            <h2 className="text-sm font-bold text-foreground">Document Source</h2>
+            <p className="text-xs text-muted-foreground">{nomFichier}</p>
           </div>
-          <span className="text-primary rounded border border-white/5 bg-white/5 px-2 py-1 text-[10px] font-bold tracking-wider uppercase">
+          <span className="text-primary rounded border border-border bg-muted px-2 py-1 text-[10px] font-bold tracking-wider uppercase">
             Données Brutes
           </span>
         </div>
 
-        <div className="relative h-[500px] flex-1 overflow-hidden rounded-xl border border-white/10 bg-white/5 p-8">
+        <div className="relative h-[500px] flex-1 overflow-hidden rounded-xl border border-border bg-muted p-8">
           {/* Lignes simulant le document scanné */}
           <div className="absolute inset-0 space-y-6 p-8 opacity-70 blur-[3px]">
-            <div className="h-8 w-1/2 rounded bg-white/20" />
+            <div className="h-8 w-1/2 rounded bg-foreground/20" />
             <div className="space-y-3">
-              <div className="h-4 w-full rounded bg-white/10" />
-              <div className="h-4 w-5/6 rounded bg-white/10" />
-              <div className="h-4 w-4/6 rounded bg-white/10" />
+              <div className="h-4 w-full rounded bg-foreground/10" />
+              <div className="h-4 w-5/6 rounded bg-foreground/10" />
+              <div className="h-4 w-4/6 rounded bg-foreground/10" />
             </div>
-            <div className="mt-8 h-6 w-1/3 rounded bg-white/15" />
+            <div className="mt-8 h-6 w-1/3 rounded bg-foreground/15" />
             <div className="space-y-3">
-              <div className="h-4 w-full rounded bg-white/10" />
-              <div className="h-4 w-full rounded bg-white/10" />
-              <div className="h-4 w-3/4 rounded bg-white/10" />
+              <div className="h-4 w-full rounded bg-foreground/10" />
+              <div className="h-4 w-full rounded bg-foreground/10" />
+              <div className="h-4 w-3/4 rounded bg-foreground/10" />
             </div>
           </div>
 
@@ -114,7 +144,7 @@ export default function CVProcessingPage() {
           <motion.div
             animate={{ top: ["0%", "100%", "0%"] }}
             transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
-            className="bg-primary absolute right-0 left-0 z-10 h-1 shadow-[0_0_20px_rgba(59,130,246,1)]"
+            className="bg-primary absolute right-0 left-0 z-10 h-1 shadow-[0_0_20px_var(--color-primary)]"
           />
         </div>
       </div>
@@ -122,20 +152,20 @@ export default function CVProcessingPage() {
       {/* Colonne de droite : Pipeline de traitement IA */}
       <div className="flex w-full flex-col justify-center space-y-10 lg:w-1/2">
         <div className="space-y-2">
-          <div className="flex items-center gap-3 text-white">
+          <div className="flex items-center gap-3 text-foreground">
             <Cpu className="text-primary animate-pulse" size={28} />
             <h1 className="text-3xl font-bold tracking-tight">
               Extraction Neurale Active
             </h1>
           </div>
-          <p className="text-sm text-gray-400">
+          <p className="text-sm text-muted-foreground">
             Structuration des données non-structurées selon la taxonomie ETP.
           </p>
         </div>
 
         <div className="relative space-y-6 pl-6">
           {/* Ligne verticale de progression globale */}
-          <div className="absolute top-5 bottom-5 left-3.5 w-px bg-white/10" />
+          <div className="absolute top-5 bottom-5 left-3.5 w-px bg-border" />
 
           {/* Ligne bleue de progression animée */}
           <motion.div
@@ -154,15 +184,15 @@ export default function CVProcessingPage() {
                 {/* Icône de statut de l'étape */}
                 <div className="absolute top-4 -left-10">
                   {isCompleted ? (
-                    <div className="bg-primary flex h-7 w-7 items-center justify-center rounded-full text-white">
+                    <div className="bg-primary flex h-7 w-7 items-center justify-center rounded-full text-primary-foreground">
                       <CheckCircle2 size={16} />
                     </div>
                   ) : isActive ? (
-                    <div className="border-primary flex h-7 w-7 items-center justify-center rounded-full border-2 bg-[#0f1423]">
+                    <div className="border-primary flex h-7 w-7 items-center justify-center rounded-full border-2 bg-background">
                       <div className="bg-primary h-2.5 w-2.5 animate-ping rounded-full" />
                     </div>
                   ) : (
-                    <div className="flex h-7 w-7 items-center justify-center rounded-full border border-white/20 bg-[#0f1423] text-gray-500">
+                    <div className="flex h-7 w-7 items-center justify-center rounded-full border border-border bg-background text-muted-foreground">
                       <Clock size={14} />
                     </div>
                   )}
@@ -173,9 +203,9 @@ export default function CVProcessingPage() {
                   className={cn(
                     "rounded-xl border p-5 transition-all duration-300",
                     isCompleted
-                      ? "border-white/5 bg-white/5 opacity-60"
+                      ? "border-border bg-muted opacity-60"
                       : isActive
-                        ? "border-primary/30 bg-primary/5 shadow-[0_0_30px_rgba(59,130,246,0.1)]"
+                        ? "border-primary/30 bg-primary/5 shadow-[0_0_30px_color-mix(in_oklch,var(--color-primary)_10%,transparent)]"
                         : "border-transparent opacity-30"
                   )}
                 >
@@ -183,13 +213,13 @@ export default function CVProcessingPage() {
                     <h3
                       className={cn(
                         "text-base font-bold",
-                        isActive ? "text-white" : "text-gray-300"
+                        isActive ? "text-foreground" : "text-foreground/85"
                       )}
                     >
                       {step.title}
                     </h3>
                     {isCompleted && (
-                      <span className="font-mono text-xs text-gray-500">100%</span>
+                      <span className="font-mono text-xs text-muted-foreground">100%</span>
                     )}
                     {isActive && (
                       <span className="text-primary animate-pulse font-mono text-xs">
@@ -197,19 +227,19 @@ export default function CVProcessingPage() {
                       </span>
                     )}
                   </div>
-                  <p className="mb-3 text-xs text-gray-400">{step.subtitle}</p>
+                  <p className="mb-3 text-xs text-muted-foreground">{step.subtitle}</p>
 
                   {/* Squelettes de chargement (seulement pour l'étape 2) */}
                   {step.id === 2 && isActive && (
                     <div className="mt-4 space-y-2">
                       <div className="flex gap-2">
-                        <div className="h-6 w-24 animate-pulse rounded bg-white/10" />
-                        <div className="h-6 w-32 animate-pulse rounded bg-white/10" />
+                        <div className="h-6 w-24 animate-pulse rounded bg-foreground/10" />
+                        <div className="h-6 w-32 animate-pulse rounded bg-foreground/10" />
                       </div>
-                      <div className="h-6 w-full animate-pulse rounded bg-white/10" />
+                      <div className="h-6 w-full animate-pulse rounded bg-foreground/10" />
                       <div className="flex gap-2">
-                        <div className="h-6 w-16 animate-pulse rounded-full bg-white/10" />
-                        <div className="h-6 w-20 animate-pulse rounded-full bg-white/10" />
+                        <div className="h-6 w-16 animate-pulse rounded-full bg-foreground/10" />
+                        <div className="h-6 w-20 animate-pulse rounded-full bg-foreground/10" />
                       </div>
                     </div>
                   )}
@@ -220,14 +250,14 @@ export default function CVProcessingPage() {
         </div>
 
         {/* Pied de page et bouton inactif en attente */}
-        <div className="flex items-center justify-between border-t border-white/5 pt-8">
-          <div className="flex items-center gap-2 font-mono text-xs tracking-widest text-gray-500 uppercase">
+        <div className="flex items-center justify-between border-t border-border pt-8">
+          <div className="flex items-center gap-2 font-mono text-xs tracking-widest text-muted-foreground uppercase">
             <Lock size={12} />
             Chiffrement de bout en bout
           </div>
           <button
             disabled
-            className="flex cursor-not-allowed items-center gap-2 rounded-lg border border-white/5 bg-white/5 px-6 py-2.5 text-sm font-semibold text-gray-500"
+            className="flex cursor-not-allowed items-center gap-2 rounded-lg border border-border bg-muted px-6 py-2.5 text-sm font-semibold text-muted-foreground"
           >
             Examiner le Profil
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none">

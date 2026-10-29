@@ -1,20 +1,26 @@
 import { api } from "@/lib/api";
-import type { PaginatedResponse } from "@/types";
-import type { Candidature } from "@/types/domain";
+import type { CandidatureAPI } from "@/types/domain";
 
-export interface PayloadCreationCandidature {
-  job_id: string;
-  cover_letter?: string;
+export interface TaskStatusResponse {
+  task_id: string;
+  application_id: string;
+  status: string;
+  result?: Record<string, unknown>;
+  matching_score?: number;
+  stage?: string;
 }
 
-/* Service pour la gestion des candidatures du candidat */
+/* Service pour le suivi des candidatures du candidat et du recruteur */
 export const applicationsService = {
-  getMesCandidatures: (): Promise<PaginatedResponse<Candidature>> =>
-    api.get<PaginatedResponse<Candidature>>("/applications"),
+  getMesCandidatures: (): Promise<CandidatureAPI[]> =>
+    api.get<CandidatureAPI[]>("/applications/me"),
 
-  creerCandidature: (payload: PayloadCreationCandidature): Promise<Candidature> =>
-    api.post<Candidature>("/applications", payload),
+  getTaskStatus: (taskId: string): Promise<TaskStatusResponse> =>
+    api.get<TaskStatusResponse>(`/applications/tasks/${taskId}/status`),
 
-  retirerCandidature: (id: string): Promise<void> =>
-    api.delete<void>(`/applications/${id}`),
+  updateStage: (applicationId: string, stage: string): Promise<CandidatureAPI> =>
+    api.patch<CandidatureAPI>(`/applications/${applicationId}/stage`, { stage }),
+
+  getJobApplications: (jobId: string): Promise<CandidatureAPI[]> =>
+    api.get<CandidatureAPI[]>(`/applications/jobs/${jobId}`),
 };

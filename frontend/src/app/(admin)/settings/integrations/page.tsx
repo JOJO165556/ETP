@@ -1,16 +1,28 @@
 "use client";
 
-import { MessageSquare, Users, Video, Calendar, Leaf, Settings } from "lucide-react";
+import { MessageSquare, Users, Video, Calendar, Leaf, Settings, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 
-const INTEGRATIONS = [
+type StatutIntegration = "connected" | "available" | "pending";
+
+const INTEGRATIONS: {
+  nom: string;
+  description: string;
+  icone: typeof MessageSquare;
+  bgIcone: string;
+  colorIcone: string;
+  statut: string;
+  type: StatutIntegration;
+}[] = [
   {
     nom: "Slack",
     description:
       "Notifications d'entretien en temps réel et retours candidats directement dans vos canaux.",
     icone: MessageSquare,
-    bgIcone: "bg-purple-500/20",
-    colorIcone: "text-purple-400",
+    bgIcone: "bg-purple-500/15",
+    colorIcone: "text-purple-600 dark:text-purple-400",
     statut: "Connecté",
     type: "connected",
   },
@@ -19,8 +31,8 @@ const INTEGRATIONS = [
     description:
       "Synchronisez les candidats depuis Recruiter directement dans votre pipeline ETP en un clic.",
     icone: Users,
-    bgIcone: "bg-blue-500/20",
-    colorIcone: "text-blue-400",
+    bgIcone: "bg-blue-500/15",
+    colorIcone: "text-blue-600 dark:text-blue-400",
     statut: "Déconnecté",
     type: "available",
   },
@@ -28,9 +40,9 @@ const INTEGRATIONS = [
     nom: "Microsoft Teams",
     description:
       "Coordonnez les comités de recrutement et planifiez les entretiens vidéo via MS Teams.",
-    icone: Users, // Simplification pour Teams
-    bgIcone: "bg-indigo-500/20",
-    colorIcone: "text-indigo-400",
+    icone: Video,
+    bgIcone: "bg-indigo-500/15",
+    colorIcone: "text-indigo-600 dark:text-indigo-400",
     statut: "Connecté",
     type: "connected",
   },
@@ -39,8 +51,8 @@ const INTEGRATIONS = [
     description:
       "Planification automatique des entretiens et gestion des réservations de salles.",
     icone: Calendar,
-    bgIcone: "bg-blue-400/20",
-    colorIcone: "text-blue-300",
+    bgIcone: "bg-blue-400/15",
+    colorIcone: "text-blue-500",
     statut: "Déconnecté",
     type: "available",
   },
@@ -49,8 +61,8 @@ const INTEGRATIONS = [
     description:
       "Générez automatiquement des liens de réunion Zoom sécurisés pour chaque entretien.",
     icone: Video,
-    bgIcone: "bg-blue-600/20",
-    colorIcone: "text-blue-500",
+    bgIcone: "bg-blue-600/15",
+    colorIcone: "text-blue-600 dark:text-blue-500",
     statut: "Déconnecté",
     type: "available",
   },
@@ -59,12 +71,20 @@ const INTEGRATIONS = [
     description:
       "Importez les données de pipeline existantes et synchronisez les offres d'emploi actuelles.",
     icone: Leaf,
-    bgIcone: "bg-emerald-500/20",
-    colorIcone: "text-emerald-400",
+    bgIcone: "bg-emerald-500/15",
+    colorIcone: "text-emerald-600 dark:text-emerald-400",
     statut: "En attente",
     type: "pending",
   },
 ];
+
+const CATEGORIES = ["Collaboration", "Communication", "Sourcing", "Productivité"];
+
+const CONFIG_STATUT: Record<StatutIntegration, { etiquettes: string; variante: "success" | "warning" } | null> = {
+  connected: { etiquettes: "Connecté", variante: "success" },
+  pending: { etiquettes: "En attente", variante: "warning" },
+  available: null,
+};
 
 export default function IntegrationsPage() {
   return (
@@ -72,17 +92,17 @@ export default function IntegrationsPage() {
       {/* En-tête */}
       <div className="mb-8 flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <div>
-          <h1 className="text-2xl font-bold text-white">Marketplace d'Intégrations</h1>
-          <p className="mt-1 text-sm text-slate-400">
+          <h1 className="text-2xl font-bold text-foreground">Marketplace d'Intégrations</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
             Propulsez votre flux de recrutement avec des outils de pointe et une
             synchronisation fluide.
           </p>
         </div>
         <div className="flex gap-3">
-          <span className="rounded bg-white/10 px-3 py-1.5 text-xs font-bold tracking-wider text-white">
+          <span className="bg-muted text-foreground rounded px-3 py-1.5 text-xs font-bold tracking-wider">
             6 ACTIVES
           </span>
-          <span className="rounded border border-white/10 px-3 py-1.5 text-xs font-bold tracking-wider text-slate-400">
+          <span className="text-muted-foreground border-border rounded border px-3 py-1.5 text-xs font-bold tracking-wider">
             24 TOTAL
           </span>
         </div>
@@ -92,33 +112,29 @@ export default function IntegrationsPage() {
         {/* Sidebar Catégories */}
         <aside className="space-y-6">
           <div className="space-y-1">
-            <h3 className="mb-3 px-3 text-sm font-bold text-white">Catégories</h3>
-            <button className="flex w-full justify-between rounded bg-blue-600 px-3 py-2 text-sm font-medium text-white">
-              Toutes les applications <span className="text-blue-200">24</span>
+            <h3 className="mb-3 px-3 text-sm font-bold text-foreground">Catégories</h3>
+            <button className="bg-primary text-primary-foreground flex w-full justify-between rounded px-3 py-2 text-sm font-medium">
+              Toutes les applications <span className="text-primary-foreground/70">24</span>
             </button>
-            <button className="flex w-full justify-between rounded px-3 py-2 text-sm font-medium text-slate-400 hover:bg-white/5 hover:text-white">
-              Collaboration <span>8</span>
-            </button>
-            <button className="flex w-full justify-between rounded px-3 py-2 text-sm font-medium text-slate-400 hover:bg-white/5 hover:text-white">
-              Communication <span>5</span>
-            </button>
-            <button className="flex w-full justify-between rounded px-3 py-2 text-sm font-medium text-slate-400 hover:bg-white/5 hover:text-white">
-              Sourcing <span>4</span>
-            </button>
-            <button className="flex w-full justify-between rounded px-3 py-2 text-sm font-medium text-slate-400 hover:bg-white/5 hover:text-white">
-              Productivité <span>7</span>
-            </button>
+            {CATEGORIES.map((cat) => (
+              <button
+                key={cat}
+                className="text-muted-foreground hover:bg-muted hover:text-foreground flex w-full justify-between rounded px-3 py-2 text-sm font-medium"
+              >
+                {cat} <span>8</span>
+              </button>
+            ))}
           </div>
 
-          <div className="rounded-xl border border-white/5 bg-[#161b22] p-5">
-            <div className="mb-3 flex items-center gap-2 text-sm font-bold text-white">
+          <div className="border-border bg-card rounded-xl border p-5">
+            <div className="mb-3 flex items-center gap-2 text-sm font-bold text-foreground">
               Alpha Exclusive
             </div>
-            <p className="mb-4 text-xs text-slate-400">
-              Obtenez un accès anticipé à notre nouvelle intégration de parsing de CV par
-              IA générative.
+            <p className="mb-4 text-xs text-muted-foreground">
+              Obtenez un accès anticipé à notre nouvelle intégration de parsing de CV par IA
+              générative.
             </p>
-            <button className="text-xs font-bold text-blue-400 hover:underline">
+            <button className="text-primary text-xs font-bold hover:underline">
               En savoir plus &rarr;
             </button>
           </div>
@@ -127,10 +143,12 @@ export default function IntegrationsPage() {
         {/* Grille Intégrations */}
         <div className="space-y-6 lg:col-span-3">
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {INTEGRATIONS.map((app) => (
+            {INTEGRATIONS.map((app) => {
+              const cfgStatut = CONFIG_STATUT[app.type];
+              return (
               <div
                 key={app.nom}
-                className="flex flex-col justify-between rounded-xl border border-white/5 bg-[#161b22] p-6 transition-colors hover:bg-[#1c222b]"
+                className="hover:bg-muted/40 border-border bg-card flex flex-col justify-between rounded-xl border p-6 transition-colors"
               >
                 <div>
                   <div className="mb-4 flex items-start justify-between">
@@ -140,89 +158,56 @@ export default function IntegrationsPage() {
                         app.bgIcone
                       )}
                     >
-                      <app.icone size={24} className={app.colorIcone} />
+                      <app.icone size={24} className={app.colorIcone} aria-hidden="true" />
                     </div>
-                    {app.type === "connected" && (
-                      <span className="rounded bg-emerald-500/10 px-2 py-1 text-[10px] font-bold text-emerald-400 uppercase">
-                        Connecté
-                      </span>
-                    )}
-                    {app.type === "pending" && (
-                      <span className="rounded bg-amber-500/10 px-2 py-1 text-[10px] font-bold text-amber-400 uppercase">
-                        En attente
-                      </span>
+                    {cfgStatut && (
+                      <Badge variant={cfgStatut.variante}>
+                        {cfgStatut.etiquettes}
+                      </Badge>
                     )}
                   </div>
-                  <h3 className="mb-2 text-lg font-bold text-white">{app.nom}</h3>
-                  <p className="line-clamp-3 text-sm text-slate-400">{app.description}</p>
+                  <h3 className="mb-2 text-lg font-bold text-foreground">{app.nom}</h3>
+                  <p className="line-clamp-3 text-sm text-muted-foreground">{app.description}</p>
                 </div>
 
                 <div className="mt-6 flex gap-2">
                   {app.type === "connected" ? (
                     <>
-                      <button className="flex-1 rounded border border-white/10 bg-[#0d1117] py-2 text-sm font-bold text-slate-300 hover:bg-white/5">
-                        Gérer
-                      </button>
-                      <button className="rounded border border-white/10 bg-[#0d1117] p-2 text-slate-400 hover:bg-white/5 hover:text-white">
-                        <Settings size={20} />
-                      </button>
+                      <Button variant="outline" className="flex-1">Gérer</Button>
+                      <Button variant="outline" size="icon" aria-label={`Paramètres ${app.nom}`}>
+                        <Settings size={16} />
+                      </Button>
                     </>
                   ) : app.type === "pending" ? (
-                    <button className="w-full rounded border border-white/10 bg-[#0d1117] py-2 text-sm font-bold text-slate-300 hover:bg-white/5">
-                      Reprendre la config.
-                    </button>
+                    <Button variant="outline" className="w-full">Reprendre la config.</Button>
                   ) : (
-                    <button className="w-full rounded bg-blue-600 py-2 text-sm font-bold text-white hover:bg-blue-500">
-                      Connecter
-                    </button>
+                    <Button className="w-full">Connecter</Button>
                   )}
                 </div>
               </div>
-            ))}
+              );
+            })}
           </div>
 
           {/* Missing Integration Banner */}
-          <div className="mt-8 rounded-xl border border-dashed border-white/20 bg-transparent p-8 text-center">
-            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-white/5 text-slate-400">
-              <PlusIcon />
+          <div className="mt-8 rounded-xl border border-dashed border-border p-8 text-center">
+            <div className="bg-muted text-muted-foreground mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full">
+              <Plus size={24} aria-hidden="true" />
             </div>
-            <h3 className="text-lg font-bold text-white">
+            <h3 className="text-lg font-bold text-foreground">
               Une intégration manque à l'appel ?
             </h3>
-            <p className="mx-auto mt-2 max-w-md text-sm text-slate-400">
+            <p className="text-muted-foreground mx-auto mt-2 max-w-md text-sm">
               Notre plateforme développeur vous permet de construire des intégrations
               personnalisées ou d'en demander de nouvelles.
             </p>
             <div className="mt-6 flex justify-center gap-4">
-              <button className="rounded bg-slate-700 px-5 py-2.5 text-sm font-bold text-white hover:bg-slate-600">
-                Demander un service
-              </button>
-              <button className="rounded border border-white/10 bg-transparent px-5 py-2.5 text-sm font-bold text-slate-300 hover:bg-white/5">
-                Docs API
-              </button>
+              <Button variant="secondary">Demander un service</Button>
+              <Button variant="outline">Docs API</Button>
             </div>
           </div>
         </div>
       </div>
     </div>
-  );
-}
-
-function PlusIcon() {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <line x1="12" y1="5" x2="12" y2="19"></line>
-      <line x1="5" y1="12" x2="19" y2="12"></line>
-    </svg>
   );
 }

@@ -1,62 +1,73 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Eye, Zap, ClipboardList, MapPin, Plus, Minus, Edit2 } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import Link from "next/link";
+import {
+  Eye,
+  Zap,
+  ClipboardList,
+  MapPin,
+  LocateFixed,
+  Edit2,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { jobsService } from "@/services/jobs.service";
-import { applicationsService } from "@/services/applications.service";
-import type { Job } from "@/types/domain";
+import { analyticsService } from "@/services/analytics.service";
+import { usersService } from "@/services/users.service";
 import { JobCard } from "@/components/shared/job-card";
-import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import {
+  useGeolocalisation,
+  type PositionLocale,
+} from "@/hooks/use-geolocation";
+import type { Job } from "@/types/domain";
 
-/* Composant de la page d'accueil (Vue d'ensemble) du tableau de bord */
+/* Page d'accueil (vue d'ensemble) du tableau de bord — données réelles du backend */
 export default function OverviewPage() {
+  const [prenom, setPrenom] = useState<string | null>(null);
   const [offresRecommandees, setOffresRecommandees] = useState<Job[]>([]);
+  const [offresLocales, setOffresLocales] = useState<Job[]>([]);
+  const [vuesProfil, setVuesProfil] = useState(0);
+  const [evolutionVues, setEvolutionVues] = useState(0);
+  const [nouveauxMatchs, setNouveauxMatchs] = useState(0);
   const [candidaturesActives, setCandidaturesActives] = useState(0);
   const [chargement, setChargement] = useState(true);
+
+  const chargerOffresLocales = useCallback(async (position: PositionLocale) => {
+    try {
+      const offres = await jobsService.getOffresLocales(
+        position.latitude,
+        position.longitude
+      );
+      setOffresLocales(offres);
+    } catch (erreur) {
+      console.error("Erreur de chargement des offres locales", erreur);
+      setOffresLocales([]);
+    }
+  }, []);
+
+  const {
+    enCours: localisationEnCours,
+    erreur: erreurLocalisation,
+    demander: demanderLocalisation,
+  } = useGeolocalisation(chargerOffresLocales);
 
   useEffect(() => {
     async function chargerDonnees() {
       try {
-        const [jobsRes, appsRes] = await Promise.all([
-          jobsService.getOffres({ size: 3 }),
-          applicationsService.getMesCandidatures(),
+        const [profil, resume, offres] = await Promise.all([
+          usersService.getMonProfil(),
+          analyticsService.getMonResume(),
+          jobsService.getOffres({ limit: 3 }),
         ]);
-
-        setOffresRecommandees(jobsRes.items);
-        setCandidaturesActives(
-          appsRes.items.filter((app) => app.statut !== "ARCHIVEE").length
-        );
+        setPrenom(profil.profile?.first_name ?? null);
+        setVuesProfil(resume.vues_profil);
+        setEvolutionVues(resume.evolution_vues);
+        setNouveauxMatchs(resume.nouveaux_matchs);
+        setCandidaturesActives(resume.candidatures_actives);
+        setOffresRecommandees(offres);
       } catch (erreur) {
         console.error("Erreur de chargement", erreur);
-        // Fallback pour la démo
-        setOffresRecommandees([
-          {
-            id: "1" as any,
-            title: "Senior Geovisualization Engineer",
-            company_name: "Carto Systems",
-            company_id: "c1" as any,
-            location: "Hybride (Paris, FR)",
-            salary_range: "75k€ - 95k€",
-            tags: ["React", "Mapbox", "WebGL"],
-            match_score: 98,
-            posted_at: "Il y a 1h",
-            is_active: true,
-          },
-          {
-            id: "2" as any,
-            title: "Lead Frontend Engineer",
-            company_name: "FinFlow",
-            company_id: "c2" as any,
-            location: "Remote (Europe)",
-            salary_range: "80k€ - 110k€",
-            tags: ["TypeScript", "Next.js"],
-            match_score: 91,
-            posted_at: "Il y a 12h",
-            is_active: true,
-          },
-        ]);
-        setCandidaturesActives(2);
       } finally {
         setChargement(false);
       }
@@ -67,27 +78,28 @@ export default function OverviewPage() {
   const STATS = [
     {
       title: "VUES DU PROFIL",
-      value: "45",
-      subtext: "+12 cette semaine",
+      value: vuesProfil,
+      subtext:
+        vuesProfil > 0 ? `+${evolutionVues} cette semaine` : "Aucune vue",
       icon: Eye,
-      iconColor: "text-blue-500",
-      bg: "bg-[#182138]",
+      iconColor: "text-primary",
+      bg: "bg-card",
     },
     {
       title: "NOUVEAUX MATCHS",
-      value: "8",
-      subtext: "Action requise",
+      value: nouveauxMatchs,
+      subtext: nouveauxMatchs > 0 ? "Action requise" : "Aucun",
       icon: Zap,
-      iconColor: "text-orange-500",
-      bg: "bg-[#182138]",
+      iconColor: "text-warning",
+      bg: "bg-card",
     },
     {
       title: "CANDIDATURES ACTIVES",
-      value: candidaturesActives.toString(),
+      value: candidaturesActives,
       subtext: "En cours",
       icon: ClipboardList,
-      iconColor: "text-slate-400",
-      bg: "bg-[#182138]",
+      iconColor: "text-muted-foreground",
+      bg: "bg-card",
     },
   ];
 
@@ -96,14 +108,16 @@ export default function OverviewPage() {
       {/* En-tête de la page */}
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
         <div className="space-y-1">
-          <p className="text-sm font-medium text-blue-400">Bon retour parmi nous</p>
-          <h1 className="text-3xl font-bold tracking-tight text-white">Bonjour, Jane</h1>
+          <p className="text-sm font-medium text-[var(--color-primary)]">Bon retour parmi nous</p>
+          <h1 className="text-3xl font-bold tracking-tight text-[var(--color-foreground)]">
+            Bonjour, {prenom ?? "candidat"}
+          </h1>
         </div>
         <Link
           href="/settings"
-          className="flex items-center gap-2 rounded-md border border-white/10 bg-white/5 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-white/10"
+          className="flex items-center gap-2 rounded-md border border-[var(--border-subtle)] bg-[var(--surface-card)] px-4 py-2.5 text-sm font-medium text-[var(--color-foreground)] transition-colors duration-150 hover:bg-[var(--surface-popover)] active:scale-[0.98] @media/hover:hover:bg-[var(--surface-popover)]"
         >
-          <Edit2 size={16} className="text-slate-400" />
+          <Edit2 size={16} className="text-[var(--color-muted-foreground)]" />
           Mettre à jour le profil
         </Link>
       </div>
@@ -114,7 +128,7 @@ export default function OverviewPage() {
           <div
             key={stat.title}
             className={cn(
-              "relative flex flex-col justify-between overflow-hidden rounded-xl border border-white/5 p-6",
+              "relative flex flex-col justify-between overflow-hidden rounded-xl border border-[var(--border-subtle)] p-6 bg-[var(--surface-card)] transition-shadow duration-200 hover:shadow-md",
               stat.bg
             )}
           >
@@ -124,12 +138,14 @@ export default function OverviewPage() {
             </div>
 
             <div className="relative z-10 space-y-4">
-              <p className="text-xs font-semibold tracking-wider text-slate-400 uppercase">
+              <p className="text-xs font-semibold tracking-wider text-[var(--color-muted-foreground)] uppercase">
                 {stat.title}
               </p>
               <div className="flex items-baseline gap-3">
-                <span className="text-4xl font-bold text-white">{stat.value}</span>
-                <span className="text-sm font-medium text-slate-500">{stat.subtext}</span>
+                <span className="text-4xl font-bold text-[var(--color-foreground)]">{stat.value}</span>
+                <span className="text-sm font-medium text-[var(--color-muted-foreground)]">
+                  {stat.subtext}
+                </span>
               </div>
             </div>
           </div>
@@ -141,10 +157,10 @@ export default function OverviewPage() {
         {/* Liste des offres recommandées */}
         <div className="space-y-6 xl:col-span-2">
           <div className="flex items-center justify-between">
-            <h2 className="text-xl font-bold text-white">Offres Recommandées</h2>
+            <h2 className="text-xl font-bold text-[var(--color-foreground)]">Offres Recommandées</h2>
             <Link
               href="/jobs"
-              className="text-sm font-medium text-blue-400 hover:underline"
+              className="text-sm font-medium text-[var(--color-primary)] hover:underline transition-colors duration-150"
             >
               Voir tout le fil
             </Link>
@@ -152,22 +168,26 @@ export default function OverviewPage() {
 
           <div className="space-y-4">
             {chargement ? (
-              <div className="py-8 text-slate-500">Recherche de correspondances...</div>
+              <div className="py-8 text-[var(--color-muted-foreground)]">Recherche de correspondances...</div>
+            ) : offresRecommandees.length === 0 ? (
+              <div className="rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-card)] p-8 text-center text-sm text-[var(--color-muted-foreground)]">
+                Aucune offre publiée pour le moment.
+              </div>
             ) : (
               offresRecommandees.map((job) => <JobCard key={job.id} offre={job} />)
             )}
           </div>
         </div>
 
-        {/* Emplacement carte des offres géolocalisées */}
+        {/* Opportunités locales géolocalisées */}
         <div className="space-y-6">
           <div className="flex items-center justify-between">
-            <h2 className="text-xl font-bold text-white">Opportunités locales</h2>
-            <MapPin size={20} className="text-slate-400" />
+            <h2 className="text-xl font-bold text-[var(--color-foreground)]">Opportunités locales</h2>
+            <MapPin size={20} className="text-[var(--color-muted-foreground)]" />
           </div>
 
-          <div className="relative h-[300px] w-full overflow-hidden rounded-xl border border-white/5 bg-[#0b1021]">
-            {/* Motif de grille */}
+          <div className="relative h-[300px] w-full overflow-hidden rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-canvas)]">
+            {/* Motif de grille décoratif */}
             <div
               className="absolute inset-0 opacity-20"
               style={{
@@ -177,29 +197,51 @@ export default function OverviewPage() {
               }}
             />
 
-            {/* Points sur la carte */}
-            <div className="absolute top-1/3 left-1/3 flex h-8 w-8 items-center justify-center rounded-full bg-blue-500/20">
-              <div className="h-4 w-4 rounded-full bg-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.8)]" />
-            </div>
+            <div className="relative z-10 flex h-full flex-col p-4">
+              <div className="mb-3 flex items-center justify-between">
+                <span className="flex items-center gap-2 rounded-md border border-[var(--border-subtle)] bg-[var(--surface-popover)] px-3 py-1.5 text-xs font-medium text-[var(--color-foreground)] backdrop-blur-md">
+                  <div className="h-2 w-2 rounded-full bg-[var(--color-primary)]" />
+                  Offres autour de chez vous
+                </span>
+                <LocateFixed size={18} className="text-[var(--color-muted-foreground)]" />
+              </div>
 
-            <div className="absolute top-1/2 right-1/3 flex h-6 w-6 items-center justify-center rounded-full bg-blue-500/20">
-              <div className="h-3 w-3 rounded-full border-2 border-blue-500 bg-transparent" />
-            </div>
-
-            {/* Badge Localisation */}
-            <div className="absolute top-4 left-4 flex items-center gap-2 rounded-md border border-white/10 bg-black/50 px-3 py-1.5 text-xs font-medium text-white backdrop-blur-md">
-              <div className="h-2 w-2 rounded-full bg-blue-500" />
-              San Francisco, CA
-            </div>
-
-            {/* Contrôles de zoom */}
-            <div className="absolute right-4 bottom-4 flex flex-col overflow-hidden rounded-md border border-white/10 bg-black/50 backdrop-blur-md">
-              <button className="border-b border-white/10 p-2 text-slate-400 transition-colors hover:bg-white/10 hover:text-white">
-                <Plus size={16} />
-              </button>
-              <button className="p-2 text-slate-400 transition-colors hover:bg-white/10 hover:text-white">
-                <Minus size={16} />
-              </button>
+              {offresLocales.length === 0 ? (
+                <div className="flex flex-1 flex-col items-center justify-center gap-3 text-center">
+                  <MapPin size={40} className="opacity-40" />
+                  <p className="max-w-[220px] text-xs leading-relaxed text-[var(--color-muted-foreground)]">
+                    {erreurLocalisation ??
+                      "Autorisez la localisation pour voir les offres à proximité."}
+                  </p>
+                  {!erreurLocalisation && (
+                    <Button
+                      onClick={demanderLocalisation}
+                      disabled={localisationEnCours}
+                      variant="outline"
+                      size="sm"
+                    >
+                      {localisationEnCours ? "Localisation..." : "Activer la localisation"}
+                    </Button>
+                  )}
+                </div>
+              ) : (
+                <div className="flex-1 space-y-2 overflow-y-auto">
+                  {offresLocales.map((offre) => (
+                    <Link
+                      key={offre.id}
+                      href={`/jobs/${offre.id}`}
+                      className="block rounded-lg border border-[var(--border-subtle)] bg-[var(--surface-card)] p-3 transition-colors duration-150 hover:border-[var(--color-primary)]/40 active:scale-[0.98] @media/hover:hover:border-[var(--color-primary)]/40"
+                    >
+                      <p className="truncate text-sm font-semibold text-[var(--color-foreground)]">
+                        {offre.title}
+                      </p>
+                      <p className="truncate text-xs text-[var(--color-muted-foreground)]">
+                        {offre.company_name} • {offre.location}
+                      </p>
+                    </Link>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </div>

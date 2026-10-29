@@ -48,9 +48,10 @@ services:
       MINIO_ROOT_USER: ${MINIO_ACCESS_KEY}
       MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY}
     ports:
-      - "9000:9000"
-      # Console desactivee en prod — accessible via port 9001 en local uniquement
-      - "127.0.0.1:9001:9001"
+      # API S3 sur 9002 (9000 est occupe par SonarQube sur la machine hote)
+      - "9002:9000"
+      # Console desactivee en prod — accessible via port 9003 en local uniquement
+      - "127.0.0.1:9003:9001"
     command: server /data --console-address ":9001"
     restart: always
     healthcheck:
@@ -70,6 +71,10 @@ services:
       - "8000:8000"
     env_file:
       - .env
+    volumes:
+      # Compte de service Firebase — fourni en lecture seule
+      # (ignore par .dockerignore pour ne pas figer la cle dans l'image)
+      - ./src/core/etp-s-59e57-837837f2db08.json:/app/src/core/etp-s-59e57-837837f2db08.json:ro
     depends_on:
       db:
         condition: service_healthy
@@ -101,7 +106,7 @@ services:
   flower:
     build: .
     container_name: etp_platform_flower
-    command: celery -A src.core.celery_app.celery_app flower --port=5555
+    command: celery -A src.core.celery_app.celery_app flower --port=5555 --broker=$${REDIS_URL}
     env_file:
       - .env
     ports:
@@ -111,6 +116,37 @@ services:
       - celery_worker
     restart: on-failure
 
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: etp_platform_prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    ports:
+      - "9090:9090"
+    restart: always
+    profiles:
+      - monitoring
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: etp_platform_grafana
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-admin}
+    volumes:
+      - grafana_data:/var/lib/grafana
+    ports:
+      - "3000:3000"
+    restart: always
+    profiles:
+      - monitoring
+
 volumes:
   postgres_data:
   minio_data:
+  prometheus_data:
+  grafana_data:
