@@ -79,4 +79,19 @@ class ApplicationNote(Base, BaseUUIDMixin, AuditMixin):
     # Relations
     application: Mapped["Application"] = relationship("Application", back_populates="notes")
     author: Mapped["User"] = relationship("User")
+
+
+class ApplicationStageHistory(Base, BaseUUIDMixin):
+    __tablename__ = "application_stage_history"
+
+    application_id: Mapped[str] = mapped_column(
+        ForeignKey("applications.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    from_stage: Mapped[ApplicationStage] = mapped_column(SQLEnum(ApplicationStage), nullable=False)
+    to_stage: Mapped[ApplicationStage] = mapped_column(SQLEnum(ApplicationStage), nullable=False)
+    changed_by_user_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
+    reason: Mapped[str | None] = mapped_column(String(255), nullable=True)
+
+    # Relations
+    application: Mapped["Application"] = relationship("Application")
     
