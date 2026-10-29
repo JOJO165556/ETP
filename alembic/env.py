@@ -28,8 +28,14 @@ target_metadata = Base.metadata
 # Réutilisation de DATABASE_URL si définie (Docker / Neon), sinon reconstruction depuis les variables
 _raw_url = os.getenv("DATABASE_URL", "")
 if _raw_url:
-    # Alembic requiert un driver synchrone — on convertit asyncpg -> psycopg2
-    DATABASE_URL = _raw_url.replace("postgresql+asyncpg://", "postgresql+psycopg2://")
+    # Alembic requiert un driver synchrone — on convertit vers postgresql+psycopg2://
+    DATABASE_URL = _raw_url
+    if DATABASE_URL.startswith("postgresql+asyncpg://"):
+        DATABASE_URL = DATABASE_URL.replace("postgresql+asyncpg://", "postgresql+psycopg2://", 1)
+    elif DATABASE_URL.startswith("postgres://"):
+        DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql+psycopg2://", 1)
+    elif DATABASE_URL.startswith("postgresql://"):
+        DATABASE_URL = DATABASE_URL.replace("postgresql://", "postgresql+psycopg2://", 1)
     # Neon fournit souvent ssl=require ou sslmode=require, psycopg2 a besoin de sslmode=require
     if "ssl=require" in DATABASE_URL and "sslmode=require" not in DATABASE_URL:
         DATABASE_URL = DATABASE_URL.replace("ssl=require", "sslmode=require")

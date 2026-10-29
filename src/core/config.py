@@ -50,18 +50,31 @@ class Settings(BaseSettings):
         return []
 
     # POSTGRES (PostGIS inclus)
-    POSTGRES_SERVER: str
-    POSTGRES_USER: str
-    POSTGRES_PASSWORD: str
-    POSTGRES_DB: str
+    POSTGRES_SERVER: Optional[str] = "localhost"
+    POSTGRES_USER: Optional[str] = "postgres"
+    POSTGRES_PASSWORD: Optional[str] = "postgres"
+    POSTGRES_DB: Optional[str] = "etp_db"
     DATABASE_URL: Optional[PostgresDsn] = None
 
     @field_validator("DATABASE_URL", mode="before")
     @classmethod
     def assemble_db_connection(cls, v: Optional[str], info: Any) -> Any:
-        if isinstance(v, str):
-            return v
-        return f"postgresql+asyncpg://{info.data.get('POSTGRES_USER')}:{info.data.get('POSTGRES_PASSWORD')}@{info.data.get('POSTGRES_SERVER')}/{info.data.get('POSTGRES_DB')}"
+        if isinstance(v, str) and v.strip():
+            url = v.strip()
+            # Convertit automatiquement postgresql:// ou postgres:// (format Neon/Supabase) en postgresql+asyncpg://
+            if url.startswith("postgres://"):
+                url = url.replace("postgres://", "postgresql+asyncpg://", 1)
+            elif url.startswith("postgresql://"):
+                url = url.replace("postgresql://", "postgresql+asyncpg://", 1)
+            # asyncpg préfère ssl=require
+            if "sslmode=require" in url and "ssl=require" not in url:
+                url = url.replace("sslmode=require", "ssl=require")
+            return url
+        server = info.data.get("POSTGRES_SERVER") or "localhost"
+        user = info.data.get("POSTGRES_USER") or "postgres"
+        pwd = info.data.get("POSTGRES_PASSWORD") or "postgres"
+        db = info.data.get("POSTGRES_DB") or "etp_db"
+        return f"postgresql+asyncpg://{user}:{pwd}@{server}/{db}"
 
     # REDIS (Cache & Celery Broker)
     REDIS_URL: RedisDsn
