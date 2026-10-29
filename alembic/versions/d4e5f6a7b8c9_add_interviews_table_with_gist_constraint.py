@@ -67,7 +67,7 @@ def upgrade() -> None:
         EXCLUDE USING gist (
             interviewer_id WITH =,
             interview_timerange(scheduled_at, duration_minutes) WITH &&
-        ) WHERE (status = 'SCHEDULED');
+        ) WHERE (status = 'scheduled');
     """)
 
 

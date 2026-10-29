@@ -43,13 +43,13 @@ class SearchRepository:
 
         if query:
             # Use FTS with GIN index on generated search_vector column
-            # French text search with tsquery for better relevance
+            # French text search with plainto_tsquery for user-friendly queries
             stmt = stmt.where(
-                text("jobs.search_vector @@ to_tsquery('french', :query)")
+                text("jobs.search_vector @@ plainto_tsquery('french', :query)")
             )
             stmt = stmt.params(query=query)
             # Order by ranking for relevance
-            stmt = stmt.order_by(text("ts_rank(jobs.search_vector, to_tsquery('french', :query)) DESC"))
+            stmt = stmt.order_by(text("ts_rank(jobs.search_vector, plainto_tsquery('french', :query)) DESC"))
 
         # Recherche JSONB avec opérateur @> et index GIN (performant)
         if skills:

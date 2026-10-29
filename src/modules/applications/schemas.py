@@ -73,11 +73,6 @@ class ApplicationNoteBase(BaseModel):
     rating: int | None = Field(None, ge=1, le=5, description="Note de 1 à 5")
 
 
-class ApplicationNoteCreate(ApplicationNoteBase):
-    application_id: str
-    author_id: str
-
-
 class ApplicationNoteResponse(ApplicationNoteBase):
     model_config = ConfigDict(from_attributes=True)
     id: str
@@ -106,7 +101,6 @@ __all__ = [
     "ApplicationSubmitResponse",
     "TaskStatusResponse",
     "ApplicationNoteBase",
-    "ApplicationNoteCreate",
     "ApplicationNoteResponse",
     "ApplicationStageHistoryResponse",
 ]
