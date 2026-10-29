@@ -9,8 +9,8 @@ from src.modules.interviews.models import Interview, InterviewStatus
 
 
 class InterviewRepository(BaseAsyncRepository[Interview]):
-    def __init__(self):
-        super().__init__(Interview)
+    def __init__(self, session):
+        super().__init__(Interview, session)
 
     async def get_by_application(self, db: AsyncSession, application_id: str) -> List[Interview]:
         """Récupère tous les entretiens d'une candidature."""

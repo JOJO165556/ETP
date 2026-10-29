@@ -1,11 +1,28 @@
 from sqlalchemy import select
+from sqlalchemy.orm import selectinload
 from typing import Sequence
 from src.core.repository import BaseAsyncRepository
 from src.modules.applications.models import Application
+from src.modules.jobs.models import Job
 
 class ApplicationRepository(BaseAsyncRepository[Application]):
     def __init__(self, session):
         super().__init__(Application, session)
+
+    async def get(self, id: str) -> Application | None:
+        """Récupère une candidature avec ses relations job et company."""
+        query = (
+            select(self.model)
+            .options(
+                selectinload(self.model.job).selectinload(Job.company),
+                selectinload(self.model.candidate),
+            )
+            .where(self.model.id == id)
+        )
+        if hasattr(self.model, "is_deleted"):
+            query = query.where(self.model.is_deleted.is_(False))
+        result = await self.session.execute(query)
+        return result.scalar_one_or_none()
 
     async def get_applications_by_job(self, job_id: str) -> Sequence[Application]:
         """Lister toutes les candidatures reçues pour un poste spécifique"""

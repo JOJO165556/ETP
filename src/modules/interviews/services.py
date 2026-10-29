@@ -14,16 +14,16 @@ logger = logging.getLogger(__name__)
 
 
 class InterviewService:
-    def __init__(self):
-        self.interview_repo = InterviewRepository()
-        self.application_repo = ApplicationRepository()
+    def __init__(self, db: AsyncSession):
+        self.interview_repo = InterviewRepository(db)
+        self.application_repo = ApplicationRepository(db)
 
     async def create_interview(
         self, db: AsyncSession, interview_data: InterviewCreate, user_id: str
     ) -> Interview:
         """Crée un entretien et déclenche les transitions automatiques."""
         # Vérifier que la candidature existe
-        application = await self.application_repo.get_by_id(db, interview_data.application_id)
+        application = await self.application_repo.get(interview_data.application_id)
         if not application:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND, detail="Application not found"
@@ -73,7 +73,7 @@ class InterviewService:
         self, db: AsyncSession, interview_id: str, interview_data: InterviewUpdate
     ) -> Interview:
         """Met à jour un entretien."""
-        interview = await self.interview_repo.get_by_id(db, interview_id)
+        interview = await self.interview_repo.get(interview_id)
         if not interview:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Interview not found")
 
@@ -108,7 +108,7 @@ class InterviewService:
         self, db: AsyncSession, interview_id: str, reason: Optional[str] = None
     ) -> Interview:
         """Annule un entretien."""
-        interview = await self.interview_repo.get_by_id(db, interview_id)
+        interview = await self.interview_repo.get(interview_id)
         if not interview:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Interview not found")
 

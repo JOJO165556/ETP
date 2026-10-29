@@ -38,7 +38,7 @@ async def create_interview(
     """
     # Vérifier que l'application appartient à l'entreprise du recruteur
     app_repo = ApplicationRepository(db)
-    application = await app_repo.get_with_details(interview_data.application_id)
+    application = await app_repo.get(interview_data.application_id)
 
     if not application:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Application not found")
@@ -51,7 +51,7 @@ async def create_interview(
                 detail="You don't have access to this application",
             )
 
-    service = InterviewService()
+    service = InterviewService(db)
     interview = await service.create_interview(db, interview_data, str(current_user.id))
     return interview
 
@@ -72,7 +72,7 @@ async def get_application_interviews(
     """
     # Vérifier l'accès à la candidature
     app_repo = ApplicationRepository(db)
-    application = await app_repo.get_with_details(application_id)
+    application = await app_repo.get(application_id)
 
     if not application:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Application not found")
@@ -85,7 +85,7 @@ async def get_application_interviews(
                 detail="You don't have access to this application",
             )
 
-    service = InterviewService()
+    service = InterviewService(db)
     interviews = await service.get_interviews_by_application(db, application_id)
     return interviews
 
@@ -103,7 +103,7 @@ async def get_upcoming_interviews(
     """
     Récupère les entretiens à venir du recruteur connecté.
     """
-    service = InterviewService()
+    service = InterviewService(db)
     interviews = await service.get_upcoming_interviews(db, str(current_user.id), days)
     return interviews
 
@@ -127,7 +127,7 @@ async def update_interview(
     """
     Met à jour les informations d'un entretien.
     """
-    service = InterviewService()
+    service = InterviewService(db)
     interview = await service.update_interview(db, interview_id, interview_data)
     return interview
 
@@ -150,6 +150,6 @@ async def cancel_interview(
     """
     Annule un entretien.
     """
-    service = InterviewService()
+    service = InterviewService(db)
     interview = await service.cancel_interview(db, interview_id, reason)
     return interview

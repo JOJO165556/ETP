@@ -23,7 +23,7 @@ async def test_interview_lifecycle(
     """Test du cycle de vie d'un entretien."""
     from src.modules.interviews.services import InterviewService
 
-    service = InterviewService()
+    service = InterviewService(db)
 
     # Création d'un entretien
     interview_data = InterviewCreate(
