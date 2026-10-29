@@ -1,7 +1,7 @@
 from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.core.security import get_password_hash
-from src.modules.users.models import User, UserRole
+from src.modules.users.models import User
 from src.modules.users.repository import UserRepository
 from src.modules.users.schemas import UserCreate, UserAdminCreate, UserUpdate, UserMeUpdate
 from src.modules.users.repository import UserProfileRepository
@@ -38,13 +38,17 @@ class UserService:
         # Créer l'entité
         # Si c'est un UserAdminCreate on va juste passer company_id,
         # Si UserCreate, pas de company_id
+        # NB : UserRepository.create crée déjà le profil vide automatiquement
         new_user = await self.repo.create(user_data)
+        # Recharge le profil (selectin) pour une sérialisation async-safe
+        await self.repo.session.refresh(new_user, attribute_names=["profile"])
 
         if not is_admin_creation:
             # Envoi asynchrone du lien de confirmation (non bloquant).
             from src.modules.auth.services import AuthService
 
             AuthService(self.repo.session)._enqueue_verification_email(new_user)
+
         return new_user
 
     async def update_user(self, user_id: str, user_in: UserUpdate, modified_by: str | None = None) -> User:
@@ -58,10 +62,10 @@ class UserService:
             existing = await self.repo.get_by_email(update_data["email"])
             if existing and str(existing.id) != user_id:
                 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email déjà utilisé.")
-                
+
         if modified_by is not None:
             update_data["modified_by"] = str(modified_by)
-
+                
         updated_user = await self.repo.update(user_id, update_data)
         return updated_user
 
@@ -90,10 +94,10 @@ class UserService:
             existing = await self.repo.get_by_email(update_data["email"])
             if existing and str(existing.id) != user_id:
                 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email déjà utilisé.")
-                
+
         if modified_by is not None:
             update_data["modified_by"] = str(modified_by)
-
+                
         if update_data:
             updated_user = await self.repo.update(user_id, update_data)
         else:

@@ -24,7 +24,7 @@ class BaseAsyncRepository(Generic[ModelType]):
         
         # Sécurité Soft Delete automatique si le mixin est présent
         if hasattr(self.model, "is_deleted"):
-            query = query.where(self.model.is_deleted == False)
+            query = query.where(self.model.is_deleted.is_(False))
             
         result = await self.session.execute(query)
         return result.scalar_one_or_none()
@@ -34,7 +34,7 @@ class BaseAsyncRepository(Generic[ModelType]):
         query = select(self.model).offset(skip).limit(limit)
         
         if hasattr(self.model, "is_deleted"):
-            query = query.where(self.model.is_deleted == False)
+            query = query.where(self.model.is_deleted.is_(False))
             
         result = await self.session.execute(query)
         return result.scalars().all()

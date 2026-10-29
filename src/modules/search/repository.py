@@ -1,10 +1,9 @@
 """Repository pour la recherche avancée avec filtres et géolocalisation."""
 import math
 import json
-from sqlalchemy import select, func, or_, and_, text, cast, String
-from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy import select, func, or_, text
 from sqlalchemy.ext.asyncio import AsyncSession
-from geoalchemy2.functions import ST_DWithin, ST_MakePoint, ST_SetSRID
+from geoalchemy2.functions import ST_DWithin
 
 from src.modules.jobs.models import Job, JobStatus
 from src.modules.users.models import User, Profile, UserRole
@@ -43,13 +42,14 @@ class SearchRepository:
             stmt = stmt.where(Job.company_id == company_id)
 
         if query:
-            search_pattern = f"%{query}%"
+            # Use FTS with GIN index on generated search_vector column
+            # French text search with tsquery for better relevance
             stmt = stmt.where(
-                or_(
-                    Job.title.ilike(search_pattern),
-                    Job.description.ilike(search_pattern),
-                )
+                text("jobs.search_vector @@ to_tsquery('french', :query)")
             )
+            stmt = stmt.params(query=query)
+            # Order by ranking for relevance
+            stmt = stmt.order_by(text("ts_rank(jobs.search_vector, to_tsquery('french', :query)) DESC"))
 
         # Recherche JSONB avec opérateur @> et index GIN (performant)
         if skills:
@@ -116,7 +116,7 @@ class SearchRepository:
         offre de cette entreprise sont retournés (isolation multi-tenant).
         """
         stmt = select(User, Profile).join(Profile, Profile.user_id == User.id, isouter=True)
-        stmt = stmt.where(User.role == UserRole.CANDIDATE, User.is_active == True)
+        stmt = stmt.where(User.role == UserRole.CANDIDATE, User.is_active)
 
         if company_id:
             candidate_subq = (
@@ -124,8 +124,8 @@ class SearchRepository:
                 .distinct()
                 .join(Job, Application.job_id == Job.id)
                 .where(
-                    Application.is_deleted == False,
-                    Job.is_deleted == False,
+                    Application.is_deleted.is_(False),
+                    Job.is_deleted.is_(False),
                     Job.company_id == company_id,
                 )
                 .subquery()

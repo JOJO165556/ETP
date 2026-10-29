@@ -4,7 +4,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.modules.applications.models import Application, ApplicationStage
 from src.modules.jobs.models import Job, JobStatus
-from src.modules.users.models import User
 
 
 class AnalyticsRepository:

@@ -27,11 +27,7 @@ from src.modules.users.router import router as users_router
 API = "/api/v1"
 
 
-# ----------------------------------------------------------------------
 # Helpers
-# ----------------------------------------------------------------------
-
-
 def _user(
     role: UserRole = UserRole.CANDIDATE,
     user_id: str = "user-A",
@@ -60,11 +56,7 @@ def _make_app(*routers, current_user: MagicMock | None = None, session=None) -> 
     return app
 
 
-# ----------------------------------------------------------------------
-# 1. Inscription : impossible d'injecter un rôle élevé
-# ----------------------------------------------------------------------
-
-
+# Inscription : impossible d'injecter un rôle élevé
 def test_register_rejects_injected_role():
     """Un champ `role` injecté est refusé par le schéma (extra=forbid)."""
     client = TestClient(_make_app(auth_router))
@@ -106,11 +98,7 @@ async def test_auth_service_always_creates_candidate():
     assert created_payload["role"] == UserRole.CANDIDATE
 
 
-# ----------------------------------------------------------------------
-# 2. Anti-IDOR CV (utilisateurs)
-# ----------------------------------------------------------------------
-
-
+# Anti-IDOR CV (utilisateurs)
 def test_candidate_cannot_download_another_candidate_cv():
     """Candidat A -> CV du candidat B : 403."""
     current_user = _user(UserRole.CANDIDATE, user_id="candidate-A")
@@ -139,11 +127,7 @@ def test_recruiter_cannot_download_cv_outside_tenant():
     assert resp.status_code == 403, resp.text
 
 
-# ----------------------------------------------------------------------
-# 3. Anti-IDOR CV (candidatures)
-# ----------------------------------------------------------------------
-
-
+# Anti-IDOR CV (candidatures)
 def test_candidate_cannot_download_another_application_cv():
     """Candidat A -> CV d'une candidature du candidat B : 403."""
     current_user = _user(UserRole.CANDIDATE, user_id="candidate-A")
@@ -160,11 +144,7 @@ def test_candidate_cannot_download_another_application_cv():
     assert resp.status_code == 403, resp.text
 
 
-# ----------------------------------------------------------------------
-# 4. Isolation multi-tenant analytics et recherche
-# ----------------------------------------------------------------------
-
-
+# Isolation multi-tenant analytics et recherche
 def test_recruiter_cannot_read_other_company_stats():
     """Recruteur company-A -> /analytics/companies/company-B : 403."""
     current_user = _user(
@@ -230,11 +210,7 @@ def test_candidate_search_requires_recruiter_role():
     assert resp.status_code == 403, resp.text
 
 
-# ----------------------------------------------------------------------
-# 5. Validation binaire des fichiers uploadés
-# ----------------------------------------------------------------------
-
-
+# Validation binaire des fichiers uploadés
 def test_upload_rejects_fake_pdf_by_magic_bytes():
     """Un fichier texte renommé resume.pdf est rejeté (400)."""
     current_user = _user(UserRole.CANDIDATE, user_id="candidate-A")
@@ -251,9 +227,9 @@ def test_upload_rejects_fake_pdf_by_magic_bytes():
 
 # ----------------------------------------------------------------------
 # 6. Schémas forgot-password / reset-password
-# ----------------------------------------------------------------------
 
 
+# Validation des schémas d'authentification
 @pytest.mark.parametrize(
     "payload",
     [
@@ -287,9 +263,9 @@ def test_reset_password_rejects_malformed_payload(payload):
 
 # ----------------------------------------------------------------------
 # 7. Statut Celery : un échec est persisté en base
-# ----------------------------------------------------------------------
 
 
+# Celery : erreur de parsing persistée
 @pytest.mark.asyncio
 async def test_parse_resume_failure_is_persisted():
     """Une erreur de téléchargement/parsing positionne la candidature en FAILURE."""

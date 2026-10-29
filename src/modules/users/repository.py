@@ -1,6 +1,6 @@
 from uuid import UUID
 from typing import Sequence
-from sqlalchemy import update, select, exists
+from sqlalchemy import update, select
 from sqlalchemy.orm import selectinload
 from src.core.repository import BaseAsyncRepository
 from src.modules.users.models import Profile, User, UserRole, Experience, Formation
@@ -61,7 +61,7 @@ class UserRepository(BaseAsyncRepository[User]):
                 selectinload(User.profile).selectinload(Profile.formations),
             )
             .where(
-                self.model.id == id, self.model.is_deleted == False
+                self.model.id == id, self.model.is_deleted.is_(False)
             )
         )
         result = await self.session.execute(query)
@@ -89,8 +89,8 @@ class UserRepository(BaseAsyncRepository[User]):
                 selectinload(User.profile).selectinload(Profile.formations),
             )
             .where(self.model.role == UserRole.CANDIDATE)
-            .where(self.model.is_active == True)
-            .where(self.model.is_deleted == False)
+            .where(self.model.is_active.is_(True))
+            .where(self.model.is_deleted.is_(False))
             .order_by(self.model.created_at.desc())
             .offset(skip)
             .limit(limit)
@@ -119,8 +119,8 @@ class UserRepository(BaseAsyncRepository[User]):
             .distinct()
             .join(Job, Application.job_id == Job.id)
             .where(
-                Application.is_deleted == False,
-                Job.is_deleted == False,
+                Application.is_deleted.is_(False),
+                Job.is_deleted.is_(False),
                 Job.company_id == company_id,
             )
             .subquery()
@@ -132,8 +132,8 @@ class UserRepository(BaseAsyncRepository[User]):
                 selectinload(User.profile).selectinload(Profile.formations),
             )
             .where(self.model.role == UserRole.CANDIDATE)
-            .where(self.model.is_active == True)
-            .where(self.model.is_deleted == False)
+            .where(self.model.is_active.is_(True))
+            .where(self.model.is_deleted.is_(False))
             .where(self.model.id.in_(select(candidate_subq.c.candidate_id)))
             .order_by(self.model.created_at.desc())
             .offset(skip)
@@ -171,7 +171,7 @@ class ExperienceRepository(BaseAsyncRepository[Experience]):
             select(self.model)
             .where(
                 self.model.profile_id == profile_id,
-                self.model.is_deleted == False,
+                self.model.is_deleted.is_(False),
             )
             .order_by(self.model.ordre.asc())
         )
@@ -189,7 +189,7 @@ class FormationRepository(BaseAsyncRepository[Formation]):
             select(self.model)
             .where(
                 self.model.profile_id == profile_id,
-                self.model.is_deleted == False,
+                self.model.is_deleted.is_(False),
             )
             .order_by(self.model.ordre.asc())
         )

@@ -1,5 +1,4 @@
 from pydantic import BaseModel, ConfigDict, Field
-from typing import Optional
 from src.modules.applications.models import ApplicationStage
 
 class ApplicationBase(BaseModel):
@@ -67,3 +66,47 @@ class TaskStatusResponse(BaseModel):
     result: dict | None = None
     matching_score: float | None = None
     stage: str | None = None
+
+
+class ApplicationNoteBase(BaseModel):
+    content: str = Field(..., min_length=1, description="Contenu de la note")
+    rating: int | None = Field(None, ge=1, le=5, description="Note de 1 à 5")
+
+
+class ApplicationNoteCreate(ApplicationNoteBase):
+    application_id: str
+    author_id: str
+
+
+class ApplicationNoteResponse(ApplicationNoteBase):
+    model_config = ConfigDict(from_attributes=True)
+    id: str
+    application_id: str
+    author_id: str
+    created_at: str
+    updated_at: str
+
+
+class ApplicationStageHistoryResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: str
+    application_id: str
+    from_stage: ApplicationStage
+    to_stage: ApplicationStage
+    changed_by_user_id: str | None
+    reason: str | None
+    created_at: str
+
+
+__all__ = [
+    "ApplicationBase",
+    "ApplicationCreate",
+    "ApplicationUpdateStage",
+    "ApplicationResponse",
+    "ApplicationSubmitResponse",
+    "TaskStatusResponse",
+    "ApplicationNoteBase",
+    "ApplicationNoteCreate",
+    "ApplicationNoteResponse",
+    "ApplicationStageHistoryResponse",
+]

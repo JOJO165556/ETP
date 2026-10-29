@@ -36,11 +36,7 @@ USER_A = "11111111-1111-1111-1111-111111111111"
 USER_B = "22222222-2222-2222-2222-222222222222"
 
 
-# ----------------------------------------------------------------------
 # Helpers
-# ----------------------------------------------------------------------
-
-
 def _user(user_id: str = USER_A) -> MagicMock:
     user = MagicMock(spec=User)
     user.id = user_id
@@ -119,11 +115,7 @@ class FakeNotificationRepository:
         return updated
 
 
-# ----------------------------------------------------------------------
-# 1 & 2. Notifications : isolation et anti-IDOR
-# ----------------------------------------------------------------------
-
-
+# Notifications : isolation et anti-IDOR
 @pytest.mark.asyncio
 async def test_notification_isolation_between_users():
     fake = FakeNotificationRepository()
@@ -240,11 +232,7 @@ def test_read_all_route_updates_only_current_user(monkeypatch):
     assert all(not n.is_read for n in fake._owned(USER_B))
 
 
-# ----------------------------------------------------------------------
-# 3. Login : compte non verifie refuse
-# ----------------------------------------------------------------------
-
-
+# Login : compte non verifie refuse
 @pytest.mark.asyncio
 async def test_login_rejects_unverified_account():
     user = _user(USER_A)
@@ -285,11 +273,7 @@ async def test_login_accepts_verified_account():
     assert verify_refresh_token(token.refresh_token)["jti"]
 
 
-# ----------------------------------------------------------------------
-# 4 & 5. Verification d'email : token valide, invalide, expire
-# ----------------------------------------------------------------------
-
-
+# Verification d'email : token valide, invalide, expire
 def test_verify_email_with_valid_token():
     session = AsyncMock()
     user = _user(USER_A)
@@ -327,11 +311,7 @@ def test_verify_email_with_expired_token():
     assert resp.status_code == 400
 
 
-# ----------------------------------------------------------------------
-# 6. Logout : blacklist du JTI et rejet du refresh
-# ----------------------------------------------------------------------
-
-
+# Logout : blacklist du JTI et rejet du refresh
 class FakeRedis:
     def __init__(self):
         self.store: dict[str, tuple[str, int | None]] = {}

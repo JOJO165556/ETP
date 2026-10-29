@@ -1,6 +1,6 @@
 from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
-from src.modules.jobs.models import Job, JobStatus
+from src.modules.jobs.models import Job
 from src.modules.jobs.repository import JobRepository
 from src.modules.jobs.schemas import JobCreate, JobUpdate
 

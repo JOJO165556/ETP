@@ -13,11 +13,6 @@ from fastapi.testclient import TestClient
 
 from src.core.database import get_db
 # Enregistre les mappers du domaine avant de creer des objets SQLAlchemy.
-import src.modules.companies.models
-import src.modules.users.models
-import src.modules.jobs.models
-import src.modules.applications.models
-import src.modules.notifications.models
 from src.modules.ai.models import AIAuditStatus
 from src.modules.ai.providers.base import (
     ProviderRuntime,

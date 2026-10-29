@@ -2,7 +2,6 @@ from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.modules.applications.models import Application, ApplicationStage
 from src.modules.applications.repository import ApplicationRepository
-from src.modules.applications.schemas import ApplicationCreate, ApplicationUpdateStage
 from src.modules.users.repository import UserProfileRepository
 from src.modules.jobs.repository import JobRepository
 from src.modules.jobs.models import JobStatus
