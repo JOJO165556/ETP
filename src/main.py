@@ -53,9 +53,6 @@ async def lifespan(app: FastAPI):
     storage_service = AsyncStorageService()
     await storage_service.initialize_buckets()
 
-    # Instrumentation Prometheus
-    Instrumentator().instrument(app).expose(app)
-
     yield
 
     # Couper proprement les connexions du pool SQL
@@ -69,6 +66,9 @@ app = FastAPI(
     docs_url="/docs",
     redoc_url="/redoc",
 )
+
+# Instrumentation Prometheus
+Instrumentator().instrument(app).expose(app)
 
 # Security headers
 app.add_middleware(SecurityHeadersMiddleware)
