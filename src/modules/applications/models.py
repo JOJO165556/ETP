@@ -1,6 +1,7 @@
 from enum import Enum
 from typing import TYPE_CHECKING
-from sqlalchemy import String, ForeignKey, Enum as SQLEnum, JSON, Numeric
+import sqlalchemy as sa
+from sqlalchemy import String, ForeignKey, Enum as SQLEnum, JSON, Numeric, Integer, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from src.core.database import Base
 from src.models.mixins import BaseUUIDMixin, AuditMixin, SoftDeleteMixin
@@ -8,6 +9,7 @@ from src.models.mixins import BaseUUIDMixin, AuditMixin, SoftDeleteMixin
 if TYPE_CHECKING:
     from src.modules.jobs.models import Job
     from src.modules.users.models import User
+    from src.modules.interviews.models import Interview
 
 
 class ApplicationStage(str, Enum):
@@ -51,4 +53,30 @@ class Application(Base, BaseUUIDMixin, AuditMixin, SoftDeleteMixin):
     # Relations
     job: Mapped["Job"] = relationship("Job", back_populates="applications")
     candidate: Mapped["User"] = relationship("User")
+    notes: Mapped[list["ApplicationNote"]] = relationship(
+        "ApplicationNote", back_populates="application", cascade="all, delete-orphan"
+    )
+    interviews: Mapped[list["Interview"]] = relationship(
+        "Interview", back_populates="application", cascade="all, delete-orphan"
+    )
+
+
+class ApplicationNote(Base, BaseUUIDMixin, AuditMixin):
+    __tablename__ = "application_notes"
+    __table_args__ = (
+        sa.CheckConstraint("rating BETWEEN 1 AND 5", name="ck_application_note_rating_range"),
+    )
+
+    application_id: Mapped[str] = mapped_column(
+        ForeignKey("applications.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    author_id: Mapped[str] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    content: Mapped[str] = mapped_column(Text, nullable=False)
+    rating: Mapped[int | None] = mapped_column(Integer, nullable=True)
+
+    # Relations
+    application: Mapped["Application"] = relationship("Application", back_populates="notes")
+    author: Mapped["User"] = relationship("User")
     
