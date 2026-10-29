@@ -2,7 +2,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 from typing import Sequence
 from src.core.repository import BaseAsyncRepository
-from src.modules.applications.models import Application
+from src.modules.applications.models import Application, ApplicationNote
 from src.modules.jobs.models import Job
 
 class ApplicationRepository(BaseAsyncRepository[Application]):
@@ -45,3 +45,25 @@ class ApplicationRepository(BaseAsyncRepository[Application]):
         )
         result = await self.session.execute(query)
         return result.scalar_one_or_none()
+
+    async def create_note(self, application_id: str, author_id: str, content: str, rating: int | None = None) -> ApplicationNote:
+        """Crée une note d'évaluation pour une candidature."""
+        note = ApplicationNote(
+            application_id=application_id,
+            author_id=author_id,
+            content=content,
+            rating=rating
+        )
+        self.session.add(note)
+        await self.session.flush()
+        return note
+
+    async def get_notes_by_application(self, application_id: str) -> Sequence[ApplicationNote]:
+        """Récupère toutes les notes d'une candidature, triées par date de création."""
+        query = (
+            select(ApplicationNote)
+            .where(ApplicationNote.application_id == application_id)
+            .order_by(ApplicationNote.created_at.desc())
+        )
+        result = await self.session.execute(query)
+        return result.scalars().all()

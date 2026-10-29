@@ -44,8 +44,8 @@ def upgrade() -> None:
         RETURNS TRIGGER AS $$
         BEGIN
             IF OLD.stage IS DISTINCT FROM NEW.stage THEN
-                INSERT INTO application_stage_history (application_id, from_stage, to_stage, changed_by_user_id, reason)
-                VALUES (NEW.id, OLD.stage, NEW.stage, NEW.modified_by, NULL);
+                INSERT INTO application_stage_history (id, application_id, from_stage, to_stage, changed_by_user_id, reason)
+                VALUES (gen_random_uuid(), NEW.id, OLD.stage, NEW.stage, NEW.modified_by, NULL);
             END IF;
             RETURN NEW;
         END;

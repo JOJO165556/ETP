@@ -78,7 +78,7 @@ async def apply_to_job(
         await db.commit()
 
     repo = ApplicationRepository(db)
-    application = await repo.get_with_details(str(application.id))
+    application = await repo.get(str(application.id))
     return ApplicationSubmitResponse(
         application=ApplicationResponse.model_validate(application),
         task_id=task_result.id if task_result else None,
@@ -256,4 +256,91 @@ async def update_application_stage(
     )
     await db.commit()
     repo = ApplicationRepository(db)
-    return await repo.get_with_details(str(application.id))
+    return await repo.get(str(application.id))
+
+
+@router.post(
+    "/{app_id}/notes",
+    response_model=dict,
+    status_code=status.HTTP_201_CREATED,
+    summary="Ajouter une note d'évaluation",
+    responses={
+        403: {"description": "Accès non autorisé (candidat ou hors tenant)"},
+        404: {"description": "Candidature introuvable"},
+    },
+)
+async def create_application_note(
+    app_id: str,
+    note_data: dict,
+    current_user: User = Depends(_RECRUITER_OR_ADMIN),
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Permet à un recruteur d'ajouter une note d'évaluation privée à une candidature.
+    L'accès est réservé aux recruteurs et admins de l'entreprise de l'offre.
+    """
+    repo = ApplicationRepository(db)
+    application = await repo.get(app_id)
+    
+    if not application:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Candidature introuvable."
+        )
+    
+    # Vérifier que l'utilisateur a le droit d'ajouter une note
+    if current_user.role != UserRole.SUPERADMIN:
+        job = await JobRepository(db).get(application.job_id)
+        if not job or str(job.company_id) != str(current_user.company_id):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Vous n'êtes pas autorisé à ajouter une note à cette candidature."
+            )
+    
+    service = ApplicationService(db)
+    return await service.create_note(
+        application_id=app_id,
+        author_id=str(current_user.id),
+        content=note_data.get("content"),
+        rating=note_data.get("rating")
+    )
+
+
+@router.get(
+    "/{app_id}/notes",
+    response_model=List[dict],
+    summary="Lister les notes d'une candidature",
+    responses={
+        403: {"description": "Accès non autorisé (candidat ou hors tenant)"},
+        404: {"description": "Candidature introuvable"},
+    },
+)
+async def get_application_notes(
+    app_id: str,
+    current_user: User = Depends(_RECRUITER_OR_ADMIN),
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Permet à un recruteur de lister toutes les notes d'évaluation d'une candidature.
+    Les notes sont triées par date de création (plus récent en premier).
+    """
+    repo = ApplicationRepository(db)
+    application = await repo.get(app_id)
+    
+    if not application:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Candidature introuvable."
+        )
+    
+    # Vérifier que l'utilisateur a le droit de voir les notes
+    if current_user.role != UserRole.SUPERADMIN:
+        job = await JobRepository(db).get(application.job_id)
+        if not job or str(job.company_id) != str(current_user.company_id):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Vous n'êtes pas autorisé à voir les notes de cette candidature."
+            )
+    
+    service = ApplicationService(db)
+    return await service.get_notes(application_id=app_id)

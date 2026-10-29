@@ -127,32 +127,32 @@ class AnalyticsRepository:
         ]
 
     async def get_company_stats(self, company_id: str) -> dict:
-        """Statistiques pour une entreprise spécifique (déjà filtrée)."""
-        jobs_result = await self.session.execute(
-            select(func.count(Job.id)).where(Job.company_id == company_id)
+        """Statistiques pour une entreprise spécifique."""
+        from sqlalchemy import func, select
+        
+        total_jobs_q = select(func.count(Job.id)).where(Job.company_id == company_id)
+        active_jobs_q = select(func.count(Job.id)).where(
+            Job.company_id == company_id, Job.status == "active"
         )
-        total_jobs = jobs_result.scalar() or 0
-
-        apps_result = await self.session.execute(
-            select(func.count(Application.id))
-            .join(Job, Application.job_id == Job.id)
-            .where(Job.company_id == company_id)
+        total_apps_q = select(func.count(Application.id)).join(Job).where(
+            Job.company_id == company_id
         )
-        total_applications = apps_result.scalar() or 0
-
-        hired_result = await self.session.execute(
-            select(func.count(Application.id))
-            .join(Job, Application.job_id == Job.id)
-            .where(Job.company_id == company_id, Application.stage == ApplicationStage.HIRED)
+        hired_q = select(func.count(Application.id)).join(Job).where(
+            Job.company_id == company_id, Application.stage == "hired"
         )
-        hired_count = hired_result.scalar() or 0
-
-        conversion = (hired_count / total_applications * 100) if total_applications > 0 else 0
-
+        
+        total_jobs = (await self.session.execute(total_jobs_q)).scalar() or 0
+        active_jobs = (await self.session.execute(active_jobs_q)).scalar() or 0
+        total_apps = (await self.session.execute(total_apps_q)).scalar() or 0
+        hired = (await self.session.execute(hired_q)).scalar() or 0
+        
+        conversion = (hired / total_apps * 100) if total_apps > 0 else 0
+        
         return {
             "company_id": company_id,
             "total_jobs": total_jobs,
-            "total_applications": total_applications,
-            "hired_count": hired_count,
+            "active_jobs": active_jobs,
+            "total_applications": total_apps,
+            "hired_count": hired,
             "conversion_rate": round(conversion, 2),
         }

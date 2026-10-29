@@ -1,6 +1,7 @@
 """Test suite: ATS Advanced & Observabilité."""
 
 from datetime import datetime, timedelta
+from pydantic import ValidationError
 
 import pytest
 from httpx import AsyncClient
@@ -11,7 +12,6 @@ from src.modules.applications.models import (
     ApplicationStage,
     ApplicationStageHistory,
 )
-from src.modules.applications.schemas import ApplicationNoteCreate
 from src.modules.interviews.models import Interview, InterviewStatus
 from src.modules.interviews.schemas import InterviewCreate, InterviewUpdate
 
@@ -103,19 +103,18 @@ async def test_application_notes_with_rating(
 @pytest.mark.asyncio
 async def test_application_note_rating_validation(db: AsyncSession):
     """Test de la validation du rating (doit être entre 1 et 5)."""
+    from src.modules.applications.schemas import ApplicationNoteBase
 
     # Rating hors range (0)
-    with pytest.raises(ValueError):
-        ApplicationNoteCreate(
-            application_id="test-id",
+    with pytest.raises(ValidationError):
+        ApplicationNoteBase(
             content="Test",
             rating=0,
         )
 
     # Rating hors range (6)
-    with pytest.raises(ValueError):
-        ApplicationNoteCreate(
-            application_id="test-id",
+    with pytest.raises(ValidationError):
+        ApplicationNoteBase(
             content="Test",
             rating=6,
         )
@@ -303,3 +302,48 @@ async def test_gist_exclusion_constraint(db: AsyncSession, test_user_recruiter, 
     # La contrainte GIST devrait rejeter cette insertion
     with pytest.raises(Exception):  # IntegrityError from PostgreSQL
         await db.commit()
+
+
+@pytest.mark.asyncio
+async def test_application_note_repository_crud(
+    db: AsyncSession, test_user_recruiter, test_application
+):
+    """Test CRUD des notes via repository."""
+    from src.modules.applications.repository import ApplicationRepository
+
+    repo = ApplicationRepository(db)
+    
+    # Créer une note
+    note = await repo.create_note(
+        application_id=str(test_application.id),
+        author_id=str(test_user_recruiter.id),
+        content="Candidat prometteur",
+        rating=4
+    )
+    await db.commit()
+    
+    assert note.id is not None
+    assert note.content == "Candidat prometteur"
+    assert note.rating == 4
+    
+    # Récupérer les notes
+    notes = await repo.get_notes_by_application(str(test_application.id))
+    assert len(notes) >= 1
+    assert notes[0].content == "Candidat prometteur"
+
+
+@pytest.mark.asyncio
+async def test_analytics_repository_get_company_stats(
+    db: AsyncSession, test_company
+):
+    """Test que AnalyticsRepository.get_company_stats retourne les stats d'entreprise."""
+    from src.modules.analytics.repository import AnalyticsRepository
+
+    repo = AnalyticsRepository(db)
+    stats = await repo.get_company_stats(str(test_company.id))
+
+    assert stats["company_id"] == str(test_company.id)
+    assert "total_jobs" in stats
+    assert "total_applications" in stats
+    assert "hired_count" in stats
+    assert "conversion_rate" in stats

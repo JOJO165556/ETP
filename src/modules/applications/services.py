@@ -75,3 +75,32 @@ class ApplicationService:
             update_data["modified_by"] = str(modified_by)
 
         return await self.repo.update(app_id, update_data)
+
+    async def create_note(self, application_id: str, author_id: str, content: str, rating: int | None = None) -> dict:
+        """Crée une note d'évaluation pour une candidature."""
+        note = await self.repo.create_note(application_id, author_id, content, rating)
+        await self.db.commit()
+        await self.db.refresh(note)
+        return {
+            "id": str(note.id),
+            "application_id": str(note.application_id),
+            "author_id": str(note.author_id),
+            "content": note.content,
+            "rating": note.rating,
+            "created_at": note.created_at.isoformat() if note.created_at else None,
+        }
+
+    async def get_notes(self, application_id: str) -> list[dict]:
+        """Récupère toutes les notes d'une candidature."""
+        notes = await self.repo.get_notes_by_application(application_id)
+        return [
+            {
+                "id": str(note.id),
+                "application_id": str(note.application_id),
+                "author_id": str(note.author_id),
+                "content": note.content,
+                "rating": note.rating,
+                "created_at": note.created_at.isoformat() if note.created_at else None,
+            }
+            for note in notes
+        ]
