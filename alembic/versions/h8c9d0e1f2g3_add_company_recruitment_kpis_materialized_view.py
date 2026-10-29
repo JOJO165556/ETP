@@ -26,14 +26,14 @@ def upgrade() -> None:
         SELECT
             j.company_id,
             COUNT(DISTINCT j.id) AS total_jobs,
-            COUNT(DISTINCT CASE WHEN j.status = 'active' THEN j.id END) AS active_jobs,
+            COUNT(DISTINCT CASE WHEN j.status::text IN ('ACTIVE', 'active') THEN j.id END) AS active_jobs,
             COUNT(DISTINCT a.id) AS total_applications,
-            COUNT(DISTINCT CASE WHEN a.stage = 'applied' THEN a.id END) AS stage_applied_count,
-            COUNT(DISTINCT CASE WHEN a.stage = 'screening' THEN a.id END) AS stage_screening_count,
-            COUNT(DISTINCT CASE WHEN a.stage = 'interview' THEN a.id END) AS stage_interview_count,
-            COUNT(DISTINCT CASE WHEN a.stage = 'offer' THEN a.id END) AS stage_offer_count,
-            COUNT(DISTINCT CASE WHEN a.stage = 'hired' THEN a.id END) AS stage_hired_count,
-            COUNT(DISTINCT CASE WHEN a.stage = 'rejected' THEN a.id END) AS stage_rejected_count,
+            COUNT(DISTINCT CASE WHEN a.stage::text IN ('APPLIED', 'applied') THEN a.id END) AS stage_applied_count,
+            COUNT(DISTINCT CASE WHEN a.stage::text IN ('SCREENING', 'screening') THEN a.id END) AS stage_screening_count,
+            COUNT(DISTINCT CASE WHEN a.stage::text IN ('INTERVIEW', 'interview') THEN a.id END) AS stage_interview_count,
+            COUNT(DISTINCT CASE WHEN a.stage::text IN ('OFFER', 'offer') THEN a.id END) AS stage_offer_count,
+            COUNT(DISTINCT CASE WHEN a.stage::text IN ('HIRED', 'hired') THEN a.id END) AS stage_hired_count,
+            COUNT(DISTINCT CASE WHEN a.stage::text IN ('REJECTED', 'rejected') THEN a.id END) AS stage_rejected_count,
             ROUND(AVG(a.matching_score)::numeric, 2) AS avg_match_score,
             ROUND(
                 AVG(EXTRACT(EPOCH FROM (sh.created_at - a.created_at)) / 86400)
@@ -43,7 +43,7 @@ def upgrade() -> None:
             NOW() AS refreshed_at
         FROM jobs j
         LEFT JOIN applications a ON a.job_id = j.id
-        LEFT JOIN application_stage_history sh ON sh.application_id = a.id AND sh.to_stage = 'hired'
+        LEFT JOIN application_stage_history sh ON sh.application_id = a.id AND sh.to_stage::text IN ('HIRED', 'hired')
         GROUP BY j.company_id
     """)
 
