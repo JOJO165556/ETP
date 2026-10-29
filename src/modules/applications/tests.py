@@ -1,5 +1,5 @@
 import pytest
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import MagicMock
 from src.modules.applications.tasks import calculate_smart_match
 from src.modules.applications.resume_analyzer import LocalResumeAnalyzer, ResumeAnalysis
 

@@ -67,7 +67,7 @@ class JobRepository(BaseAsyncRepository[Job]):
             select(Profile, User, distance_col)
             .join(User, Profile.user_id == User.id)
             .where(User.role == UserRole.CANDIDATE)
-            .where(User.is_active == True)
+            .where(User.is_active)
         )
         
         result = await self.session.execute(query)

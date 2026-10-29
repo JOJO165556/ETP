@@ -1,5 +1,5 @@
 from pydantic import BaseModel, ConfigDict, Field
-from typing import List, Optional
+from typing import List
 from src.modules.jobs.models import JobStatus
 
 class JobBase(BaseModel):

@@ -5,6 +5,7 @@ pas renseignes dans .env. Les deux fonctions d'entree (`verify_id_token`,
 `verify_app_check_token`) retournent alors des valeurs qui laissent le flux
 poursuivre en mode degrade (developpement), comme documente dans l'ADR-0001.
 """
+import asyncio
 import logging
 import json
 import os

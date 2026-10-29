@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING
 from sqlalchemy import String, Boolean, JSON
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from src.core.database import Base

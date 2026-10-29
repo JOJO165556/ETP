@@ -1,5 +1,4 @@
 from pydantic import BaseModel, ConfigDict, Field
-from typing import Optional
 from src.modules.applications.models import ApplicationStage
 
 class ApplicationBase(BaseModel):

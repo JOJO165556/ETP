@@ -1,6 +1,6 @@
 from enum import Enum
 from typing import TYPE_CHECKING
-from sqlalchemy import String, ForeignKey, Enum as SQLEnum, JSON, Numeric, Text
+from sqlalchemy import String, ForeignKey, Enum as SQLEnum, JSON, Numeric
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from src.core.database import Base
 from src.models.mixins import BaseUUIDMixin, AuditMixin, SoftDeleteMixin

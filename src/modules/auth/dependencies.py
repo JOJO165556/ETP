@@ -7,7 +7,7 @@ from sqlalchemy.future import select
 
 from src.core.config import settings
 from src.core.database import get_db
-from src.core.security import verify_access_token, ALGORITHM
+from src.core.security import verify_access_token
 from src.modules.auth.constants import UNVERIFIED_EMAIL_DETAIL
 from src.modules.auth.schemas import TokenData
 from src.modules.users.models import User, UserRole

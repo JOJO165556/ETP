@@ -3,7 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List
 
 from src.core.database import get_db
-from src.modules.auth.dependencies import get_current_user, require_roles
+from src.modules.auth.dependencies import require_roles
 from src.modules.users.models import User, UserRole
 from src.modules.companies.schemas import CompanyCreate, CompanyUpdate, CompanyResponse
 from src.modules.companies.services import CompanyService

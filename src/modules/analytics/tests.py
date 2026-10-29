@@ -1,6 +1,3 @@
-import pytest
-from unittest.mock import MagicMock, AsyncMock, patch
-from src.modules.analytics.repository import AnalyticsRepository
 from src.modules.analytics.schemas import (
     PipelineStats, JobStats, HiringFunnel, SkillDemand, AnalyticsDashboard,
 )
