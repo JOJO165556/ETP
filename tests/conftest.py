@@ -27,12 +27,8 @@ from src.modules.users.models import User, UserRole
 def _get_test_database_url() -> str:
     raw = os.environ.get("TEST_DATABASE_URL")
     if raw and raw.strip():
-        u = raw.strip()
-        if u.startswith("postgres://"):
-            return u.replace("postgres://", "postgresql+asyncpg://", 1)
-        elif u.startswith("postgresql://"):
-            return u.replace("postgresql://", "postgresql+asyncpg://", 1)
-        return u
+        from src.core.config import _normalize_postgres_url
+        return _normalize_postgres_url(raw)
     return str(settings.DATABASE_URL)
 
 

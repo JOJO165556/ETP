@@ -9,6 +9,30 @@ def _generate_secret(length: int = 64) -> str:
     return secrets.token_urlsafe(length)
 
 
+def _normalize_postgres_url(url: str) -> str:
+    url = url.strip()
+    if url.startswith("postgres://"):
+        url = url.replace("postgres://", "postgresql+asyncpg://", 1)
+    elif url.startswith("postgresql://"):
+        url = url.replace("postgresql://", "postgresql+asyncpg://", 1)
+
+    if "?" in url:
+        from urllib.parse import parse_qs, urlencode, urlparse, urlunparse
+
+        parsed = urlparse(url)
+        qs = parse_qs(parsed.query)
+        # Supprimer les options libpq non supportees par asyncpg (ex: Neon channel_binding)
+        for param in ["channel_binding", "target_session_attrs", "gssencmode"]:
+            qs.pop(param, None)
+        if "sslmode" in qs and "ssl" not in qs:
+            qs["ssl"] = qs.pop("sslmode")
+        new_query = urlencode(qs, doseq=True)
+        url = urlunparse(
+            (parsed.scheme, parsed.netloc, parsed.path, parsed.params, new_query, parsed.fragment)
+        )
+    return url
+
+
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
         env_file=".env", env_file_encoding="utf-8", case_sensitive=True, extra="ignore"
@@ -63,14 +87,7 @@ class Settings(BaseSettings):
     @classmethod
     def assemble_db_connection(cls, v: Optional[str], info: Any) -> Any:
         if isinstance(v, str) and v.strip():
-            url = v.strip()
-            if url.startswith("postgres://"):
-                url = url.replace("postgres://", "postgresql+asyncpg://", 1)
-            elif url.startswith("postgresql://"):
-                url = url.replace("postgresql://", "postgresql+asyncpg://", 1)
-            if "sslmode=require" in url and "ssl=require" not in url:
-                url = url.replace("sslmode=require", "ssl=require")
-            return url
+            return _normalize_postgres_url(v)
         server = info.data.get("POSTGRES_SERVER") or "localhost"
         user = info.data.get("POSTGRES_USER") or "postgres"
         pwd = info.data.get("POSTGRES_PASSWORD") or "postgres"
