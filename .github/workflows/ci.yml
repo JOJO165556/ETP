@@ -90,17 +90,14 @@ jobs:
           path: test-results/
 
   deploy-backend:
-    name: Deploy Backend (Railway)
+    name: Deploy Backend (Render)
     runs-on: ubuntu-latest
     needs: [test]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     steps:
-      - uses: actions/checkout@v4
-      - run: npm install -g @railway/cli
-      - name: Deploy to Railway
-        env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
-        run: railway up --service backend --detach
+      - name: Trigger Render Deploy Hook
+        run: |
+          curl -f -X POST "${{ secrets.RENDER_DEPLOY_HOOK_URL }}"
 
   deploy-frontend:
     name: Deploy Frontend (Vercel)

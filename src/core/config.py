@@ -99,6 +99,18 @@ class Settings(BaseSettings):
     GOOGLE_APPLICATION_CREDENTIALS: Optional[str] = None
     FIREBASE_APP_CHECK_ENABLED: bool = True
 
+    @property
+    def is_production(self) -> bool:
+        return self.ENVIRONMENT == "production"
+
+    @property
+    def is_development(self) -> bool:
+        return self.ENVIRONMENT == "development"
+
+    @property
+    def is_test(self) -> bool:
+        return self.ENVIRONMENT == "test"
+
     GEMINI_API_KEY: Optional[str] = None
     GEMINI_MODEL: str = "gemini-2.5-flash"
     GEMINI_API_BASE: str = "https://generativelanguage.googleapis.com/v1beta"

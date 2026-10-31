@@ -9,7 +9,8 @@ from src.core.storage import AsyncStorageService
 from src.core.logging_config import setup_logging
 from src.core.health import health_check
 
-setup_logging()  # Must be called before router imports for proper logging configuration
+# Log level DEBUG en dev, INFO en prod
+setup_logging(level="DEBUG" if settings.is_development else "INFO")
 
 # Router imports after setup_logging
 from src.modules.auth.router import router as auth_router
@@ -31,15 +32,16 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         response: Response = await call_next(request)
         
-        # HSTS — force HTTPS pendant 1 an
-        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+        # HSTS uniquement en production (HTTPS réel)
+        if settings.is_production:
+            response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
         # Protege contre le clickjacking
         response.headers["X-Frame-Options"] = "DENY"
         # Empêche le MIME sniffing
         response.headers["X-Content-Type-Options"] = "nosniff"
         # XSS filter (legacy mais encore utile)
         response.headers["X-XSS-Protection"] = "1; mode=block"
-        # Pas de referrer header sensibel
+        # Pas de referrer header sensible
         response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
         # Politique de permission (camera, mic, geo = none)
         response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
@@ -59,12 +61,18 @@ async def lifespan(app: FastAPI):
     await engine.dispose()
 
 
+# Swagger/ReDoc désactivés en prod
+_docs_url = None if settings.is_production else "/docs"
+_redoc_url = None if settings.is_production else "/redoc"
+_openapi_url = None if settings.is_production else "/openapi.json"
+
 app = FastAPI(
     title=settings.PROJECT_NAME,
     version="1.0.0",
     lifespan=lifespan,
-    docs_url="/docs",
-    redoc_url="/redoc",
+    docs_url=_docs_url,
+    redoc_url=_redoc_url,
+    openapi_url=_openapi_url,
 )
 
 # Instrumentation Prometheus
