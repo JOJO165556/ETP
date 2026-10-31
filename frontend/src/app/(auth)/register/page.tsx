@@ -1,25 +1,22 @@
 "use client";
 
-import { Suspense, useState, useMemo } from "react";
+import React, { Suspense, useState, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import {
   Eye,
   EyeOff,
   Loader2,
   User,
   Building2,
-  CheckCircle2,
   Check,
   Mail,
   Lock,
   ArrowRight,
-  ShieldCheck,
 } from "lucide-react";
-import * as z from "zod";
 
 import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
@@ -32,6 +29,133 @@ import {
 } from "@/lib/firebase";
 import { registerSchema, type RegisterValues } from "@/lib/validations/auth";
 import type { AuthTokens } from "@/types";
+
+/* Composant mémoïsé haute performance pour l'animation de robustesse du mot de passe */
+const PasswordStrengthIndicator = React.memo(function PasswordStrengthIndicator({
+  password = "",
+}: {
+  password?: string;
+}) {
+  const criteria = useMemo(
+    () => ({
+      hasLength: password.length >= 8,
+      hasUpper: /[A-Z]/.test(password),
+      hasNumber: /[0-9]/.test(password),
+      hasSpecial: /[^A-Za-z0-9]/.test(password),
+    }),
+    [password]
+  );
+
+  const score = useMemo(() => {
+    if (!password) return 0;
+    let s = 0;
+    if (criteria.hasLength) s++;
+    if (criteria.hasUpper) s++;
+    if (criteria.hasNumber) s++;
+    if (criteria.hasSpecial || password.length >= 12) s++;
+    return s;
+  }, [password, criteria]);
+
+  if (!password) return null;
+
+  const color =
+    score >= 3 ? "bg-emerald-500" : score === 2 ? "bg-amber-500" : "bg-red-500";
+  const label =
+    score === 1
+      ? "Trop court (8+ car. requis)"
+      : score === 2
+        ? "Moyen (ajoutez majuscule ou chiffre)"
+        : score === 3
+          ? "Fort"
+          : "Excellente robustesse";
+
+  return (
+    <div className="space-y-2 pt-1.5 transition-opacity duration-200">
+      {/* 4 segments animés à 60 FPS sans reflow */}
+      <div className="grid grid-cols-4 gap-1.5">
+        {[1, 2, 3, 4].map((step) => {
+          const isActive = score >= step;
+          return (
+            <div key={step} className="h-1.5 rounded-full bg-muted overflow-hidden">
+              <div
+                className={`h-full transition-all duration-200 ${isActive ? color : "bg-transparent"}`}
+                style={{ width: isActive ? "100%" : "0%" }}
+              />
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Libellé de robustesse */}
+      <div className="flex items-center justify-between text-[11px]">
+        <span className="text-muted-foreground font-medium">Robustesse :</span>
+        <span
+          className={`font-semibold ${
+            score >= 3
+              ? "text-emerald-500"
+              : score === 2
+                ? "text-amber-500"
+                : "text-destructive"
+          }`}
+        >
+          {label}
+        </span>
+      </div>
+
+      {/* Critères interactifs */}
+      <div className="grid grid-cols-2 gap-1.5 pt-1 text-[11px]">
+        <div
+          className={`flex items-center gap-1.5 transition-colors ${
+            criteria.hasLength ? "text-emerald-500 font-medium" : "text-muted-foreground"
+          }`}
+        >
+          {criteria.hasLength ? (
+            <Check size={12} strokeWidth={3} className="text-emerald-500" />
+          ) : (
+            <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground/40 mx-0.5 inline-block" />
+          )}
+          <span>8+ caractères</span>
+        </div>
+        <div
+          className={`flex items-center gap-1.5 transition-colors ${
+            criteria.hasUpper ? "text-emerald-500 font-medium" : "text-muted-foreground"
+          }`}
+        >
+          {criteria.hasUpper ? (
+            <Check size={12} strokeWidth={3} className="text-emerald-500" />
+          ) : (
+            <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground/40 mx-0.5 inline-block" />
+          )}
+          <span>1 majuscule</span>
+        </div>
+        <div
+          className={`flex items-center gap-1.5 transition-colors ${
+            criteria.hasNumber ? "text-emerald-500 font-medium" : "text-muted-foreground"
+          }`}
+        >
+          {criteria.hasNumber ? (
+            <Check size={12} strokeWidth={3} className="text-emerald-500" />
+          ) : (
+            <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground/40 mx-0.5 inline-block" />
+          )}
+          <span>1 chiffre</span>
+        </div>
+        <div
+          className={`flex items-center gap-1.5 transition-colors ${
+            criteria.hasSpecial ? "text-emerald-500 font-medium" : "text-muted-foreground"
+          }`}
+        >
+          {criteria.hasSpecial ? (
+            <Check size={12} strokeWidth={3} className="text-emerald-500" />
+          ) : (
+            <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground/40 mx-0.5 inline-block" />
+          )}
+          <span>1 symbole (!@#$)</span>
+        </div>
+      </div>
+    </div>
+  );
+});
 
 function RegisterForm() {
   const router = useRouter();
@@ -46,6 +170,7 @@ function RegisterForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [socialBusy, setSocialBusy] = useState<boolean>(false);
 
+  // mode "onBlur" : validation uniquement au changement de champ pour garantir une frappe instantanée sans freeze
   const {
     register,
     handleSubmit,
@@ -53,38 +178,11 @@ function RegisterForm() {
     formState: { errors, isSubmitting },
   } = useForm<RegisterValues>({
     resolver: zodResolver(registerSchema),
+    mode: "onBlur",
     defaultValues: { first_name: "", last_name: "", email: "", password: "" },
   });
 
-  const currentPassword = watch("password") || "";
-
-  // Critères détaillés et score du mot de passe
-  const passwordCriteria = useMemo(() => {
-    return {
-      hasLength: currentPassword.length >= 8,
-      hasUpper: /[A-Z]/.test(currentPassword),
-      hasNumber: /[0-9]/.test(currentPassword),
-      hasSpecial: /[^A-Za-z0-9]/.test(currentPassword),
-    };
-  }, [currentPassword]);
-
-  const passwordScore = useMemo(() => {
-    if (!currentPassword) return 0;
-    let s = 0;
-    if (passwordCriteria.hasLength) s++;
-    if (passwordCriteria.hasUpper) s++;
-    if (passwordCriteria.hasNumber) s++;
-    if (passwordCriteria.hasSpecial || currentPassword.length >= 12) s++;
-    return s;
-  }, [currentPassword, passwordCriteria]);
-
-  const strengthMeta = useMemo(() => {
-    if (passwordScore === 0) return { label: "", color: "bg-muted" };
-    if (passwordScore === 1) return { label: "Trop court (8+ car. requis)", color: "bg-red-500" };
-    if (passwordScore === 2) return { label: "Moyen (ajoutez majuscule ou chiffre)", color: "bg-amber-500" };
-    if (passwordScore === 3) return { label: "Fort", color: "bg-emerald-500" };
-    return { label: "Excellente robustesse", color: "bg-emerald-600" };
-  }, [passwordScore]);
+  const currentPassword = watch("password");
 
   /* Redirection adaptée au profil */
   const handlePostAuthRedirect = (selectedRole: "candidate" | "recruiter") => {
@@ -126,7 +224,7 @@ function RegisterForm() {
       }
       setError(
         code === "auth/unauthorized-domain"
-          ? "Ce domaine web n'est pas encore autorisé dans la console Firebase."
+          ? "Ce domaine web n'est pas encore autorisé dans la console Firebase (Settings > Authorized Domains)."
           : "Inscription avec Google annulée ou indisponible."
       );
     } finally {
@@ -384,125 +482,8 @@ function RegisterForm() {
             </button>
           </div>
 
-          {/* Jauge animée de sécurité et d'efficacité du mot de passe */}
-          {currentPassword.length > 0 && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-              exit={{ opacity: 0, height: 0 }}
-              transition={{ duration: 0.25 }}
-              className="space-y-2 pt-1.5"
-            >
-              {/* 4 segments animés avec spring */}
-              <div className="grid grid-cols-4 gap-1.5">
-                {[1, 2, 3, 4].map((step) => {
-                  const isActive = passwordScore >= step;
-                  return (
-                    <div key={step} className="h-1.5 rounded-full bg-muted overflow-hidden">
-                      <motion.div
-                        className={`h-full ${isActive ? strengthMeta.color : "bg-transparent"}`}
-                        initial={false}
-                        animate={{
-                          scaleX: isActive ? 1 : 0,
-                          opacity: isActive ? 1 : 0,
-                        }}
-                        transition={{ type: "spring", stiffness: 300, damping: 25 }}
-                        style={{ originX: 0 }}
-                      />
-                    </div>
-                  );
-                })}
-              </div>
-
-              {/* Libellé d'efficacité */}
-              <div className="flex items-center justify-between text-[11px]">
-                <span className="text-muted-foreground font-medium">Robustesse :</span>
-                <span
-                  className={`font-semibold ${
-                    passwordScore >= 3
-                      ? "text-emerald-500"
-                      : passwordScore === 2
-                        ? "text-amber-500"
-                        : "text-destructive"
-                  }`}
-                >
-                  {strengthMeta.label}
-                </span>
-              </div>
-
-              {/* Critères interactifs avec cochettes animées */}
-              <div className="grid grid-cols-2 gap-1.5 pt-1 text-[11px]">
-                <div
-                  className={`flex items-center gap-1.5 transition-colors ${
-                    passwordCriteria.hasLength ? "text-emerald-500 font-medium" : "text-muted-foreground"
-                  }`}
-                >
-                  <motion.span
-                    animate={{ scale: passwordCriteria.hasLength ? [0.8, 1.25, 1] : 1 }}
-                    transition={{ duration: 0.2 }}
-                  >
-                    {passwordCriteria.hasLength ? (
-                      <Check size={12} strokeWidth={3} />
-                    ) : (
-                      <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground/40 mx-0.5 inline-block" />
-                    )}
-                  </motion.span>
-                  <span>8+ caractères</span>
-                </div>
-                <div
-                  className={`flex items-center gap-1.5 transition-colors ${
-                    passwordCriteria.hasUpper ? "text-emerald-500 font-medium" : "text-muted-foreground"
-                  }`}
-                >
-                  <motion.span
-                    animate={{ scale: passwordCriteria.hasUpper ? [0.8, 1.25, 1] : 1 }}
-                    transition={{ duration: 0.2 }}
-                  >
-                    {passwordCriteria.hasUpper ? (
-                      <Check size={12} strokeWidth={3} />
-                    ) : (
-                      <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground/40 mx-0.5 inline-block" />
-                    )}
-                  </motion.span>
-                  <span>1 majuscule</span>
-                </div>
-                <div
-                  className={`flex items-center gap-1.5 transition-colors ${
-                    passwordCriteria.hasNumber ? "text-emerald-500 font-medium" : "text-muted-foreground"
-                  }`}
-                >
-                  <motion.span
-                    animate={{ scale: passwordCriteria.hasNumber ? [0.8, 1.25, 1] : 1 }}
-                    transition={{ duration: 0.2 }}
-                  >
-                    {passwordCriteria.hasNumber ? (
-                      <Check size={12} strokeWidth={3} />
-                    ) : (
-                      <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground/40 mx-0.5 inline-block" />
-                    )}
-                  </motion.span>
-                  <span>1 chiffre</span>
-                </div>
-                <div
-                  className={`flex items-center gap-1.5 transition-colors ${
-                    passwordCriteria.hasSpecial ? "text-emerald-500 font-medium" : "text-muted-foreground"
-                  }`}
-                >
-                  <motion.span
-                    animate={{ scale: passwordCriteria.hasSpecial ? [0.8, 1.25, 1] : 1 }}
-                    transition={{ duration: 0.2 }}
-                  >
-                    {passwordCriteria.hasSpecial ? (
-                      <Check size={12} strokeWidth={3} />
-                    ) : (
-                      <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground/40 mx-0.5 inline-block" />
-                    )}
-                  </motion.span>
-                  <span>1 symbole (!@#$)</span>
-                </div>
-              </div>
-            </motion.div>
-          )}
+          {/* Jauge isolée mémoïsée : zéro impact sur les autres inputs */}
+          <PasswordStrengthIndicator password={currentPassword} />
 
           {errors.password && (
             <p className="text-xs text-destructive">{errors.password.message}</p>
