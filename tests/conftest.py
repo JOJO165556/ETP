@@ -14,6 +14,7 @@ try:
 except ImportError:
     pass  # dotenv non disponible en CI
 
+from src.core.config import settings
 from src.core.database import Base, get_db
 from src.core.security import get_password_hash
 from src.main import app
@@ -22,13 +23,20 @@ from src.modules.companies.models import Company
 from src.modules.jobs.models import Job, JobStatus
 from src.modules.users.models import User, UserRole
 
-TEST_DATABASE_URL = os.environ.get(
-    "TEST_DATABASE_URL",
-    os.environ.get(
-        "DATABASE_URL",
-        "postgresql+asyncpg://postgres:postgres@localhost:5432/test_db",
-    ),
-)
+
+def _get_test_database_url() -> str:
+    raw = os.environ.get("TEST_DATABASE_URL")
+    if raw and raw.strip():
+        u = raw.strip()
+        if u.startswith("postgres://"):
+            return u.replace("postgres://", "postgresql+asyncpg://", 1)
+        elif u.startswith("postgresql://"):
+            return u.replace("postgresql://", "postgresql+asyncpg://", 1)
+        return u
+    return str(settings.DATABASE_URL)
+
+
+TEST_DATABASE_URL = _get_test_database_url()
 
 
 @pytest_asyncio.fixture(scope="session")
