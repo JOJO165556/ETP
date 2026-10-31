@@ -48,21 +48,21 @@ interface FirebaseWebConfig {
  */
 export function isFirebaseConfigured(): boolean {
   return !!(
-    (process.env.NEXT_PUBLIC_FIREBASE_API_KEY || "AIzaSyCRl9GRzrfx8K25-LMvBZ37Hf3vUqZhr4c") &&
-    (process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || "etp-s-59e57.firebaseapp.com") &&
-    (process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || "etp-s-59e57") &&
-    (process.env.NEXT_PUBLIC_FIREBASE_APP_ID || "1:201613750954:web:2f0b7cbd0dc503c06a16d3")
+    process.env.NEXT_PUBLIC_FIREBASE_API_KEY &&
+    process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN &&
+    process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID &&
+    process.env.NEXT_PUBLIC_FIREBASE_APP_ID
   );
 }
 
 function getFirebaseConfig(): FirebaseWebConfig {
   return {
-    apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || "AIzaSyCRl9GRzrfx8K25-LMvBZ37Hf3vUqZhr4c",
-    authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || "etp-s-59e57.firebaseapp.com",
-    projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || "etp-s-59e57",
-    storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || "etp-s-59e57.firebasestorage.app",
-    messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || "201613750954",
-    appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID || "1:201613750954:web:2f0b7cbd0dc503c06a16d3",
+    apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+    authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+    projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+    storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+    messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+    appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
   };
 }
 

@@ -19,7 +19,7 @@ class Settings(BaseSettings):
     SECRET_KEY: str = _generate_secret()
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
     ENVIRONMENT: str = "development"
-    FRONTEND_URL: str = "http://localhost:3000"
+    FRONTEND_URL: str = "https://tryetp.vercel.app"
     EMAIL_VERIFICATION_EXPIRE_HOURS: int = 24
 
     SMTP_HOST: str = "localhost"
@@ -32,16 +32,26 @@ class Settings(BaseSettings):
     SMTP_TIMEOUT: int = 15
     RESEND_API_KEY: Optional[str] = None
 
-    BACKEND_CORS_ORIGINS: List[AnyHttpUrl] = []
+    BACKEND_CORS_ORIGINS: List[AnyHttpUrl] = [
+        "http://localhost:3000",
+        "https://tryetp.vercel.app",
+    ]
 
     @field_validator("BACKEND_CORS_ORIGINS", mode="before")
     @classmethod
     def assemble_cors_origins(cls, v: Any) -> Any:
+        default_origins = [
+            "http://localhost:3000",
+            "https://tryetp.vercel.app",
+        ]
         if isinstance(v, str) and not v.startswith("["):
-            return [i.strip() for i in v.split(",")]
-        elif isinstance(v, (list, str)):
+            origins = [i.strip() for i in v.split(",") if i.strip()]
+            return origins if origins else default_origins
+        elif isinstance(v, list):
+            return v if v else default_origins
+        elif isinstance(v, str):
             return v
-        return []
+        return default_origins
 
     POSTGRES_SERVER: Optional[str] = "localhost"
     POSTGRES_USER: Optional[str] = "postgres"
