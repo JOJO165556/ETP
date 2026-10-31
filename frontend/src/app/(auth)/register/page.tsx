@@ -272,7 +272,7 @@ function RegisterForm() {
       setError(
         message.includes("existe deja")
           ? "Un compte avec cette adresse email existe déjà. Veuillez vous connecter."
-          : message
+          : "Une erreur est survenue lors de l'inscription. Veuillez réessayer."
       );
     }
   };
