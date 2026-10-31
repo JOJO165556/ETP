@@ -8,16 +8,28 @@ const nextConfig: NextConfig = {
     "43cd-2c0f-f0f8-690-4d00-9669-2b33-a20f-17e2.ngrok-free.app",
   ],
 
-  // Proxy vers le backend FastAPI en développement pour éviter les CORS
+  // Proxy vers le backend FastAPI
   async rewrites() {
-    let apiUrl = process.env.NEXT_PUBLIC_API_URL;
-    if (!apiUrl || apiUrl === "undefined" || apiUrl === "null") {
-      apiUrl = "http://localhost:8000";
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+    // Si l'URL n'est pas définie ou pointe sur localhost hors mode développement,
+    // on ne configure aucun rewrite pour éviter ROUTER_EXTERNAL_TARGET_ERROR sur Vercel.
+    const isDev = process.env.NODE_ENV === "development";
+    if (!apiUrl || apiUrl === "undefined" || apiUrl === "null" || apiUrl.includes("localhost")) {
+      if (isDev) {
+        return [
+          {
+            source: "/api/v1/:path*",
+            destination: "http://localhost:8000/api/v1/:path*",
+          },
+        ];
+      }
+      return [];
     }
+
     return [
       {
-        source: "/api/:path*",
-        destination: `${apiUrl}/api/:path*`,
+        source: "/api/v1/:path*",
+        destination: `${apiUrl}/api/v1/:path*`,
       },
     ];
   },
@@ -51,15 +63,23 @@ const nextConfig: NextConfig = {
     ];
   },
 
+  compress: true,
+  poweredByHeader: false,
+
   images: {
+    formats: ["image/avif", "image/webp"],
+    minimumCacheTTL: 604800, // 7 jours de cache sur Vercel Edge Cache
     remotePatterns: [
       {
         protocol: "https",
         hostname: "*.supabase.co",
       },
+      {
+        protocol: "https",
+        hostname: "avatars.githubusercontent.com",
+      },
     ],
   },
-
 };
 
 export default nextConfig;

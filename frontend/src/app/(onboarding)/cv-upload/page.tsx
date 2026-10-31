@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { UploadCloud, Lock, ArrowRight, Loader2 } from "lucide-react";
+import { UploadCloud, Lock, ArrowRight, Loader2, FileText, CheckCircle2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 import { API_V1 } from "@/lib/api";
@@ -14,6 +14,14 @@ export default function CVUploadPage() {
   const [isDragging, setIsDragging] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [file, setFile] = useState<File | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  /* Gère la sélection manuelle via explorateur de fichiers */
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setFile(e.target.files[0]);
+    }
+  };
 
   /* Gère le dépôt (drag & drop) du fichier */
   const handleDrop = (e: React.DragEvent) => {
@@ -102,68 +110,93 @@ export default function CVUploadPage() {
         />
 
         <div
+          onClick={() => fileInputRef.current?.click()}
           onDragOver={(e) => {
             e.preventDefault();
             setIsDragging(true);
           }}
           onDragLeave={() => setIsDragging(false)}
           onDrop={handleDrop}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              fileInputRef.current?.click();
+            }
+          }}
           className={cn(
-            "relative flex flex-col items-center justify-center rounded-2xl border border-dashed bg-background/50 p-16 backdrop-blur-sm transition-all duration-300",
+            "relative flex cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed bg-background/50 p-14 backdrop-blur-sm transition-all duration-300 outline-none focus-visible:ring-2 focus-visible:ring-primary",
             isDragging
-              ? "border-primary bg-primary/5"
-              : "border-border hover:border-border",
-            file ? "border-success/50 bg-success/5" : ""
+              ? "border-primary bg-primary/10 scale-[1.01]"
+              : "border-border hover:border-primary/60 hover:bg-muted/40",
+            file ? "border-emerald-500/60 bg-emerald-500/5 hover:border-emerald-500" : ""
           )}
         >
+          {/* Input fichier réel masqué */}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+            onChange={handleFileSelect}
+            className="hidden"
+            id="cv-file-input"
+            aria-label="Sélectionner un fichier de CV"
+          />
+
           <div
             className={cn(
-              "mb-6 flex h-16 w-16 items-center justify-center rounded-xl bg-muted text-muted-foreground transition-colors duration-300",
-              isDragging ? "text-primary" : "",
-              file ? "bg-success/10 text-success" : ""
+              "mb-5 flex h-16 w-16 items-center justify-center rounded-2xl transition-all duration-300",
+              isDragging ? "bg-primary/20 text-primary scale-110" : "bg-muted text-muted-foreground",
+              file ? "bg-emerald-500/15 text-emerald-500" : ""
             )}
           >
-            <UploadCloud size={28} />
+            {file ? <FileText size={30} /> : <UploadCloud size={30} />}
           </div>
 
           {!file ? (
             <>
               <h3 className="mb-2 text-lg font-semibold text-foreground">
-                Glissez & déposez votre fichier ici
+                Glissez & déposez votre CV ici
               </h3>
-              <p className="mb-8 text-sm text-muted-foreground">
+              <p className="mb-6 text-sm text-muted-foreground">
                 ou{" "}
-                <button className="text-primary hover:underline">
-                  cliquez pour parcourir
-                </button>{" "}
-                votre appareil
+                <span className="font-semibold text-primary underline underline-offset-4 hover:text-primary/80">
+                  parcourez vos fichiers
+                </span>{" "}
+                depuis votre appareil
               </p>
               <div className="flex items-center gap-2">
-                <span className="rounded bg-muted px-2 py-1 font-mono text-xs text-muted-foreground">
+                <span className="rounded-md border border-border bg-muted/60 px-2.5 py-1 font-mono text-xs text-muted-foreground">
                   PDF
                 </span>
-                <span className="rounded bg-muted px-2 py-1 font-mono text-xs text-muted-foreground">
+                <span className="rounded-md border border-border bg-muted/60 px-2.5 py-1 font-mono text-xs text-muted-foreground">
                   DOCX
                 </span>
-                <span className="rounded bg-muted px-2 py-1 font-mono text-xs text-muted-foreground">
-                  Max 10MB
+                <span className="rounded-md border border-border bg-muted/60 px-2.5 py-1 font-mono text-xs text-muted-foreground">
+                  Max 10 Mo
                 </span>
               </div>
             </>
           ) : (
             <>
-              <h3 className="mb-2 text-lg font-semibold text-foreground">{file.name}</h3>
-              <p className="mb-8 text-sm text-success">
-                Prêt pour l'analyse ({(file.size / 1024 / 1024).toFixed(2)} MB)
+              <div className="flex items-center gap-2 mb-2 text-emerald-500">
+                <CheckCircle2 size={18} />
+                <h3 className="text-lg font-semibold text-foreground">{file.name}</h3>
+              </div>
+              <p className="mb-6 text-sm text-muted-foreground">
+                Fichier prêt pour l'analyse IA ({(file.size / 1024 / 1024).toFixed(2)} Mo)
               </p>
               <button
+                type="button"
                 onClick={(e) => {
                   e.stopPropagation();
                   setFile(null);
+                  if (fileInputRef.current) fileInputRef.current.value = "";
                 }}
-                className="text-xs text-muted-foreground transition-colors hover:text-foreground"
+                className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive hover:border-destructive/30"
               >
-                Supprimer le fichier
+                Changer de fichier
               </button>
             </>
           )}

@@ -8,12 +8,6 @@ const FEATURES = [
   "Un pipeline que toute l'équipe peut piloter ensemble",
 ];
 
-const TESTIMONIAL = {
-  quote:
-    "ETP a réduit notre temps de recrutement d'un tiers. Les scores de matching sont d'une précision impressionnante.",
-  author: "Camille R.",
-  role: "Head of Talent, Lumen",
-};
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -56,12 +50,12 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
             ))}
           </ul>
 
-          <div className="rounded-xl bg-white/10 p-5 backdrop-blur-sm">
-            <p className="text-sm leading-relaxed text-white/90">
-              « {TESTIMONIAL.quote} »
+          <div className="rounded-xl border border-white/15 bg-white/10 p-5 backdrop-blur-sm">
+            <p className="text-xs font-semibold tracking-wider text-white/90 uppercase">
+              Standard d'ingénierie & Conformité
             </p>
-            <p className="mt-3 text-xs font-medium text-white/60">
-              {TESTIMONIAL.author} &middot; {TESTIMONIAL.role}
+            <p className="mt-2 text-sm leading-relaxed text-white/85">
+              Traitement confidentiel des données, chiffrement de bout en bout et hébergement souverain certifié RGPD.
             </p>
           </div>
         </div>

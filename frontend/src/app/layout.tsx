@@ -30,6 +30,13 @@ export const metadata: Metadata = {
   description:
     "Plateforme de gestion des talents, offres d'emploi et candidatures pour les entreprises.",
   keywords: ["ATS", "recrutement", "RH", "talents", "emploi"],
+  icons: {
+    icon: [
+      { url: "/favicon.ico" },
+      { url: "/etp_logo.webp", type: "image/webp" },
+    ],
+    apple: "/etp_logo.webp",
+  },
   // Plateforme SaaS privée : pas d'indexation moteur de recherche
   robots: { index: false, follow: false },
 };

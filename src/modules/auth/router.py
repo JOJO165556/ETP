@@ -159,20 +159,20 @@ async def firebase_login(
             if email_verified:
                 user.is_verified = True
         else:
-            # Self-service (social ou email) : le role ne provient JAMAIS du
-            # client. On rejette toute tentative de role != CANDIDATE (escalade
-            # de privilege) ; recruiter/company_admin/superadmin ne sont concedes
-            # que par un admin via /users (require_roles SUPERADMIN).
-            if body.role not in (None, UserRole.CANDIDATE):
+            # Self-service (social ou email) : autorise candidat ou recruteur.
+            # company_admin et superadmin restent strictement protégés.
+            valid_roles = (UserRole.CANDIDATE, UserRole.RECRUITER, "candidate", "recruiter")
+            if body.role is not None and body.role not in valid_roles:
                 raise HTTPException(
                     status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
                     detail="Role non autorise lors de la creation via Firebase.",
                 )
+            target_role = UserRole.RECRUITER if body.role in (UserRole.RECRUITER, "recruiter") else UserRole.CANDIDATE
             user = await user_repo.create({
                 "email": email,
                 "firebase_uid": firebase_uid,
                 "hashed_password": "",  # Auth 100% Firebase : aucun mot de passe local
-                "role": UserRole.CANDIDATE,
+                "role": target_role,
                 "auth_provider": auth_provider,
                 "is_verified": email_verified,
             })
@@ -258,12 +258,24 @@ async def forgot_password(
 
     if user and user.is_active:
         reset_token = create_password_reset_token(email)
-        # TODO (production) : envoyer le token par email via SendGrid ou Resend
-        # En développement, le lien est affiché dans les logs du serveur
-        logger.info(
-            "[DEV] Lien de réinitialisation : "
-            f"http://localhost:3000/reset-password?token={reset_token}"
-        )
+        reset_url = f"{settings.FRONTEND_URL}/reset-password?token={reset_token}"
+
+        # Envoi de l'email via le moteur de templates Jinja2 (reset_password.html)
+        from src.core.email import send_templated_email_now
+        try:
+            await send_templated_email_now(
+                to_email=email,
+                subject="Réinitialisation de votre mot de passe - ETP",
+                template_name="reset_password",
+                context={
+                    "reset_url": reset_url,
+                    "expires_hours": 1,
+                },
+            )
+        except Exception as e:
+            logger.error(f"Erreur envoi email réinitialisation mot de passe: {e}")
+
+        logger.info(f"Lien de réinitialisation généré pour {email}: {reset_url}")
 
     return {"message": "Si cet email est enregistré, un lien vous a été envoyé."}
 

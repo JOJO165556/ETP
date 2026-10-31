@@ -35,6 +35,7 @@ DEFAULT_SUBJECTS: dict[str, str] = {
     "stage_changed": "Mise à jour de votre candidature - {{ job_title }}",
     "application_rejected": "Candidature - {{ job_title }}",
     "new_job_match": "Nouvelle offre correspondant à votre profil",
+    "reset_password": "Réinitialisation de votre mot de passe - ETP",
 }
 
 

@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
@@ -97,15 +98,41 @@ const NAV_FOOTER = [
 ];
 
 interface SidebarProps {
-  role?: "CANDIDAT" | "RECRUITER" | "ADMIN";
+  role?: string;
   collapsed?: boolean;
   onToggle?: () => void;
 }
 
 /* Barre de navigation latérale avec navigation par rôle */
-export function Sidebar({ role = "CANDIDAT", collapsed = false, onToggle }: SidebarProps) {
+export function Sidebar({ role: initialRole, collapsed = false, onToggle }: SidebarProps) {
   const chemin = usePathname();
-  const sections = NAVIGATION[role] || NAVIGATION.CANDIDAT;
+  const [currentRole, setCurrentRole] = useState<string>(initialRole || "candidate");
+
+  useEffect(() => {
+    if (initialRole) {
+      setCurrentRole(initialRole);
+      return;
+    }
+    // Auto-détection du rôle connecté depuis le profil utilisateur
+    fetch("/api/v1/auth/me")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data?.role) {
+          setCurrentRole(data.role);
+        }
+      })
+      .catch(() => {});
+  }, [initialRole]);
+
+  const normalized = (currentRole || "candidate").toUpperCase();
+  const roleKey =
+    normalized.includes("RECRUIT") || normalized.includes("COMPANY")
+      ? "RECRUITER"
+      : normalized.includes("ADMIN")
+        ? "ADMIN"
+        : "CANDIDAT";
+
+  const sections = NAVIGATION[roleKey] || NAVIGATION.CANDIDAT;
 
   return (
     <aside
@@ -129,8 +156,8 @@ export function Sidebar({ role = "CANDIDAT", collapsed = false, onToggle }: Side
               <span className="text-sm font-bold tracking-tight text-sidebar-foreground" style={{ fontFamily: 'var(--font-heading)' }}>
                 ETP
               </span>
-              <span className="text-[10px] font-medium tracking-wider text-sidebar-foreground/50 uppercase">
-                Enterprise Talent Platform
+              <span className="mt-1 inline-flex w-fit items-center rounded-full bg-primary/10 px-2 py-0.5 text-[9px] font-semibold text-primary uppercase tracking-wider">
+                {roleKey === "RECRUITER" ? "Espace Recruteur" : roleKey === "ADMIN" ? "Administration" : "Espace Candidat"}
               </span>
             </div>
           )}

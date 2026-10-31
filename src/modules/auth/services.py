@@ -162,10 +162,11 @@ class AuthService:
                 detail="Un compte avec cet email existe deja"
             )
 
+        target_role = UserRole.RECRUITER if data.role == "recruiter" else UserRole.CANDIDATE
         user = await self.user_repo.create({
             "email": data.email,
             "hashed_password": get_password_hash(data.password),
-            "role": UserRole.CANDIDATE,
+            "role": target_role,
             "is_active": True,
             "is_verified": False,
         })
