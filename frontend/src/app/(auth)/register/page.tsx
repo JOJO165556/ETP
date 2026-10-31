@@ -253,7 +253,6 @@ function RegisterForm() {
           last_name: data.last_name,
           email: data.email,
           password: data.password,
-          role,
         });
 
         const res = await fetch("/api/auth/set-cookie", {
