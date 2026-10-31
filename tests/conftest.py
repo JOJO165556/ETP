@@ -38,7 +38,14 @@ TEST_DATABASE_URL = _get_test_database_url()
 @pytest_asyncio.fixture(scope="session")
 async def db_engine():
     """Moteur PostgreSQL partagé : schéma créé une seule fois avec toutes les structures avancées."""
-    engine = create_async_engine(TEST_DATABASE_URL, echo=False)
+    # statement_cache_size=0 : désactive le cache de requêtes préparées d'asyncpg.
+    # Après drop_all + create_all les OIDs des types ENUM (userrole, jobstatus…)
+    # changent ; le cache conserve les anciens OIDs → "cache lookup failed for type".
+    engine = create_async_engine(
+        TEST_DATABASE_URL,
+        echo=False,
+        connect_args={"statement_cache_size": 0},
+    )
     async with engine.begin() as conn:
         await conn.execute(
             text("DROP MATERIALIZED VIEW IF EXISTS mv_company_recruitment_kpis CASCADE;")
