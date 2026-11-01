@@ -14,6 +14,8 @@ import { initializeApp, type FirebaseApp } from "firebase/app";
 import {
   getAuth,
   signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   signInWithPhoneNumber,
@@ -112,14 +114,25 @@ function toSessionUser(user: User): FirebaseSessionUser {
   };
 }
 
-/** Connexion Google via popup. */
+/** Connexion Google via redirect (compatible tous navigateurs, évite les popup blockers). */
 export async function signInWithGoogle(): Promise<FirebaseSessionUser> {
   const app = getFirebaseApp()!;
   const auth = getAuth(app);
-  const provider = new GoogleAuthProvider();
-  // signInWithPopup doit être appelé le plus tôt possible dans le handler
-  // pour que Firefox ne considère pas le popup comme non-initié par l'utilisateur.
-  const result = await signInWithPopup(auth, provider);
+  await signInWithRedirect(auth, new GoogleAuthProvider());
+  // signInWithRedirect ne retourne jamais — la page est redirigée vers Google.
+  // Le résultat est récupéré au retour via getGoogleRedirectResult().
+  throw new Error("redirect"); // jamais atteint
+}
+
+/**
+ * Récupère le résultat de la redirection Google au retour sur la page.
+ * À appeler au montage des pages d'auth.
+ */
+export async function getGoogleRedirectResult(): Promise<FirebaseSessionUser | null> {
+  const app = getFirebaseApp();
+  if (!app) return null;
+  const result = await getRedirectResult(getAuth(app));
+  if (!result) return null;
   return toSessionUser(result.user);
 }
 

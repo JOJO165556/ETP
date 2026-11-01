@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
@@ -19,6 +19,7 @@ import {
   isFirebaseConfigured,
   signInWithGoogle,
   signInWithFacebook,
+  getGoogleRedirectResult,
   signInWithEmail,
   exchangeFirebaseSession,
 } from "@/lib/firebase";
@@ -52,6 +53,36 @@ export default function LoginPage() {
   } = useForm<LoginValues>({ resolver: zodResolver(loginSchema) });
 
   const firebaseReady = isFirebaseConfigured();
+
+  /* Récupère le résultat de la redirection Google au retour sur la page. */
+  useEffect(() => {
+    if (!firebaseReady) return;
+    getGoogleRedirectResult()
+      .then(async (user) => {
+        if (!user) return; // pas de redirect en cours — silencieux
+        setSocialBusy("google");
+        const ok = await exchangeFirebaseSession(user);
+        if (!ok) throw new Error("session");
+        await completeLogin(null);
+      })
+      .catch((err: unknown) => {
+        const code =
+          typeof err === "object" && err !== null && "code" in err
+            ? String((err as { code?: unknown }).code)
+            : "";
+        if (
+          code === "auth/popup-closed-by-user" ||
+          code === "auth/cancelled-popup-request"
+        ) {
+          setSocialBusy(null);
+          return;
+        }
+        if (code) {
+          setError("Connexion Google annulée ou indisponible.");
+        }
+        setSocialBusy(null);
+      });
+  }, [firebaseReady]);
 
   /* Soumission email/mot de passe : Firebase si configuré, sinon la session classique. */
   const onSubmit = async (data: LoginValues) => {

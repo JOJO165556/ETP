@@ -1,6 +1,6 @@
 "use client";
 
-import React, { Suspense, useState, useMemo } from "react";
+import React, { Suspense, useEffect, useState, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -25,6 +25,7 @@ import {
   isFirebaseConfigured,
   createAccountWithEmail,
   signInWithGoogle,
+  getGoogleRedirectResult,
   exchangeFirebaseSession,
 } from "@/lib/firebase";
 import { registerSchema, type RegisterValues } from "@/lib/validations/auth";
@@ -184,6 +185,38 @@ function RegisterForm() {
 
   const currentPassword = watch("password");
 
+  /* Récupère le résultat de la redirection Google au retour sur la page. */
+  useEffect(() => {
+    if (!isFirebaseConfigured()) return;
+    getGoogleRedirectResult()
+      .then(async (user) => {
+        if (!user) return; // pas de redirect en cours — silencieux
+        setSocialBusy(true);
+        const ok = await exchangeFirebaseSession(user, { role });
+        if (!ok) throw new Error("session");
+        handlePostAuthRedirect(role);
+      })
+      .catch((err: unknown) => {
+        // Popup fermé ou annulé : pas d'erreur à afficher
+        const code =
+          typeof err === "object" && err !== null && "code" in err
+            ? String((err as { code?: unknown }).code)
+            : "";
+        if (
+          code === "auth/popup-closed-by-user" ||
+          code === "auth/cancelled-popup-request"
+        ) {
+          setSocialBusy(false);
+          return;
+        }
+        if (code) {
+          setError("Connexion Google annulée ou indisponible.");
+        }
+        setSocialBusy(false);
+      });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   /* Redirection adaptée au profil */
   const handlePostAuthRedirect = (selectedRole: "candidate" | "recruiter") => {
     if (selectedRole === "candidate") {
@@ -220,6 +253,7 @@ function RegisterForm() {
         code === "auth/popup-closed-by-user" ||
         code === "auth/cancelled-popup-request"
       ) {
+        setSocialBusy(false);
         return;
       }
       setError(
