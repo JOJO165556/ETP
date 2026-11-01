@@ -1,4 +1,3 @@
-from typing import Literal
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 from src.modules.users.models import UserRole
 
@@ -22,8 +21,8 @@ class TokenData(BaseModel):
 
 
 class RegisterRequest(BaseModel):
-    """Inscription publique (candidat ou recruteur).
-    Les rôles administratifs (company_admin, superadmin) sont strictement interdits en self-service.
+    """Inscription publique directe.
+    Le role est toujours CANDIDATE (aucun champ role accepte).
     """
     model_config = ConfigDict(extra="forbid", json_schema_extra={
         "example": {
@@ -31,14 +30,12 @@ class RegisterRequest(BaseModel):
             "password": "MonSecret123!",
             "first_name": "Jean",
             "last_name": "Dupont",
-            "role": "candidate",
         }
     })
     email: EmailStr
     password: str = Field(min_length=8, max_length=128, description="Mot de passe d'au moins 8 caractères")
     first_name: str | None = None
     last_name: str | None = None
-    role: Literal["candidate", "recruiter"] = "candidate"
 
 
 class RefreshTokenRequest(BaseModel):

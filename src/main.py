@@ -81,14 +81,15 @@ Instrumentator().instrument(app).expose(app)
 # Security headers
 app.add_middleware(SecurityHeadersMiddleware)
 
-# CORS restrictif — jamais de wildcard
+# CORS restrictif — origines autorisées sans slash final
 if settings.BACKEND_CORS_ORIGINS:
+    cors_origins = [str(origin).rstrip("/") for origin in settings.BACKEND_CORS_ORIGINS]
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=[str(origin) for origin in settings.BACKEND_CORS_ORIGINS],
+        allow_origins=cors_origins,
         allow_credentials=True,
-        allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH"],
-        allow_headers=["Authorization", "Content-Type"],
+        allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+        allow_headers=["Authorization", "Content-Type", "Accept", "Origin", "X-Requested-With"],
     )
 
 # Enregistrement des routes de l'API v1

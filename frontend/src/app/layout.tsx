@@ -61,7 +61,7 @@ export default function RootLayout({
         {/* Applique le thème avant le premier paint pour éviter tout flash. Clair par défaut. */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{var t=localStorage.getItem('${THEME_STORAGE_KEY}');if(t==='dark'){document.documentElement.classList.add('dark')}}catch(e){}})();`,
+            __html: "try{if(localStorage.getItem('etp-theme')==='dark'){document.documentElement.classList.add('dark');}}catch(e){}",
           }}
         />
       </head>
