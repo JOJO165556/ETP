@@ -217,14 +217,13 @@ function RegisterForm() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  /* Redirection adaptée au profil */
+  /* Redirection adaptée au profil — navigation dure pour éviter la boucle de redirect OAuth */
   const handlePostAuthRedirect = (selectedRole: "candidate" | "recruiter") => {
     if (selectedRole === "candidate") {
-      router.push("/cv-upload");
+      window.location.href = "/cv-upload";
     } else {
-      router.push("/overview");
+      window.location.href = "/overview";
     }
-    router.refresh();
   };
 
   /* Connexion / Inscription Google */
