@@ -1,0 +1,25 @@
+# grafana/alloy/render.yaml
+# Service Render Worker — collecteur Grafana Alloy pour les métriques ETP
+#
+# Variables d'environnement requises (à configurer dans le dashboard Render) :
+#   METRICS_URL          — adresse interne de l'API FastAPI exposant /metrics
+#                          (ex: https://api-etp.onrender.com/metrics)
+#   GRAFANA_CLOUD_URL    — URL Remote Write Grafana Cloud
+#                          (ex: https://prometheus-prod-XX.grafana.net/api/prom/push)
+#   GRAFANA_CLOUD_USER   — identifiant numérique Grafana Cloud (Prometheus instance ID)
+#   GRAFANA_CLOUD_PASSWORD — clé API Grafana Cloud (scope metrics:write)
+
+services:
+  - type: worker
+    name: etp-alloy-metrics
+    runtime: docker
+    dockerfilePath: ./grafana/alloy/Dockerfile
+    envVars:
+      - key: METRICS_URL
+        sync: false
+      - key: GRAFANA_CLOUD_URL
+        sync: false
+      - key: GRAFANA_CLOUD_USER
+        sync: false
+      - key: GRAFANA_CLOUD_PASSWORD
+        sync: false

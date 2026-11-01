@@ -1,213 +1,88 @@
-"use client";
+import { Calendar, Mail, MessageSquare, Sparkles, Users, Video } from "lucide-react";
 
-import { MessageSquare, Users, Video, Calendar, Leaf, Settings, Plus } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { PageHeader } from "@/components/shared/page-header";
 
-type StatutIntegration = "connected" | "available" | "pending";
-
-const INTEGRATIONS: {
-  nom: string;
-  description: string;
-  icone: typeof MessageSquare;
-  bgIcone: string;
-  colorIcone: string;
-  statut: string;
-  type: StatutIntegration;
-}[] = [
+const ACTIF = [
   {
-    nom: "Slack",
+    Icone: Mail,
+    titre: "Notifications par email",
     description:
-      "Notifications d'entretien en temps réel et retours candidats directement dans vos canaux.",
-    icone: MessageSquare,
-    bgIcone: "bg-purple-500/15",
-    colorIcone: "text-purple-600 dark:text-purple-400",
-    statut: "Connecté",
-    type: "connected",
+      "Confirmation de candidature, invitation à un entretien et décision finale sont envoyées automatiquement aux personnes concernées.",
   },
   {
-    nom: "LinkedIn Recruiter",
+    Icone: Calendar,
+    titre: "Entretiens centralisés",
     description:
-      "Synchronisez les candidats depuis Recruiter directement dans votre pipeline ETP en un clic.",
-    icone: Users,
-    bgIcone: "bg-blue-500/15",
-    colorIcone: "text-blue-600 dark:text-blue-400",
-    statut: "Déconnecté",
-    type: "available",
+      "Chaque rendez-vous est enregistré avec sa durée, son lieu ou son lien de visioconférence, visible par l'équipe.",
   },
   {
-    nom: "Microsoft Teams",
+    Icone: Users,
+    titre: "Vivier d'entreprise",
     description:
-      "Coordonnez les comités de recrutement et planifiez les entretiens vidéo via MS Teams.",
-    icone: Video,
-    bgIcone: "bg-indigo-500/15",
-    colorIcone: "text-indigo-600 dark:text-indigo-400",
-    statut: "Connecté",
-    type: "connected",
-  },
-  {
-    nom: "Google Calendar",
-    description:
-      "Planification automatique des entretiens et gestion des réservations de salles.",
-    icone: Calendar,
-    bgIcone: "bg-blue-400/15",
-    colorIcone: "text-blue-500",
-    statut: "Déconnecté",
-    type: "available",
-  },
-  {
-    nom: "Zoom",
-    description:
-      "Générez automatiquement des liens de réunion Zoom sécurisés pour chaque entretien.",
-    icone: Video,
-    bgIcone: "bg-blue-600/15",
-    colorIcone: "text-blue-600 dark:text-blue-500",
-    statut: "Déconnecté",
-    type: "available",
-  },
-  {
-    nom: "Greenhouse",
-    description:
-      "Importez les données de pipeline existantes et synchronisez les offres d'emploi actuelles.",
-    icone: Leaf,
-    bgIcone: "bg-emerald-500/15",
-    colorIcone: "text-emerald-600 dark:text-emerald-400",
-    statut: "En attente",
-    type: "pending",
+      "Les profils candidats restent cloisonnés par entreprise. Aucun échange de données entre organisations.",
   },
 ];
 
-const CATEGORIES = ["Collaboration", "Communication", "Sourcing", "Productivité"];
+const AVENIR = [
+  { Icone: MessageSquare, titre: "Slack", description: "Alertes d'entretien dans vos canaux internes." },
+  { Icone: Video, titre: "Microsoft Teams", description: "Création du lien de réunion depuis l'entretien." },
+  { Icone: Calendar, titre: "Google Agenda", description: "Synchronisation des créneaux de l'équipe." },
+  { Icone: Users, titre: "LinkedIn Recruiter", description: "Import des profils sourcés dans le vivier." },
+  { Icone: Sparkles, titre: "Airtable et Notion", description: "Export des candidatures vers vos outils existants." },
+];
 
-const CONFIG_STATUT: Record<StatutIntegration, { etiquettes: string; variante: "success" | "warning" } | null> = {
-  connected: { etiquettes: "Connecté", variante: "success" },
-  pending: { etiquettes: "En attente", variante: "warning" },
-  available: null,
-};
-
-export default function IntegrationsPage() {
+export default function ConnexionsPage() {
   return (
-    <div className="p-8 lg:p-12">
-      {/* En-tête */}
-      <div className="mb-8 flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Marketplace d'Intégrations</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Propulsez votre flux de recrutement avec des outils de pointe et une
-            synchronisation fluide.
-          </p>
-        </div>
-        <div className="flex gap-3">
-          <span className="bg-muted text-foreground rounded px-3 py-1.5 text-xs font-bold tracking-wider">
-            6 ACTIVES
-          </span>
-          <span className="text-muted-foreground border-border rounded border px-3 py-1.5 text-xs font-bold tracking-wider">
-            24 TOTAL
-          </span>
-        </div>
-      </div>
+    <div className="mx-auto w-full max-w-4xl space-y-8 p-6 lg:p-10">
+      <PageHeader
+        title="Connexions"
+        description="Ce qui fonctionne aujourd'hui dans votre espace, et ce qui arrive ensuite."
+      />
 
-      <div className="grid grid-cols-1 gap-8 lg:grid-cols-4">
-        {/* Sidebar Catégories */}
-        <aside className="space-y-6">
-          <div className="space-y-1">
-            <h3 className="mb-3 px-3 text-sm font-bold text-foreground">Catégories</h3>
-            <button className="bg-primary text-primary-foreground flex w-full justify-between rounded px-3 py-2 text-sm font-medium">
-              Toutes les applications <span className="text-primary-foreground/70">24</span>
-            </button>
-            {CATEGORIES.map((cat) => (
-              <button
-                key={cat}
-                className="text-muted-foreground hover:bg-muted hover:text-foreground flex w-full justify-between rounded px-3 py-2 text-sm font-medium"
-              >
-                {cat} <span>8</span>
-              </button>
-            ))}
-          </div>
-
-          <div className="border-border bg-card rounded-xl border p-5">
-            <div className="mb-3 flex items-center gap-2 text-sm font-bold text-foreground">
-              Alpha Exclusive
-            </div>
-            <p className="mb-4 text-xs text-muted-foreground">
-              Obtenez un accès anticipé à notre nouvelle intégration de parsing de CV par IA
-              générative.
-            </p>
-            <button className="text-primary text-xs font-bold hover:underline">
-              En savoir plus &rarr;
-            </button>
-          </div>
-        </aside>
-
-        {/* Grille Intégrations */}
-        <div className="space-y-6 lg:col-span-3">
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {INTEGRATIONS.map((app) => {
-              const cfgStatut = CONFIG_STATUT[app.type];
-              return (
-              <div
-                key={app.nom}
-                className="hover:bg-muted/40 border-border bg-card flex flex-col justify-between rounded-xl border p-6 transition-colors"
-              >
-                <div>
-                  <div className="mb-4 flex items-start justify-between">
-                    <div
-                      className={cn(
-                        "flex h-12 w-12 items-center justify-center rounded-xl",
-                        app.bgIcone
-                      )}
-                    >
-                      <app.icone size={24} className={app.colorIcone} aria-hidden="true" />
-                    </div>
-                    {cfgStatut && (
-                      <Badge variant={cfgStatut.variante}>
-                        {cfgStatut.etiquettes}
-                      </Badge>
-                    )}
-                  </div>
-                  <h3 className="mb-2 text-lg font-bold text-foreground">{app.nom}</h3>
-                  <p className="line-clamp-3 text-sm text-muted-foreground">{app.description}</p>
+      <section className="space-y-3">
+        <h2 className="text-base font-semibold text-foreground">Disponible maintenant</h2>
+        <ul className="space-y-2">
+          {ACTIF.map(({ Icone, titre, description }) => (
+            <li
+              key={titre}
+              className="flex items-start gap-4 rounded-xl border border-border bg-card p-5"
+            >
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-success/10 text-success">
+                <Icone size={17} aria-hidden="true" />
+              </span>
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-2">
+                  <p className="text-sm font-semibold text-foreground">{titre}</p>
+                  <Badge variant="success">Actif</Badge>
                 </div>
-
-                <div className="mt-6 flex gap-2">
-                  {app.type === "connected" ? (
-                    <>
-                      <Button variant="outline" className="flex-1">Gérer</Button>
-                      <Button variant="outline" size="icon" aria-label={`Paramètres ${app.nom}`}>
-                        <Settings size={16} />
-                      </Button>
-                    </>
-                  ) : app.type === "pending" ? (
-                    <Button variant="outline" className="w-full">Reprendre la config.</Button>
-                  ) : (
-                    <Button className="w-full">Connecter</Button>
-                  )}
-                </div>
+                <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{description}</p>
               </div>
-              );
-            })}
-          </div>
+            </li>
+          ))}
+        </ul>
+      </section>
 
-          {/* Missing Integration Banner */}
-          <div className="mt-8 rounded-xl border border-dashed border-border p-8 text-center">
-            <div className="bg-muted text-muted-foreground mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full">
-              <Plus size={24} aria-hidden="true" />
-            </div>
-            <h3 className="text-lg font-bold text-foreground">
-              Une intégration manque à l'appel ?
-            </h3>
-            <p className="text-muted-foreground mx-auto mt-2 max-w-md text-sm">
-              Notre plateforme développeur vous permet de construire des intégrations
-              personnalisées ou d'en demander de nouvelles.
-            </p>
-            <div className="mt-6 flex justify-center gap-4">
-              <Button variant="secondary">Demander un service</Button>
-              <Button variant="outline">Docs API</Button>
-            </div>
-          </div>
+      <section className="space-y-3">
+        <div className="flex items-center justify-between">
+          <h2 className="text-base font-semibold text-foreground">Prochainement</h2>
+          <span className="text-xs text-muted-foreground">Feuille de route produit</span>
         </div>
-      </div>
+        <ul className="grid gap-2 sm:grid-cols-2">
+          {AVENIR.map(({ Icone, titre, description }) => (
+            <li key={titre} className="rounded-xl border border-border bg-card p-4">
+              <div className="flex items-center gap-2">
+                <Icone size={15} className="text-muted-foreground" aria-hidden="true" />
+                <p className="text-sm font-medium text-foreground">{titre}</p>
+                <Badge variant="outline" className="ml-auto">
+                  À venir
+                </Badge>
+              </div>
+              <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">{description}</p>
+            </li>
+          ))}
+        </ul>
+      </section>
     </div>
   );
 }

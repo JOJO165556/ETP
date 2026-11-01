@@ -7,10 +7,11 @@ from httpx import ASGITransport, AsyncClient
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
-# Chargement optionnel des variables d'environnement
+# Chargement optionnel des variables d'environnement.
+# Les variables deja presentes dans l'environnement (CI, shell) sont prioritaires.
 try:
     from dotenv import load_dotenv
-    load_dotenv(".env.test", override=True)
+    load_dotenv(".env.test")
 except ImportError:
     pass  # dotenv non disponible en CI
 
@@ -174,17 +175,20 @@ async def session_factory(db_engine):
     return async_sessionmaker(db_engine, class_=AsyncSession, expire_on_commit=False)
 
 
-# Nettoyage entre chaque test
+# Nettoyage entre chaque test.
+# La liste des tables est derivee des modeles pour rester alignee sur le schema.
+_TRUNCATE_STATEMENT = text(
+    "TRUNCATE TABLE "
+    + ", ".join(table.name for table in Base.metadata.sorted_tables)
+    + " RESTART IDENTITY CASCADE"
+)
+
+
 @pytest_asyncio.fixture(autouse=True)
 async def clean_db(session_factory):
     """Tronque toutes les tables avant chaque test pour garantir l'isolation."""
     async with session_factory() as session:
-        await session.execute(
-            text(
-                "TRUNCATE TABLE interviews, application_notes, application_stage_history, "
-                "applications, jobs, users, companies RESTART IDENTITY CASCADE"
-            )
-        )
+        await session.execute(_TRUNCATE_STATEMENT)
         await session.commit()
 
 

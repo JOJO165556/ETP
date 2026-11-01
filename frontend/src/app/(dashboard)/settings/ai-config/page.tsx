@@ -1,296 +1,330 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { BarChart, FileText, RefreshCw, Users } from "lucide-react";
-import { ToggleSwitch } from "@/components/ui/toggle-switch";
-import { Button } from "@/components/ui/button";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { CheckCircle2, RotateCcw } from "lucide-react";
+
 import { Badge } from "@/components/ui/badge";
-import { usersService } from "@/services/users.service";
-import type { CandidatVivier } from "@/types/domain";
+import { Button } from "@/components/ui/button";
+import { PageHeader } from "@/components/shared/page-header";
+import { StatePanel } from "@/components/shared/state-panel";
+import { Skeleton } from "@/components/ui/skeleton";
+import { ToggleSwitch } from "@/components/ui/toggle-switch";
+import { aiService, type ReglesPreselection } from "@/services/ai.service";
 
-type StatsVivier = {
-  total: number;
-  avecCv: number;
-  profilPublic: number;
-  rechercheActive: number;
-  topCompetences: { nom: string; count: number }[];
-};
+const DEFAUT = { competences: 60, experience: 25, formation: 15 };
 
-function calculerStats(candidats: CandidatVivier[]): StatsVivier {
-  const compteur = new Map<string, number>();
-  for (const c of candidats) {
-    for (const s of c.skills ?? []) {
-      const key = s.toLowerCase();
-      compteur.set(key, (compteur.get(key) ?? 0) + 1);
-    }
-  }
-  const topCompetences = [...compteur.entries()]
-    .map(([nom, count]) => ({ nom, count }))
-    .sort((a, b) => b.count - a.count)
-    .slice(0, 6);
-  return {
-    total: candidats.length,
-    avecCv: candidats.filter((c) => c.has_cv).length,
-    profilPublic: candidats.filter((c) => c.profil_public).length,
-    rechercheActive: candidats.filter((c) => c.recherchable).length,
-    topCompetences,
-  };
+function versPourcent(valeur: number): number {
+  return Math.round(Number(valeur) * 100);
 }
 
-export default function AiConfigPage() {
-  const [skillWeight, setSkillWeight] = useState(65);
-  const [expWeight, setExpWeight] = useState(40);
-  const [llmSensitivity, setLlmSensitivity] = useState(82);
-  const [stats, setStats] = useState<StatsVivier | null>(null);
+function versRatio(valeur: number): number {
+  return Math.round(valeur) / 100;
+}
 
-  useEffect(() => {
-    let vivant = true;
-    usersService
-      .getCandidats({ limit: 100 })
-      .then((candidats) => vivant && setStats(calculerStats(candidats)))
-      .catch((e) => console.error("Erreur de chargement du vivier", e));
-    return () => {
-      vivant = false;
-    };
+export default function ReglesPreselectionPage() {
+  const [regles, setRegles] = useState<ReglesPreselection | null>(null);
+  const [chargement, setChargement] = useState(true);
+  const [erreur, setErreur] = useState(false);
+
+  const [competences, setCompetences] = useState(DEFAUT.competences);
+  const [experience, setExperience] = useState(DEFAUT.experience);
+  const [formation, setFormation] = useState(DEFAUT.formation);
+  const [seuilPreselection, setSeuilPreselection] = useState(80);
+  const [seuilEcartement, setSeuilEcartement] = useState(25);
+  const [miseAJourAuto, setMiseAJourAuto] = useState(true);
+  const [comparaisonElargie, setComparaisonElargie] = useState(false);
+
+  const [enregistrement, setEnregistrement] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
+  const [erreurEnregistrement, setErreurEnregistrement] = useState<string | null>(null);
+
+  const appliquer = useCallback((valeurs: ReglesPreselection) => {
+    setCompetences(versPourcent(valeurs.weight_skills));
+    setExperience(versPourcent(valeurs.weight_experience));
+    setFormation(versPourcent(valeurs.weight_education));
+    setSeuilPreselection(Number(valeurs.threshold_screening));
+    setSeuilEcartement(Number(valeurs.threshold_reject));
+    setMiseAJourAuto(valeurs.auto_stage_update);
+    setComparaisonElargie(valeurs.semantic_matching);
   }, []);
 
+  const charger = useCallback(async () => {
+    setChargement(true);
+    setErreur(false);
+    try {
+      const valeurs = await aiService.getRegles();
+      setRegles(valeurs);
+      appliquer(valeurs);
+    } catch {
+      setErreur(true);
+    } finally {
+      setChargement(false);
+    }
+  }, [appliquer]);
+
+  useEffect(() => {
+    charger();
+  }, [charger]);
+
+  const total = competences + experience + formation;
+  const equilibre = total === 100;
+
+  const erreurSeuils = useMemo(() => {
+    if (seuilEcartement > seuilPreselection) {
+      return "Le seuil d'écartement doit rester inférieur ou égal au seuil de présélection.";
+    }
+    return null;
+  }, [seuilEcartement, seuilPreselection]);
+
+  const enregistrer = async () => {
+    if (!equilibre || erreurSeuils) return;
+    setEnregistrement(true);
+    setMessage(null);
+    setErreurEnregistrement(null);
+    try {
+      const valeurs = await aiService.enregistrerRegles({
+        weight_skills: versRatio(competences),
+        weight_experience: versRatio(experience),
+        weight_education: versRatio(formation),
+        threshold_screening: seuilPreselection,
+        threshold_reject: seuilEcartement,
+        auto_stage_update: miseAJourAuto,
+        semantic_matching: comparaisonElargie,
+      });
+      setRegles(valeurs);
+      appliquer(valeurs);
+      setMessage("Vos règles ont bien été enregistrées.");
+    } catch {
+      setErreurEnregistrement("L'enregistrement a échoué. Vérifiez votre connexion puis réessayez.");
+    } finally {
+      setEnregistrement(false);
+    }
+  };
+
+  const reinitialiser = () => {
+    setCompetences(DEFAUT.competences);
+    setExperience(DEFAUT.experience);
+    setFormation(DEFAUT.formation);
+    setSeuilPreselection(80);
+    setSeuilEcartement(25);
+    setMiseAJourAuto(true);
+    setComparaisonElargie(false);
+    setMessage(null);
+    setErreurEnregistrement(null);
+  };
+
+  if (chargement) {
+    return (
+      <div className="space-y-6 p-6 lg:p-10">
+        <Skeleton className="h-8 w-64" />
+        <Skeleton className="h-56 w-full rounded-xl" />
+        <Skeleton className="h-40 w-full rounded-xl" />
+      </div>
+    );
+  }
+
+  if (erreur) {
+    return (
+      <div className="p-6 lg:p-10">
+        <StatePanel
+          tone="error"
+          title="Les règles de présélection sont indisponibles"
+          description="La connexion au serveur a échoué. Réessayez dans un instant."
+          actionLabel="Réessayer"
+          onAction={charger}
+        />
+      </div>
+    );
+  }
+
+  const curseurs = [
+    {
+      cle: "competences",
+      libelle: "Compétences",
+      aide: "Priorité donnée aux compétences attendues pour le poste.",
+      valeur: competences,
+      changer: setCompetences,
+    },
+    {
+      cle: "experience",
+      libelle: "Expérience",
+      aide: "Durée et progression du parcours professionnel.",
+      valeur: experience,
+      changer: setExperience,
+    },
+    {
+      cle: "formation",
+      libelle: "Formation",
+      aide: "Diplômes et domaines d'études.",
+      valeur: formation,
+      changer: setFormation,
+    },
+  ];
+
   return (
-    <div className="p-8 lg:p-12">
-      {/* En-tête */}
-      <div className="mb-8 flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
-        <div>
-          <h1 className="text-2xl font-bold text-[var(--color-foreground)]">Configuration IA</h1>
-          <p className="mt-1 text-sm text-[var(--color-muted-foreground)]">
-            Ajustez les algorithmes de matching et les déclencheurs de flux de travail
-            autonomes.
-          </p>
-        </div>
-        <div className="flex gap-3">
-          <Button
-            variant="outline"
-            onClick={() => {
-              setSkillWeight(65);
-              setExpWeight(40);
-              setLlmSensitivity(82);
-            }}
-            className="transition-colors duration-150 active:scale-[0.98] @media/hover:hover:scale-100"
-          >
-            Réinitialiser par défaut
-          </Button>
-          <Button className="transition-colors duration-150 active:scale-[0.98] @media/hover:hover:scale-100">Déployer la config</Button>
-        </div>
-      </div>
+    <div className="mx-auto w-full max-w-4xl space-y-6 p-6 lg:p-10">
+      <PageHeader
+        title="Règles de présélection"
+        description="Choisissez ce qui compte le plus lorsque les candidatures sont classées, et à partir de quand elles passent à l'étape suivante."
+        actions={
+          regles && (
+            <Badge variant={regles.source === "defaults" ? "secondary" : "success"}>
+              {regles.source === "defaults" ? "Valeurs par défaut" : "Personnalisées"}
+            </Badge>
+          )
+        }
+      />
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        {/* Colonne de gauche (Settings) */}
-        <div className="space-y-6 lg:col-span-2">
-          {/* Matching Sensitivity */}
-          <section className="rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-card)] p-6 transition-shadow duration-200 hover:shadow-md">
-            <h2 className="mb-6 flex items-center gap-2 text-lg font-bold text-[var(--color-foreground)]">
-              <BarChart size={20} className="text-[var(--color-muted-foreground)]" /> Sensibilité du Matching
-            </h2>
-
-            <div className="space-y-8">
-              <div>
-                <div className="mb-2 flex items-center justify-between">
-                  <label className="text-sm font-medium text-[var(--color-foreground)]">
-                    Pondération des compétences
-                  </label>
-                  <span className="text-sm font-bold text-[var(--color-primary)]">{skillWeight}%</span>
-                </div>
-                <input
-                  type="range"
-                  min="0"
-                  max="100"
-                  value={skillWeight}
-                  onChange={(e) => setSkillWeight(Number(e.target.value))}
-                  className="h-1.5 w-full cursor-pointer appearance-none rounded-lg bg-[var(--surface-popover)] accent-[var(--color-primary)]"
-                />
-                <p className="mt-2 text-xs text-[var(--color-muted-foreground)]">
-                  Prioriser les compétences déclarées et vérifiées des candidats par rapport
-                  à l'ancienneté historique.
-                </p>
-              </div>
-
-              <div>
-                <div className="mb-2 flex items-center justify-between">
-                  <label className="text-sm font-medium text-[var(--color-foreground)]">
-                    Pondération de l'expérience
-                  </label>
-                  <span className="text-sm font-bold text-[var(--color-primary)]">{expWeight}%</span>
-                </div>
-                <input
-                  type="range"
-                  min="0"
-                  max="100"
-                  value={expWeight}
-                  onChange={(e) => setExpWeight(Number(e.target.value))}
-                  className="h-1.5 w-full cursor-pointer appearance-none rounded-lg bg-[var(--surface-popover)] accent-[var(--color-primary)]"
-                />
-                <p className="mt-2 text-xs text-[var(--color-muted-foreground)]">
-                  Ajuster l'importance de la longévité dans l'industrie et de la profondeur
-                  de progression de carrière.
-                </p>
-              </div>
-
-              <div>
-                <div className="mb-2 flex items-center justify-between">
-                  <label className="text-sm font-medium text-[var(--color-foreground)]">
-                    Sensibilité lexicale (moteur sémantique)
-                  </label>
-                  <span className="text-sm font-bold text-[var(--color-primary)]">{llmSensitivity}%</span>
-                </div>
-                <input
-                  type="range"
-                  min="0"
-                  max="100"
-                  value={llmSensitivity}
-                  onChange={(e) => setLlmSensitivity(Number(e.target.value))}
-                  className="h-1.5 w-full cursor-pointer appearance-none rounded-lg bg-[var(--surface-popover)] accent-[var(--color-primary)]"
-                />
-                <p className="mt-2 text-xs text-[var(--color-muted-foreground)]">
-                  Tolérance du moteur sémantique aux formulations proches des compétences
-                  recherchées.
-                </p>
-              </div>
-            </div>
-          </section>
-
-          {/* Engine & Workflows */}
-          <div className="grid gap-6 md:grid-cols-2">
-            <section className="rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-card)] p-6 transition-shadow duration-200 hover:shadow-md">
-              <h2 className="mb-6 flex items-center justify-between text-lg font-bold text-[var(--color-foreground)]">
-                <span className="flex items-center gap-2">
-                  <FileText size={20} className="text-[var(--color-muted-foreground)]" /> Moteur d'Analyse
-                </span>
-              </h2>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between rounded-lg border border-[var(--border-subtle)] bg-[var(--surface-popover)] p-3">
-                  <span className="text-sm font-medium text-[var(--color-foreground)]/85">
-                    Amélioration OCR
-                  </span>
-                  <ToggleSwitch actif={true} onChange={() => {}} />
-                </div>
-                <div className="flex items-center justify-between rounded-lg border border-[var(--border-subtle)] bg-[var(--surface-popover)] p-3">
-                  <span className="text-sm font-medium text-[var(--color-foreground)]/85">
-                    Indexation des profils en ligne
-                  </span>
-                  <ToggleSwitch actif={false} onChange={() => {}} />
-                </div>
-                <div className="flex items-center justify-between rounded-lg border border-[var(--border-subtle)] bg-[var(--surface-popover)] p-3">
-                  <span className="text-sm font-medium text-[var(--color-foreground)]/85">
-                    Enrichissement de profils
-                  </span>
-                  <ToggleSwitch actif={true} onChange={() => {}} />
-                </div>
-              </div>
-            </section>
-
-            <section className="rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-card)] p-6 transition-shadow duration-200 hover:shadow-md">
-              <h2 className="mb-6 flex items-center justify-between text-lg font-bold text-[var(--color-foreground)]">
-                <span className="flex items-center gap-2">
-                  <RefreshCw size={20} className="text-[var(--color-muted-foreground)]" /> Flux de Travail
-                </span>
-              </h2>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between rounded-lg border border-[var(--color-destructive)]/20 bg-[var(--surface-popover)] p-3">
-                  <span className="text-sm font-medium text-[var(--color-foreground)]/85">
-                    Rejet Automatique
-                  </span>
-                  <ToggleSwitch actif={true} onChange={() => {}} className="!bg-[var(--color-destructive)]" />
-                </div>
-                <div className="flex items-center justify-between rounded-lg border border-[var(--border-subtle)] bg-[var(--surface-popover)] p-3">
-                  <span className="text-sm font-medium text-[var(--color-foreground)]/85">
-                    Tri des candidatures
-                  </span>
-                  <ToggleSwitch actif={true} onChange={() => {}} />
-                </div>
-                <div className="flex items-center justify-between rounded-lg border border-[var(--border-subtle)] bg-[var(--surface-popover)] p-3">
-                  <span className="text-sm font-medium text-[var(--color-foreground)]/85">
-                    Notification des recruteurs
-                  </span>
-                  <ToggleSwitch actif={false} onChange={() => {}} />
-                </div>
-              </div>
-            </section>
-          </div>
-
-          <div className="rounded-lg border border-[var(--border-subtle)] bg-[var(--surface-card)] p-4 text-sm text-[var(--color-muted-foreground)]">
-            Configuration d'essai : ces réglages orchestrent la future version du moteur de
-            matching. La persistance de ces paramètres côté API sera livrée dans une
-            prochaine itération.
-          </div>
-        </div>
-
-        {/* Colonne de droite (Vue d'ensemble du vivier) */}
-        <div className="space-y-6">
-          <section className="rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-card)] p-6 transition-shadow duration-200 hover:shadow-md">
-            <div className="mb-5 flex items-center justify-between">
-              <h2 className="flex items-center gap-2 text-lg font-bold text-[var(--color-foreground)]">
-                <Users size={20} className="text-[var(--color-muted-foreground)]" /> Vivier de talents
-              </h2>
-              <Badge variant="secondary">En direct</Badge>
-            </div>
-            <p className="mb-6 text-xs text-[var(--color-muted-foreground)]">
-              Statistiques recalculées en continu depuis les profils de la plateforme.
+      <section className="rounded-xl border border-border bg-card p-6">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <h2 className="text-base font-semibold text-foreground">Importance des critères</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              La somme doit être égale à 100 %. Ajustez un curseur, les autres restent inchangés.
             </p>
+          </div>
+          <span
+            className={`rounded-md px-2.5 py-1 text-xs font-semibold ${
+              equilibre ? "bg-success/10 text-success" : "bg-warning/10 text-warning"
+            }`}
+          >
+            Total : {total} %
+          </span>
+        </div>
 
-            {!stats ? (
-              <div className="space-y-3">
-                <div className="h-20 animate-pulse rounded-lg bg-[var(--surface-popover)]/70" />
-                <div className="h-20 animate-pulse rounded-lg bg-[var(--surface-popover)]/70" />
+        <div className="mt-6 space-y-6">
+          {curseurs.map((curseur) => (
+            <div key={curseur.cle}>
+              <div className="flex items-center justify-between">
+                <label htmlFor={curseur.cle} className="text-sm font-medium text-foreground">
+                  {curseur.libelle}
+                </label>
+                <span className="text-sm font-semibold text-primary">{curseur.valeur} %</span>
               </div>
-            ) : (
-              <div className="grid grid-cols-2 gap-3">
-                <div className="rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-popover)] p-4">
-                  <p className="text-2xl font-bold text-[var(--color-foreground)]">{stats.total}</p>
-                  <p className="text-xs font-semibold tracking-wider text-[var(--color-muted-foreground)] uppercase">
-                    Candidats
-                  </p>
-                </div>
-                <div className="rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-popover)] p-4">
-                  <p className="text-2xl font-bold text-[var(--color-foreground)]">
-                    {stats.total ? Math.round((stats.avecCv / stats.total) * 100) : 0}%
-                  </p>
-                  <p className="text-xs font-semibold tracking-wider text-[var(--color-muted-foreground)] uppercase">
-                    Avec CV déposé
-                  </p>
-                </div>
-                <div className="rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-popover)] p-4">
-                  <p className="text-2xl font-bold text-[var(--color-foreground)]">{stats.profilPublic}</p>
-                  <p className="text-xs font-semibold tracking-wider text-[var(--color-muted-foreground)] uppercase">
-                    Profils publics
-                  </p>
-                </div>
-                <div className="rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-popover)] p-4">
-                  <p className="text-2xl font-bold text-[var(--color-foreground)]">{stats.rechercheActive}</p>
-                  <p className="text-xs font-semibold tracking-wider text-[var(--color-muted-foreground)] uppercase">
-                    Recherche active
-                  </p>
-                </div>
-              </div>
-            )}
+              <input
+                id={curseur.cle}
+                type="range"
+                min={0}
+                max={100}
+                step={5}
+                value={curseur.valeur}
+                onChange={(event) => curseur.changer(Number(event.target.value))}
+                className="mt-3 h-1.5 w-full cursor-pointer appearance-none rounded-full bg-muted accent-primary"
+              />
+              <p className="mt-2 text-xs text-muted-foreground">{curseur.aide}</p>
+            </div>
+          ))}
+        </div>
 
-            {stats && stats.topCompetences.length > 0 && (
-              <div className="mt-6">
-                <p className="mb-3 text-xs font-bold tracking-wider text-[var(--color-muted-foreground)] uppercase">
-                  Compétences les plus présentes
-                </p>
-                <ul className="space-y-2">
-                  {stats.topCompetences.map((c) => (
-                    <li key={c.nom} className="flex items-center justify-between text-sm">
-                      <span className="truncate text-[var(--color-foreground)]/85">{c.nom}</span>
-                      <span className="font-mono text-xs text-[var(--color-muted-foreground)]">
-                        {c.count} profil{c.count > 1 ? "s" : ""}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-          </section>
+        {!equilibre && (
+          <p role="status" className="mt-4 rounded-lg bg-warning/10 px-3 py-2 text-xs text-warning">
+            Ajustez les curseurs pour atteindre exactement 100 % avant d&apos;enregistrer.
+          </p>
+        )}
+      </section>
+
+      <section className="rounded-xl border border-border bg-card p-6">
+        <h2 className="text-base font-semibold text-foreground">Seuils de décision</h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Exprimés sur 100. Une candidature au-dessus du seuil de présélection avance
+          automatiquement ; en dessous du seuil d&apos;écartement, elle est écartée.
+        </p>
+
+        <div className="mt-6 grid gap-5 sm:grid-cols-2">
+          <div>
+            <label htmlFor="seuil-preselection" className="text-sm font-medium text-foreground">
+              Seuil de présélection
+            </label>
+            <input
+              id="seuil-preselection"
+              type="number"
+              min={0}
+              max={100}
+              value={seuilPreselection}
+              onChange={(event) => setSeuilPreselection(Number(event.target.value))}
+              className="mt-2 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-ring focus:ring-2 focus:ring-ring/30"
+            />
+          </div>
+          <div>
+            <label htmlFor="seuil-ecartement" className="text-sm font-medium text-foreground">
+              Seuil d&apos;écartement
+            </label>
+            <input
+              id="seuil-ecartement"
+              type="number"
+              min={0}
+              max={100}
+              value={seuilEcartement}
+              onChange={(event) => setSeuilEcartement(Number(event.target.value))}
+              className="mt-2 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-ring focus:ring-2 focus:ring-ring/30"
+            />
+          </div>
+        </div>
+
+        {erreurSeuils && (
+          <p role="alert" className="mt-4 rounded-lg bg-destructive/10 px-3 py-2 text-xs text-destructive">
+            {erreurSeuils}
+          </p>
+        )}
+      </section>
+
+      <section className="rounded-xl border border-border bg-card p-6">
+        <h2 className="text-base font-semibold text-foreground">Automatisation</h2>
+        <div className="mt-4 space-y-3">
+          <div className="flex items-center justify-between rounded-lg border border-border p-4">
+            <div>
+              <p className="text-sm font-medium text-foreground">Mettre à jour l&apos;étape automatiquement</p>
+              <p className="text-xs text-muted-foreground">
+                La candidature avance dès que le seuil est atteint.
+              </p>
+            </div>
+            <ToggleSwitch actif={miseAJourAuto} onChange={setMiseAJourAuto} />
+          </div>
+          <div className="flex items-center justify-between rounded-lg border border-border p-4">
+            <div>
+              <p className="text-sm font-medium text-foreground">Comparaison élargie des intitulés</p>
+              <p className="text-xs text-muted-foreground">
+                Reconnaît les formulations proches d&apos;une même compétence.
+              </p>
+            </div>
+            <ToggleSwitch actif={comparaisonElargie} onChange={setComparaisonElargie} />
+          </div>
+        </div>
+      </section>
+
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <Button variant="outline" onClick={reinitialiser} className="gap-2">
+          <RotateCcw size={15} aria-hidden="true" />
+          Rétablir les valeurs conseillées
+        </Button>
+
+        <div className="flex items-center gap-3">
+          {regles?.updated_at && (
+            <span className="text-xs text-muted-foreground">
+              Dernière mise à jour le{" "}
+              {new Date(regles.updated_at).toLocaleDateString("fr-FR")}
+            </span>
+          )}
+          <Button
+            onClick={enregistrer}
+            disabled={!equilibre || Boolean(erreurSeuils) || enregistrement}
+          >
+            {enregistrement ? "Enregistrement..." : "Enregistrer les règles"}
+          </Button>
         </div>
       </div>
+
+      {message && (
+        <p role="status" className="flex items-center gap-2 text-sm text-success">
+          <CheckCircle2 size={15} aria-hidden="true" />
+          {message}
+        </p>
+      )}
+      {erreurEnregistrement && (
+        <p role="alert" className="text-sm text-destructive">
+          {erreurEnregistrement}
+        </p>
+      )}
     </div>
   );
 }

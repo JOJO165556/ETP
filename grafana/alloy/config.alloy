@@ -1,0 +1,18 @@
+// grafana/alloy/config.alloy
+// Collecteur Alloy — pousse les métriques Prometheus de l'API FastAPI vers Grafana Cloud
+
+prometheus.scrape "etp_api" {
+  targets = [{ __address__ = env("METRICS_URL") }]
+  forward_to = [prometheus.remote_write.grafana_cloud.receiver]
+  scrape_interval = "15s"
+}
+
+prometheus.remote_write "grafana_cloud" {
+  endpoint {
+    url = env("GRAFANA_CLOUD_URL")
+    basic_auth {
+      username = env("GRAFANA_CLOUD_USER")
+      password = env("GRAFANA_CLOUD_PASSWORD")
+    }
+  }
+}

@@ -8,6 +8,8 @@ import { Loader2, Mail, ArrowLeft, CheckCircle } from "lucide-react";
 import * as z from "zod";
 
 import { isFirebaseConfigured, sendPasswordReset } from "@/lib/firebase";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 /* Schéma de validation pour l'adresse email */
 const schema = z.object({
@@ -57,20 +59,20 @@ function ForgotPasswordForm() {
     return (
       <div className="w-full max-w-[400px] space-y-6 text-center">
         <div className="flex flex-col items-center gap-3">
-          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-green-50">
-            <CheckCircle size={28} className="text-green-600" />
+          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-success/10">
+            <CheckCircle size={28} className="text-success" />
           </div>
-          <h1 className="text-xl font-bold text-gray-900">
+          <h1 className="text-xl font-bold text-foreground">
             Vérifiez votre boîte mail
           </h1>
-          <p className="text-sm leading-relaxed text-gray-500">
+          <p className="text-sm leading-relaxed text-muted-foreground">
             Si un compte est associé à cette adresse, vous recevrez un lien de
             réinitialisation dans les prochaines minutes.
           </p>
         </div>
         <Link
           href="/login"
-          className="inline-flex items-center gap-2 text-sm font-medium text-[#1d40d9] hover:underline"
+          className="inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline"
         >
           <ArrowLeft size={14} />
           Retour à la connexion
@@ -83,13 +85,13 @@ function ForgotPasswordForm() {
     <div className="w-full max-w-[400px] space-y-7">
       {/* En-tête */}
       <div className="space-y-1">
-        <p className="text-xs font-semibold tracking-widest text-[#1d40d9] uppercase">
+        <p className="text-xs font-semibold tracking-widest text-primary uppercase">
           Sécurité du compte
         </p>
-        <h1 className="text-2xl font-bold tracking-tight text-gray-900">
+        <h1 className="text-2xl font-bold tracking-tight text-foreground">
           Mot de passe oublié ?
         </h1>
-        <p className="text-sm text-gray-500">
+        <p className="text-sm text-muted-foreground">
           Saisissez votre adresse email et nous vous enverrons un lien de
           réinitialisation.
         </p>
@@ -100,7 +102,7 @@ function ForgotPasswordForm() {
         {error && (
           <div
             role="alert"
-            className="rounded-lg bg-red-50 px-4 py-3 text-sm font-medium text-red-700"
+            className="rounded-lg bg-destructive/10 px-4 py-3 text-sm font-medium text-destructive"
           >
             {error}
           </div>
@@ -110,46 +112,46 @@ function ForgotPasswordForm() {
         <div className="space-y-1.5">
           <label
             htmlFor="email"
-            className="block text-sm font-medium text-gray-700"
+            className="block text-sm font-medium text-foreground"
           >
             Adresse email
           </label>
           <div className="relative">
             <Mail
               size={16}
-              className="absolute top-1/2 left-3 -translate-y-1/2 text-gray-400"
+              className="absolute top-1/2 left-3 z-10 -translate-y-1/2 text-muted-foreground"
               aria-hidden="true"
             />
-            <input
+            <Input
               id="email"
               type="email"
               autoComplete="email"
               placeholder="vous@exemple.com"
               {...register("email")}
-              className="block w-full rounded-lg border border-gray-200 bg-white py-2.5 pr-4 pl-9 text-sm text-gray-900 transition placeholder:text-gray-400 focus:border-[#1d40d9] focus:ring-2 focus:ring-[#1d40d9]/20 focus:outline-none"
+              className="h-auto py-2.5 pr-4 pl-9"
             />
           </div>
           {errors.email && (
-            <p className="text-xs text-red-600">{errors.email.message}</p>
+            <p className="text-xs text-destructive">{errors.email.message}</p>
           )}
         </div>
 
         {/* Bouton de soumission */}
-        <button
+        <Button
           type="submit"
           disabled={isSubmitting}
-          className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#1d40d9] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:opacity-60"
+          className="w-full gap-2 px-4 py-2.5 text-sm font-semibold"
         >
           {isSubmitting && <Loader2 size={16} className="animate-spin" />}
           {isSubmitting ? "Envoi en cours..." : "Envoyer le lien"}
-        </button>
+        </Button>
       </form>
 
       {/* Lien retour */}
-      <p className="text-center text-sm text-gray-500">
+      <p className="text-center text-sm text-muted-foreground">
         <Link
           href="/login"
-          className="inline-flex items-center gap-1 font-medium text-[#1d40d9] hover:underline"
+          className="inline-flex items-center gap-1 font-medium text-primary hover:underline"
         >
           <ArrowLeft size={14} />
           Retour à la connexion

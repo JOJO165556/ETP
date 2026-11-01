@@ -60,6 +60,14 @@
     --emerald-900: #064e3b;
     --emerald-950: #022c22;
 
+    /* Ambre - Alertes */
+    --amber-500: #f59e0b;
+    --amber-600: #d97706;
+    --amber-400: #fbbf24;
+
+    /* Rose - Danger */
+    --rose-500: #f43f5e;
+
     /* Sémantiques ATS */
     --stage-applied: #94a3b8;
     --stage-screening: #6366f1;
@@ -116,7 +124,8 @@
     /* Text - Light Mode */
     --text-primary: var(--slate-900);
     --text-secondary: var(--slate-600);
-    --text-muted: var(--slate-400);
+    /* slate-500 : contraste 4.7:1 sur fond clair (WCAG AA) */
+    --text-muted: var(--slate-500);
     --text-on-primary: #ffffff;
     --text-on-surface: var(--slate-900);
 
@@ -125,6 +134,12 @@
     --brand-secondary: var(--sky-600);
     --brand-accent: var(--emerald-500);
     --brand-accent-dark: var(--emerald-600);
+
+    /* États sémantiques */
+    --success: var(--emerald-600);
+    --warning: var(--amber-600);
+    --info: var(--sky-600);
+    --danger: #ef4444;
 
     /* Focus visible - WCAG 2.2 */
     --focus-ring-width: 2px;
@@ -148,7 +163,8 @@
     /* Text - Dark Mode */
     --text-primary: var(--slate-50);
     --text-secondary: var(--slate-400);
-    --text-muted: var(--slate-500);
+    /* slate-400 : contraste 7:1 sur fond sombre (WCAG AA) */
+    --text-muted: var(--slate-400);
     --text-on-primary: #ffffff;
     --text-on-surface: var(--slate-50);
 
@@ -157,6 +173,12 @@
     --brand-secondary: var(--sky-500);
     --brand-accent: var(--emerald-400);
     --brand-accent-dark: var(--emerald-500);
+
+    /* États sémantiques - Dark Mode */
+    --success: var(--emerald-400);
+    --warning: var(--amber-400);
+    --info: var(--sky-400);
+    --danger: #f87171;
   }
 
   *,
@@ -165,6 +187,9 @@
     box-sizing: border-box;
     margin: 0;
     padding: 0;
+    /* Couleur de bordure par defaut : evite que `border` seul retombe sur
+       currentColor et dessine des traits noirs. */
+    border-color: var(--border-subtle);
   }
 
   html {
@@ -251,43 +276,51 @@
   --font-body: var(--font-body);
   --font-mono: var(--font-mono);
 
-  /* Map primitive tokens to shadcn theme */
-  --background: var(--surface-canvas);
-  --foreground: var(--text-primary);
-  --card: var(--surface-card);
-  --card-foreground: var(--text-on-surface);
-  --popover: var(--surface-popover);
-  --popover-foreground: var(--text-on-surface);
-  --primary: var(--brand-primary);
-  --primary-foreground: var(--text-on-primary);
-  --secondary: var(--surface-muted);
-  --secondary-foreground: var(--text-primary);
-  --muted: var(--surface-muted);
-  --muted-foreground: var(--text-muted);
-  --accent: var(--brand-secondary);
-  --accent-foreground: var(--text-on-primary);
-  --destructive: #ef4444;
-  --destructive-foreground: #ffffff;
-  --border: var(--border-subtle);
-  --input: var(--border-subtle);
-  --ring: var(--border-focus);
-  --radius: var(--radius-md);
+  /* Tokens semantiques exposes aux utilitaires Tailwind.
+     Le prefixe --color- est obligatoire : sans lui, bg-card / border-border /
+     text-muted-foreground ne sont pas generes et les bordures retombent sur
+     currentColor (traits quasi noirs). */
+  --color-background: var(--surface-canvas);
+  --color-foreground: var(--text-primary);
+  --color-card: var(--surface-card);
+  --color-card-foreground: var(--text-on-surface);
+  --color-popover: var(--surface-popover);
+  --color-popover-foreground: var(--text-on-surface);
+  --color-primary: var(--brand-primary);
+  --color-primary-foreground: var(--text-on-primary);
+  --color-secondary: var(--surface-muted);
+  --color-secondary-foreground: var(--text-primary);
+  --color-muted: var(--surface-muted);
+  --color-muted-foreground: var(--text-muted);
+  --color-accent: var(--brand-secondary);
+  --color-accent-foreground: var(--text-on-primary);
+  --color-destructive: var(--danger);
+  --color-destructive-foreground: var(--text-on-primary);
+  --color-success: var(--success);
+  --color-success-foreground: var(--text-on-primary);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--slate-900);
+  --color-info: var(--info);
+  --color-info-foreground: var(--text-on-primary);
+  --color-border: var(--border-subtle);
+  --color-input: var(--border-subtle);
+  --color-ring: var(--border-focus);
 
   /* Chart colors */
-  --chart-1: var(--indigo-500);
-  --chart-2: var(--sky-500);
-  --chart-3: var(--emerald-500);
-  --chart-4: var(--amber-500);
-  --chart-5: var(--rose-500);
+  --color-chart-1: var(--indigo-500);
+  --color-chart-2: var(--sky-500);
+  --color-chart-3: var(--emerald-500);
+  --color-chart-4: var(--amber-500);
+  --color-chart-5: var(--rose-500);
 
   /* Sidebar specific */
-  --sidebar: var(--surface-elevated);
-  --sidebar-foreground: var(--text-secondary);
-  --sidebar-primary: var(--brand-primary);
-  --sidebar-primary-foreground: var(--text-on-primary);
-  --sidebar-accent: var(--surface-muted);
-  --sidebar-accent-foreground: var(--text-primary);
-  --sidebar-border: var(--border-subtle);
-  --sidebar-ring: var(--border-focus);
+  --color-sidebar: var(--surface-elevated);
+  --color-sidebar-foreground: var(--text-secondary);
+  --color-sidebar-primary: var(--brand-primary);
+  --color-sidebar-primary-foreground: var(--text-on-primary);
+  --color-sidebar-accent: var(--surface-muted);
+  --color-sidebar-accent-foreground: var(--text-primary);
+  --color-sidebar-border: var(--border-subtle);
+  --color-sidebar-ring: var(--border-focus);
 }
 

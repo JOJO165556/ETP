@@ -144,7 +144,7 @@ export default function CVProcessingPage() {
           <motion.div
             animate={{ top: ["0%", "100%", "0%"] }}
             transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
-            className="bg-primary absolute right-0 left-0 z-10 h-1 shadow-[0_0_20px_var(--color-primary)]"
+            className="bg-primary absolute right-0 left-0 z-10 h-1 shadow-[0_0_20px_var(--brand-primary)]"
           />
         </div>
       </div>
@@ -205,7 +205,7 @@ export default function CVProcessingPage() {
                     isCompleted
                       ? "border-border bg-muted opacity-60"
                       : isActive
-                        ? "border-primary/30 bg-primary/5 shadow-[0_0_30px_color-mix(in_oklch,var(--color-primary)_10%,transparent)]"
+                        ? "border-primary/30 bg-primary/5 shadow-[0_0_30px_color-mix(in_oklch,var(--brand-primary)_10%,transparent)]"
                         : "border-transparent opacity-30"
                   )}
                 >

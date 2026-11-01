@@ -3,7 +3,7 @@
 <p align="center">
   <img src="https://img.shields.io/badge/Python-3.12+-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python 3.12+" />
   <img src="https://img.shields.io/badge/FastAPI-0.136-009688?style=for-the-badge&logo=fastapi&logoColor=white" alt="FastAPI" />
-  <img src="https://img.shields.io/badge/Next.js-15.3-000000?style=for-the-badge&logo=next.js&logoColor=white" alt="Next.js 15" />
+  <img src="https://img.shields.io/badge/Next.js-16.4-000000?style=for-the-badge&logo=next.js&logoColor=white" alt="Next.js 16" />
   <img src="https://img.shields.io/badge/TypeScript-5.0-3178C6?style=for-the-badge&logo=typescript&logoColor=white" alt="TypeScript" />
   <img src="https://img.shields.io/badge/PostgreSQL-PostGIS-4169E1?style=for-the-badge&logo=postgresql&logoColor=white" alt="PostgreSQL / PostGIS" />
   <img src="https://img.shields.io/badge/Celery-5.4-37814A?style=for-the-badge&logo=celery&logoColor=white" alt="Celery" />
@@ -44,7 +44,7 @@ etp_platform/
 │       ├── notifications/        # Emails SMTP et notifications en base
 │       ├── search/               # Moteur de recherche FTS et geospatial
 │       └── gdpr/                 # Export et anonymisation RGPD
-├── frontend/                     # Interface Web Next.js 15 (React 19, TypeScript, Tailwind)
+├── frontend/                     # Interface Web Next.js 16 (React 19.1, TypeScript 5, Tailwind 4)
 ├── alembic/                      # Migrations de base de donnees
 ├── docker-compose.yml            # Services conteneurises (PostgreSQL, Redis, MinIO)
 └── tests/                        # Tests automatises pytest
@@ -116,7 +116,22 @@ npm --prefix frontend run build
 
 ---
 
-## 4. Licence
+## 4. Observabilité
+
+### Local (Docker)
+Prometheus : http://localhost:9090  
+Grafana : http://localhost:3000  
+Démarrage : `docker compose --profile monitoring up -d`  
+Login Grafana : `admin` / variable `GRAFANA_ADMIN_PASSWORD` (défaut: `admin`)
+
+### Production (Grafana Cloud)
+Les métriques sont poussées vers Grafana Cloud via Grafana Alloy déployé sur Render.  
+Accès : votre workspace Grafana Cloud sur grafana.com  
+Configuration : `grafana/alloy/config.alloy` — variables requises : `METRICS_URL`, `GRAFANA_CLOUD_URL`, `GRAFANA_CLOUD_USER`, `GRAFANA_CLOUD_PASSWORD`
+
+---
+
+## 5. Licence
 
 Distribué sous la licence MIT. Consultez le fichier [`LICENSE`](LICENSE) pour plus de détails.
 

@@ -293,7 +293,7 @@ function RegisterForm() {
         <p className="text-sm text-muted-foreground">
           {role === "candidate"
             ? "Accédez aux offres géolocalisées et faites matcher votre CV par IA."
-            : "Pilotez vos recrutements avec scoring de pertinence et pipeline Kanban."}
+            : "Suivez chaque candidature étape par étape, avec toute votre équipe."}
         </p>
       </div>
 
@@ -369,7 +369,7 @@ function RegisterForm() {
             />
           </svg>
         )}
-        S'inscrire avec Google ({role === "candidate" ? "Candidat" : "Recruteur"})
+        Continuer avec Google
       </Button>
 
       {/* Séparateur */}

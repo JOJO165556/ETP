@@ -1,52 +1,52 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-// Routes accessibles sans authentification
-const PUBLIC_ROUTES = ["/login", "/register", "/forgot-password", "/logout"];
+/* Pages d'authentification : redirigent vers l'espace si une session existe. */
+const AUTH_PAGES = ["/login", "/register", "/forgot-password", "/reset-password"];
 
-export function middleware(request: NextRequest) {
+/* Pages accessibles sans session (dont la page de sortie vers un site externe). */
+const PUBLIC_ROUTES = [...AUTH_PAGES, "/leave"];
+
+export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
+  const isAuthPage = AUTH_PAGES.some(
+    (route) => pathname === route || pathname.startsWith(`${route}/`)
+  );
   const isPublicRoute = PUBLIC_ROUTES.some(
-    (route) => pathname === route || pathname.startsWith(route)
+    (route) => pathname === route || pathname.startsWith(`${route}/`)
   );
 
   /*
-   * Les routes /api/* (proxy vers le backend, route handlers set-cookie et
-   * logout) sont volontairement exclues de la protection : certaines sont
-   * appelees avant tout cookie de session (login, echange Firebase,
-   * register, logout). C'est le backend qui enforce l'authentification.
+   * Les routes /api/* sont exclues de la protection : certaines sont appelées
+   * avant tout cookie de session (connexion, inscription, déconnexion). C'est
+   * le backend qui applique l'authentification sur chaque endpoint.
    */
   const isApiRoute = pathname.startsWith("/api/");
 
-  // Lecture du token depuis le cookie (posé côté serveur à la connexion)
   const accessToken =
     request.cookies.get("etp_access_token")?.value ??
     request.headers.get("authorization")?.replace("Bearer ", "");
 
-  // Utilisateur déjà authentifié tentant d'accéder à une page auth
-  if (!isApiRoute && isPublicRoute && accessToken) {
+  /* Session ouverte sur une page d'authentification : retour à l'espace. */
+  if (!isApiRoute && isAuthPage && accessToken) {
     return NextResponse.redirect(new URL("/overview", request.url));
   }
 
-  // Utilisateur non authentifié tentant d'accéder à une route protégée
+  /* Visiteur sans session sur une page protégée : connexion avec retour. */
   if (!isApiRoute && !isPublicRoute && !accessToken && pathname !== "/") {
     const loginUrl = new URL("/login", request.url);
     loginUrl.searchParams.set("from", pathname);
     return NextResponse.redirect(loginUrl);
   }
 
-  // Injection automatique du token dans les requêtes proxy (vers FastAPI)
+  /* Injection du jeton pour les appels proxy vers le backend FastAPI. */
   const requestHeaders = new Headers(request.headers);
   if (accessToken) {
     requestHeaders.set("Authorization", `Bearer ${accessToken}`);
   }
 
-  return NextResponse.next({
-    request: {
-      headers: requestHeaders,
-    },
-  });
+  return NextResponse.next({ request: { headers: requestHeaders } });
 }
 
 export const config = {

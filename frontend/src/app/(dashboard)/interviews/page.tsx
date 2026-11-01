@@ -1,230 +1,223 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Calendar, Video, Clock, User, Filter, ChevronDown } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { Calendar, Clock, MapPin, Video, X } from "lucide-react";
+
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { PageHeader } from "@/components/shared/page-header";
+import { StatePanel } from "@/components/shared/state-panel";
+import { Skeleton } from "@/components/ui/skeleton";
+import { interviewsService, type EntretienAPI, type StatutEntretien } from "@/services/interviews.service";
 import { cn } from "@/lib/utils";
 
-type InterviewStatus = "scheduled" | "completed" | "cancelled";
+const STATUTS: Record<StatutEntretien, { libelle: string; variante: "success" | "secondary" | "destructive" | "warning" }> = {
+  scheduled: { libelle: "Planifié", variante: "success" },
+  completed: { libelle: "Terminé", variante: "secondary" },
+  cancelled: { libelle: "Annulé", variante: "destructive" },
+  no_show: { libelle: "Absence", variante: "warning" },
+};
 
-interface Interview {
-  id: string;
-  candidate_name: string;
-  candidate_email: string;
-  job_title: string;
-  company_name: string;
-  interviewer_id: string;
-  interviewer_name: string;
-  scheduled_at: string;
-  duration_minutes: number;
-  status: InterviewStatus;
-  video_link: string | null;
+const FILTRES: Array<{ cle: StatutEntretien | "tous"; libelle: string }> = [
+  { cle: "tous", libelle: "Tous" },
+  { cle: "scheduled", libelle: "Planifiés" },
+  { cle: "completed", libelle: "Terminés" },
+  { cle: "cancelled", libelle: "Annulés" },
+  { cle: "no_show", libelle: "Absences" },
+];
+
+function formaterJour(iso: string): string {
+  return new Date(iso).toLocaleDateString("fr-FR", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+  });
 }
 
-/* Page Agenda des Entretiens — Vue Recruteur */
-export default function InterviewsPage() {
-  const [interviews] = useState<Interview[]>([]);
-  const [chargement, setChargement] = useState(true);
-  const [filtreStatut, setFiltreStatut] = useState<InterviewStatus | "all">("all");
-  const [menuFiltreOuvert, setMenuFiltreOuvert] = useState(false);
+function formaterHeure(iso: string): string {
+  return new Date(iso).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+}
 
-  useEffect(() => {
-    // TODO: Intégrer avec le service backend réel
-    setChargement(false);
+export default function EntretiensPage() {
+  const [entretiens, setEntretiens] = useState<EntretienAPI[]>([]);
+  const [chargement, setChargement] = useState(true);
+  const [erreur, setErreur] = useState(false);
+  const [filtre, setFiltre] = useState<StatutEntretien | "tous">("tous");
+  const [annulation, setAnnulation] = useState<string | null>(null);
+
+  const charger = useCallback(async () => {
+    setChargement(true);
+    setErreur(false);
+    try {
+      setEntretiens(await interviewsService.getAVenir());
+    } catch {
+      setErreur(true);
+    } finally {
+      setChargement(false);
+    }
   }, []);
 
-  const interviewsFiltres = interviews.filter((int) => {
-    if (filtreStatut !== "all" && int.status !== filtreStatut) return false;
-    return true;
-  });
+  useEffect(() => {
+    charger();
+  }, [charger]);
 
-  const formaterDate = (iso: string): string => {
+  const filtres = useMemo(
+    () => (filtre === "tous" ? entretiens : entretiens.filter((e) => e.status === filtre)),
+    [entretiens, filtre]
+  );
+
+  const annuler = async (id: string) => {
+    setAnnulation(id);
     try {
-      const date = new Date(iso);
-      return date.toLocaleDateString("fr-FR", {
-        weekday: "long",
-        day: "numeric",
-        month: "long",
-        year: "numeric",
-      });
+      const misAJour = await interviewsService.annuler(id);
+      setEntretiens((liste) => liste.map((e) => (e.id === id ? misAJour : e)));
     } catch {
-      return iso;
+      setErreur(true);
+    } finally {
+      setAnnulation(null);
     }
-  };
-
-  const formaterHeure = (iso: string): string => {
-    try {
-      const date = new Date(iso);
-      return date.toLocaleTimeString("fr-FR", {
-        hour: "2-digit",
-        minute: "2-digit",
-      });
-    } catch {
-      return "";
-    }
-  };
-
-  const STATUT_LABELS: Record<InterviewStatus, { label: string; variant: "success" | "warning" | "destructive" }> = {
-    scheduled: { label: "Planifié", variant: "success" },
-    completed: { label: "Terminé", variant: "warning" },
-    cancelled: { label: "Annulé", variant: "destructive" },
   };
 
   return (
-    <div className="flex h-full flex-col p-6 lg:p-10">
-      {/* En-tête */}
-      <header className="mb-8 flex flex-col justify-between gap-4 md:flex-row md:items-center">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight text-[var(--color-foreground)]">
-            Agenda des Entretiens
-          </h1>
-          <p className="mt-1 text-sm text-[var(--color-muted-foreground)]">
-            Gérez et suivez tous vos entretiens planifiés.
-          </p>
-        </div>
-
-        <div className="flex items-center gap-3">
-          {/* Filtre Statut */}
-          <div className="relative">
-            <Button
-              variant="outline"
-              onClick={() => setMenuFiltreOuvert(!menuFiltreOuvert)}
-              className="gap-2 transition-colors duration-150 active:scale-[0.98] @media/hover:hover:scale-100"
-            >
-              <Filter size={16} />
-              {filtreStatut === "all" ? "Tous les statuts" : STATUT_LABELS[filtreStatut].label}
-              <ChevronDown size={16} />
-            </Button>
-
-            {menuFiltreOuvert && (
-              <div className="absolute right-0 top-full z-50 mt-2 w-48 rounded-lg border border-[var(--border-subtle)] bg-[var(--surface-card)] p-2 shadow-lg">
-                <button
-                  onClick={() => {
-                    setFiltreStatut("all");
-                    setMenuFiltreOuvert(false);
-                  }}
-                  className={cn(
-                    "w-full rounded-md px-3 py-2 text-left text-sm transition-colors",
-                    filtreStatut === "all"
-                      ? "bg-[var(--surface-popover)] text-[var(--color-foreground)]"
-                      : "text-[var(--color-muted-foreground)] hover:bg-[var(--surface-popover)]"
-                  )}
-                >
-                  Tous les statuts
-                </button>
-                {(Object.keys(STATUT_LABELS) as InterviewStatus[]).map((statut) => (
-                  <button
-                    key={statut}
-                    onClick={() => {
-                      setFiltreStatut(statut);
-                      setMenuFiltreOuvert(false);
-                    }}
-                    className={cn(
-                      "w-full rounded-md px-3 py-2 text-left text-sm transition-colors",
-                      filtreStatut === statut
-                        ? "bg-[var(--surface-popover)] text-[var(--color-foreground)]"
-                        : "text-[var(--color-muted-foreground)] hover:bg-[var(--surface-popover)]"
-                    )}
-                  >
-                    {STATUT_LABELS[statut].label}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-
-          <Button className="transition-colors duration-150 active:scale-[0.98] @media/hover:hover:scale-100">
-            <Calendar size={16} className="mr-2" />
-            Nouvel Entretien
-          </Button>
-        </div>
-      </header>
-
-      {/* Liste des entretiens */}
-      <div className="flex-1 overflow-y-auto">
-        {chargement ? (
-          <div className="py-12 text-center text-[var(--color-muted-foreground)]">
-            Chargement de l'agenda...
-          </div>
-        ) : interviewsFiltres.length === 0 ? (
-          <div className="flex h-full items-center justify-center">
-            <div className="text-center">
-              <Calendar size={48} className="mx-auto mb-4 text-[var(--color-muted-foreground)] opacity-40" />
-              <p className="text-sm text-[var(--color-muted-foreground)]">
-                {interviews.length === 0
-                  ? "Aucun entretien planifié pour le moment."
-                  : "Aucun entretien ne correspond à vos filtres."}
-              </p>
-            </div>
-          </div>
-        ) : (
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {interviewsFiltres.map((interview) => (
-              <div
-                key={interview.id}
-                className="rounded-2xl border border-[var(--border-subtle)] bg-[var(--surface-card)] p-6 transition-shadow duration-200 hover:shadow-md"
+    <div className="mx-auto w-full max-w-5xl space-y-6 p-6 lg:p-10">
+      <PageHeader
+        title="Entretiens"
+        description="Vos prochains rendez-vous, avec la durée, le lieu et le lien de visioconférence."
+        actions={
+          <div className="flex flex-wrap gap-1 rounded-lg border border-border bg-card p-1">
+            {FILTRES.map((option) => (
+              <button
+                key={option.cle}
+                type="button"
+                onClick={() => setFiltre(option.cle)}
+                aria-pressed={filtre === option.cle}
+                className={cn(
+                  "rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
+                  filtre === option.cle
+                    ? "bg-primary/10 text-primary"
+                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                )}
               >
-                {/* En-tête de la carte */}
-                <div className="mb-4 flex items-start justify-between">
-                  <Badge variant={STATUT_LABELS[interview.status].variant}>
-                    {STATUT_LABELS[interview.status].label}
-                  </Badge>
-                  <div className="flex items-center gap-1 text-xs text-[var(--color-muted-foreground)]">
-                    <Clock size={14} />
-                    {interview.duration_minutes} min
+                {option.libelle}
+              </button>
+            ))}
+          </div>
+        }
+      />
+
+      {chargement ? (
+        <div className="space-y-3">
+          {[0, 1, 2].map((i) => (
+            <Skeleton key={i} className="h-28 w-full rounded-xl" />
+          ))}
+        </div>
+      ) : erreur ? (
+        <StatePanel
+          tone="error"
+          title="Impossible de charger vos entretiens"
+          description="La connexion au serveur a échoué. Réessayez dans un instant."
+          actionLabel="Réessayer"
+          onAction={charger}
+        />
+      ) : filtres.length === 0 ? (
+        <StatePanel
+          title={entretiens.length === 0 ? "Aucun entretien planifié" : "Aucun entretien pour ce filtre"}
+          description={
+            entretiens.length === 0
+              ? "Les entretiens apparaissent ici dès qu'une date est fixée avec un candidat."
+              : "Changez de filtre pour voir les autres rendez-vous."
+          }
+        />
+      ) : (
+        <ul className="space-y-3">
+          {filtres.map((entretien) => {
+            const statut = STATUTS[entretien.status];
+            return (
+              <li
+                key={entretien.id}
+                className="flex flex-col gap-4 rounded-xl border border-border bg-card p-5 sm:flex-row sm:items-center sm:justify-between"
+              >
+                <div className="flex items-start gap-4">
+                  <div className="flex w-14 shrink-0 flex-col items-center rounded-lg border border-border bg-muted/60 px-2 py-2">
+                    <span className="text-xs font-medium text-muted-foreground uppercase">
+                      {new Date(entretien.scheduled_at).toLocaleDateString("fr-FR", { month: "short" })}
+                    </span>
+                    <span className="text-xl font-semibold text-foreground">
+                      {new Date(entretien.scheduled_at).getDate()}
+                    </span>
+                  </div>
+
+                  <div className="min-w-0 space-y-1.5">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="text-sm font-semibold text-foreground first-letter:uppercase">
+                        {formaterJour(entretien.scheduled_at)}
+                      </p>
+                      <Badge variant={statut.variante}>{statut.libelle}</Badge>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
+                      <span className="inline-flex items-center gap-1.5">
+                        <Clock size={14} aria-hidden="true" />
+                        {formaterHeure(entretien.scheduled_at)} · {entretien.duration_minutes} min
+                      </span>
+                      {entretien.location && (
+                        <span className="inline-flex items-center gap-1.5">
+                          <MapPin size={14} aria-hidden="true" />
+                          {entretien.location}
+                        </span>
+                      )}
+                      {!entretien.location && entretien.meeting_link && (
+                        <span className="inline-flex items-center gap-1.5">
+                          <Video size={14} aria-hidden="true" />
+                          Visioconférence
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Référence candidature {entretien.application_id.slice(0, 8)}
+                    </p>
                   </div>
                 </div>
 
-                {/* Candidat */}
-                <div className="mb-4">
-                  <h3 className="text-lg font-bold text-[var(--color-foreground)]">
-                    {interview.candidate_name}
-                  </h3>
-                  <p className="text-sm text-[var(--color-muted-foreground)]">
-                    {interview.candidate_email}
-                  </p>
+                <div className="flex shrink-0 flex-wrap items-center gap-2 sm:justify-end">
+                  {entretien.meeting_link && entretien.status === "scheduled" && (
+                    <Button
+                      render={
+                        <a
+                          href={`/leave?to=${encodeURIComponent(entretien.meeting_link)}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        />
+                      }
+                      size="sm"
+                      className="gap-1.5"
+                    >
+                      <Video size={14} aria-hidden="true" />
+                      Rejoindre
+                    </Button>
+                  )}
+                  {entretien.status === "scheduled" && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => annuler(entretien.id)}
+                      disabled={annulation === entretien.id}
+                      className="gap-1.5"
+                    >
+                      <X size={14} aria-hidden="true" />
+                      {annulation === entretien.id ? "Annulation..." : "Annuler"}
+                    </Button>
+                  )}
                 </div>
+              </li>
+            );
+          })}
+        </ul>
+      )}
 
-                {/* Poste */}
-                <div className="mb-4 rounded-lg bg-[var(--surface-popover)] p-3">
-                  <p className="text-sm font-medium text-[var(--color-foreground)]">
-                    {interview.job_title}
-                  </p>
-                  <p className="text-xs text-[var(--color-muted-foreground)]">
-                    {interview.company_name}
-                  </p>
-                </div>
-
-                {/* Date et Heure */}
-                <div className="mb-4 flex items-center gap-2 text-sm text-[var(--color-muted-foreground)]">
-                  <Calendar size={16} />
-                  <span>{formaterDate(interview.scheduled_at)}</span>
-                  <span>•</span>
-                  <span>{formaterHeure(interview.scheduled_at)}</span>
-                </div>
-
-                {/* Recruteur */}
-                <div className="mb-4 flex items-center gap-2 text-sm text-[var(--color-muted-foreground)]">
-                  <User size={16} />
-                  <span>{interview.interviewer_name}</span>
-                </div>
-
-                {/* Actions */}
-                {interview.status === "scheduled" && interview.video_link && (
-                  <Button
-                    className="w-full gap-2 transition-colors duration-150 active:scale-[0.98] @media/hover:hover:scale-100"
-                    onClick={() => interview.video_link && window.open(interview.video_link, "_blank", "noopener,noreferrer")}
-                  >
-                    <Video size={16} />
-                    Rejoindre la visio
-                  </Button>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+      <p className="flex items-center gap-2 text-xs text-muted-foreground">
+        <Calendar size={13} aria-hidden="true" />
+        Chaque entretien confirmé déclenche une notification par email aux personnes concernées.
+      </p>
     </div>
   );
 }
