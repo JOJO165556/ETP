@@ -7,7 +7,7 @@ const AUTH_PAGES = ["/login", "/register", "/forgot-password", "/reset-password"
 /* Pages accessibles sans session (dont la page de sortie vers un site externe). */
 const PUBLIC_ROUTES = [...AUTH_PAGES, "/leave"];
 
-export function proxy(request: NextRequest) {
+export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   const isAuthPage = AUTH_PAGES.some(

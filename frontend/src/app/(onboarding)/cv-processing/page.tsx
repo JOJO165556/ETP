@@ -7,26 +7,26 @@ import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { api } from "@/lib/api";
 
-/* Configuration des étapes du pipeline d'extraction IA */
+/* Configuration des étapes du traitement du CV */
 const STEPS = [
   {
     id: 1,
-    title: "Ingestion du Document",
-    subtitle: "OCR Terminé • Réduction de bruit appliquée",
+    title: "Lecture du document",
+    subtitle: "Fichier reçu et préparé",
     delay: 0,
     duration: 2000,
   },
   {
     id: 2,
-    title: "Extraction d'Entités Sémantiques",
-    subtitle: "Mappage vers la taxonomie organisationnelle...",
+    title: "Analyse des compétences",
+    subtitle: "Identification des expériences et formations...",
     delay: 2000,
     duration: 3000,
   },
   {
     id: 3,
-    title: "Synthèse du Profil",
-    subtitle: "En attente de la fin de l'extraction.",
+    title: "Construction du profil",
+    subtitle: "En attente de la fin de l'analyse.",
     delay: 5000,
     duration: 1500,
   },
@@ -119,7 +119,7 @@ export default function CVProcessingPage() {
             <p className="text-xs text-muted-foreground">{nomFichier}</p>
           </div>
           <span className="text-primary rounded border border-border bg-muted px-2 py-1 text-[10px] font-bold tracking-wider uppercase">
-            Données Brutes
+            Original
           </span>
         </div>
 
@@ -155,11 +155,11 @@ export default function CVProcessingPage() {
           <div className="flex items-center gap-3 text-foreground">
             <Cpu className="text-primary animate-pulse" size={28} />
             <h1 className="text-3xl font-bold tracking-tight">
-              Extraction Neurale Active
+              Analyse de votre CV en cours
             </h1>
           </div>
           <p className="text-sm text-muted-foreground">
-            Structuration des données non-structurées selon la taxonomie ETP.
+            Vos informations sont traitées de façon sécurisée et confidentielle.
           </p>
         </div>
 
