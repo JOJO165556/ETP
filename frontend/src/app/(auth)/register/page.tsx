@@ -386,7 +386,7 @@ function RegisterForm() {
             </div>
           )}
 
-          {/* Formulaire email/mot de passe — candidats uniquement */}
+          {/* Formulaire email/mot de passe, candidats uniquement */}
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
