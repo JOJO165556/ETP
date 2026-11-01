@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { Calendar, Mail, Banknote } from "lucide-react";
+import { ArrowRight, Calendar } from "lucide-react";
+
 import { applicationsService } from "@/services/applications.service";
 import { StatutBadge, type StatutCandidature } from "@/components/shared/status-badge";
 import {
@@ -10,226 +11,168 @@ import {
   type ConfigEtape,
   type EtapeCandidature,
 } from "@/components/shared/pipeline-progress";
-import { Button } from "@/components/ui/button";
+import { PageHeader } from "@/components/shared/page-header";
+import { StatePanel } from "@/components/shared/state-panel";
+import { Skeleton } from "@/components/ui/skeleton";
 import type { CandidatureAPI } from "@/types/domain";
 
-const ETAPES_ORDRE: EtapeCandidature[] = [
-  "POSTULE",
-  "PREEVALUATION",
-  "ENTRETIEN",
-  "OFFRE",
-  "EMBAUCHE",
-];
+const ETAPES: EtapeCandidature[] = ["POSTULE", "PREEVALUATION", "ENTRETIEN", "OFFRE", "EMBAUCHE"];
 
-/* Position dans le pipeline associée à chaque étape backend */
-const ETAPE_BACKEND: Record<string, EtapeCandidature> = {
-  "APPLIED": "POSTULE",
-  "SCREENING": "PREEVALUATION",
-  "INTERVIEW": "ENTRETIEN",
-  "OFFER": "OFFRE",
-  "HIRED": "EMBAUCHE",
-  "REJECTED": "POSTULE",
+/* Les étapes renvoyées par le serveur sont en minuscules. */
+const ETAPE_SERVEUR: Record<string, EtapeCandidature> = {
+  applied: "POSTULE",
+  screening: "PREEVALUATION",
+  interview: "ENTRETIEN",
+  offer: "OFFRE",
+  hired: "EMBAUCHE",
+  rejected: "POSTULE",
 };
 
-interface CandidatureAffichee {
-  id: string;
-  intitule_poste: string;
-  nom_entreprise: string;
-  statut: StatutCandidature;
-  etape_actuelle: EtapeCandidature;
-  correspondance: number | null;
-  date: string | null;
-  note_evenement: string | null;
-  libelle_action: string | null;
-}
+const MESSAGE_ETAPE: Record<string, string> = {
+  interview: "Un entretien est programmé avec l'équipe recrutement.",
+  offer: "Une proposition vous a été adressée, elle attend votre réponse.",
+  hired: "Félicitations, votre candidature a été retenue.",
+  rejected: "La candidature n'a pas été retenue pour ce poste.",
+};
 
-function formaterDateRelative(iso: string | null): string | null {
+function dateRelative(iso: string | null): string | null {
   if (!iso) return null;
-  try {
-    const date = new Date(iso);
-    const diffMs = Date.now() - date.getTime();
-    const jours = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-    if (jours < 1) return "Mis à jour aujourd'hui";
-    if (jours === 1) return "Mis à jour hier";
-    if (jours < 7) return `Mis à jour il y a ${jours}j`;
-    return `Mis à jour le ${date.toLocaleDateString("fr-FR")}`;
-  } catch {
-    return null;
-  }
+  const jours = Math.floor((Date.now() - new Date(iso).getTime()) / 86_400_000);
+  if (jours <= 0) return "Mise à jour aujourd'hui";
+  if (jours === 1) return "Mise à jour hier";
+  if (jours < 7) return `Mise à jour il y a ${jours} jours`;
+  return `Mise à jour le ${new Date(iso).toLocaleDateString("fr-FR")}`;
 }
 
-function mapperCandidature(app: CandidatureAPI): CandidatureAffichee {
-  const etape = ETAPE_BACKEND[app.stage] ?? "POSTULE";
-  const rejetee = app.stage === "REJECTED";
-  const statut: StatutCandidature = rejetee
-    ? "ARCHIVEE"
-    : app.stage === "OFFER"
-      ? "ACTION_REQUISE"
-      : "ACTIVE";
-
-  const noteEvenement = rejetee
-    ? "Candidature refusée par l'entreprise."
-    : app.stage === "INTERVIEW"
-      ? "Entretien à venir avec l'équipe."
-      : app.stage === "OFFER"
-        ? "Lettre d'offre en attente de réponse."
-        : null;
-
-  return {
-    id: app.id,
-    intitule_poste: app.job_title ?? "Poste sans intitulé",
-    nom_entreprise: app.company_name ?? "Entreprise inconnue",
-    statut,
-    etape_actuelle: etape,
-    correspondance: app.matching_score,
-    date: formaterDateRelative(app.updated_at ?? app.created_at),
-    note_evenement: noteEvenement,
-    libelle_action:
-      app.stage === "OFFER"
-        ? "Examiner l'offre"
-        : app.stage === "INTERVIEW"
-          ? "Se préparer"
-          : null,
-  };
-}
-
-function genererPipeline(app: CandidatureAffichee): ConfigEtape[] {
-  const indexCourante = ETAPES_ORDRE.indexOf(app.etape_actuelle);
-  return ETAPES_ORDRE.map((etape, idx) => {
+function pipeline(etapeActuelle: EtapeCandidature, rejetee: boolean): ConfigEtape[] {
+  const indexCourante = ETAPES.indexOf(etapeActuelle);
+  return ETAPES.map((etape, index) => {
     let statut: ConfigEtape["statut"] = "en_attente";
-    if (app.statut === "ARCHIVEE") {
-      statut = idx >= indexCourante ? "rejetee" : "terminee";
-    } else if (idx < indexCourante) {
-      statut = "terminee";
-    } else if (idx === indexCourante) {
-      statut = "active";
-    }
+    if (rejetee) statut = index >= indexCourante ? "rejetee" : "terminee";
+    else if (index < indexCourante) statut = "terminee";
+    else if (index === indexCourante) statut = "active";
     return { etape, statut };
   });
 }
 
-/* Page de suivi des candidatures (My Applications) — données réelles */
 export default function CandidaturesPage() {
   const [candidatures, setCandidatures] = useState<CandidatureAPI[]>([]);
   const [chargement, setChargement] = useState(true);
+  const [erreur, setErreur] = useState(false);
 
-  useEffect(() => {
-    let vivant = true;
-    applicationsService
-      .getMesCandidatures()
-      .then((data) => vivant && setCandidatures(data))
-      .catch((erreur) =>
-        console.error("Erreur de chargement des candidatures", erreur)
-      )
-      .finally(() => vivant && setChargement(false));
-    return () => {
-      vivant = false;
-    };
+  const charger = useCallback(async () => {
+    setChargement(true);
+    setErreur(false);
+    try {
+      setCandidatures(await applicationsService.getMesCandidatures());
+    } catch {
+      setErreur(true);
+    } finally {
+      setChargement(false);
+    }
   }, []);
 
-  const affichees = useMemo(() => candidatures.map(mapperCandidature), [candidatures]);
+  useEffect(() => {
+    charger();
+  }, [charger]);
+
+  const lignes = useMemo(
+    () =>
+      candidatures.map((app) => {
+        const rejetee = app.stage === "rejected";
+        const statut: StatutCandidature = rejetee
+          ? "ARCHIVEE"
+          : app.stage === "offer"
+            ? "ACTION_REQUISE"
+            : "ACTIVE";
+        return {
+          ...app,
+          rejetee,
+          statut,
+          etape: ETAPE_SERVEUR[app.stage] ?? "POSTULE",
+        };
+      }),
+    [candidatures]
+  );
 
   return (
-    <div className="flex h-full flex-col p-6 lg:p-10">
-      {/* En-tête de page */}
-      <header className="mb-8 flex flex-col justify-between gap-4 md:flex-row md:items-end">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight text-[var(--color-foreground)]">
-            Mes Candidatures
-          </h1>
-          <p className="mt-1 text-sm text-[var(--color-muted-foreground)]">
-            Suivez l'évolution de vos candidatures au sein des organisations.
-          </p>
+    <div className="mx-auto w-full max-w-5xl space-y-6 p-6 lg:p-10">
+      <PageHeader
+        title="Mes candidatures"
+        description="Suivez chaque candidature, de l'envoi à la décision finale."
+      />
+
+      {chargement ? (
+        <div className="space-y-3">
+          {[0, 1, 2].map((i) => (
+            <Skeleton key={i} className="h-44 w-full rounded-xl" />
+          ))}
         </div>
-      </header>
+      ) : erreur ? (
+        <StatePanel
+          tone="error"
+          title="Vos candidatures sont indisponibles"
+          description="La connexion au serveur a échoué. Réessayez dans un instant."
+          actionLabel="Réessayer"
+          onAction={charger}
+        />
+      ) : lignes.length === 0 ? (
+        <StatePanel
+          title="Aucune candidature pour l'instant"
+          description="Parcourez les offres, postulez, puis suivez ici l'avancement de chaque dossier."
+        />
+      ) : (
+        <ul className="space-y-3">
+          {lignes.map((app) => (
+            <li key={app.id} className="rounded-xl border border-border bg-card p-6">
+              <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+                <div className="min-w-0 flex-1 space-y-3">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <StatutBadge statut={app.statut} />
+                    {dateRelative(app.updated_at ?? app.created_at) && (
+                      <span className="text-xs text-muted-foreground">
+                        {dateRelative(app.updated_at ?? app.created_at)}
+                      </span>
+                    )}
+                  </div>
 
-      {/* Liste des candidatures */}
-      <div className="space-y-4">
-        {chargement ? (
-          <div className="py-12 text-center text-[var(--color-muted-foreground)]">
-            Chargement de vos candidatures...
-          </div>
-        ) : affichees.length === 0 ? (
-          <div className="rounded-2xl border border-[var(--border-subtle)] bg-[var(--surface-card)] p-12 text-center">
-            <Calendar size={40} className="mx-auto mb-4 text-[var(--color-muted-foreground)]" />
-            <p className="text-sm text-[var(--color-muted-foreground)]">
-Vous n'avez pas encore de candidatures. Explorez le{" "}
-              <Link
-                href="/jobs"
-                className="font-medium text-[var(--color-primary)] hover:underline transition-colors duration-150"
-              >
-                fil d'offres
-              </Link>{" "}
-              pour commencer.
-            </p>
-          </div>
-        ) : (
-          affichees.map((app) => (
-            <div
-              key={app.id}
-              className="flex flex-col gap-6 rounded-2xl border border-[var(--border-subtle)] bg-[var(--surface-card)] p-6 lg:flex-row lg:items-center transition-shadow duration-200 hover:shadow-md"
-            >
-              {/* Informations principales de la candidature */}
-              <div className="flex-1 space-y-4">
-                <div className="flex items-center justify-between lg:justify-start lg:gap-6">
-                  <StatutBadge statut={app.statut} />
-                  {app.date && <span className="text-xs text-[var(--color-muted-foreground)]">{app.date}</span>}
-                </div>
+                  <div>
+                    <h2 className="text-lg font-semibold text-foreground">{app.job_title ?? "Poste sans intitulé"}</h2>
+                    <p className="mt-0.5 text-sm text-muted-foreground">
+                      {app.company_name ?? "Entreprise non renseignée"}
+                    </p>
+                  </div>
 
-                <div>
-                  <h2 className="text-xl font-bold text-[var(--color-foreground)]">{app.intitule_poste}</h2>
-                  <div className="mt-1 flex items-center gap-2 text-[var(--color-muted-foreground)]">
-                    <div className="bg-[var(--surface-popover)] flex h-5 w-5 items-center justify-center rounded text-[10px] font-bold text-[var(--color-foreground)]">
-                      {app.nom_entreprise.charAt(0)}
-                    </div>
-                    <span className="text-sm font-medium">{app.nom_entreprise}</span>
+                  <div className="flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
+                    {app.matching_score != null && (
+                      <span>Correspondance {Math.round(app.matching_score)} %</span>
+                    )}
+                    <Link
+                      href={`/jobs/${app.job_id}`}
+                      className="inline-flex items-center gap-1 font-medium text-primary underline-offset-4 hover:underline"
+                    >
+                      Voir l&apos;offre
+                      <ArrowRight size={13} aria-hidden="true" />
+                    </Link>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-4 text-xs text-[var(--color-muted-foreground)]">
-                  {app.correspondance != null && (
-                    <span className="flex items-center gap-1">
-                      <Banknote size={14} className="text-[var(--color-muted-foreground)]" />{" "}
-                      Correspondance {Math.round(app.correspondance)}%
-                    </span>
+                <div className="w-full shrink-0 space-y-4 lg:w-[420px]">
+                  <PipelineProgress etapes={pipeline(app.etape, app.rejetee)} />
+                  {MESSAGE_ETAPE[app.stage] && (
+                    <div className="flex items-start gap-2 rounded-lg border border-border bg-muted/50 p-3">
+                      <Calendar size={16} className="mt-0.5 shrink-0 text-muted-foreground" aria-hidden="true" />
+                      <p className="text-xs leading-relaxed text-muted-foreground">
+                        {MESSAGE_ETAPE[app.stage]}
+                      </p>
+                    </div>
                   )}
                 </div>
               </div>
-
-              {/* Pipeline et Actions */}
-              <div className="w-full shrink-0 space-y-6 lg:w-[500px] xl:w-[600px]">
-                <PipelineProgress etapes={genererPipeline(app)} />
-
-                {app.note_evenement && (
-                  <div className="border-[var(--border-subtle)] bg-[var(--surface-popover)] flex items-center justify-between rounded-xl border p-4">
-                    <div className="flex items-start gap-3">
-                      <div className="mt-0.5 text-[var(--color-muted-foreground)]">
-                        {app.statut === "ACTION_REQUISE" ? (
-                          <Mail size={18} className="text-[var(--color-success)]" />
-                        ) : (
-                          <Calendar size={18} />
-                        )}
-                      </div>
-                      <div>
-                        <h4 className="text-sm font-bold text-[var(--color-foreground)]">
-                          {app.etape_actuelle === "OFFRE" ? "Offre reçue" : "Étape suivante"}
-                        </h4>
-                        <p className="text-xs text-[var(--color-muted-foreground)]">{app.note_evenement}</p>
-                      </div>
-                    </div>
-
-                    {app.libelle_action && (
-                      <Button className="bg-[var(--color-success)] text-white hover:bg-[var(--color-success)]/90 transition-colors duration-150 active:scale-[0.98] @media/hover:hover:scale-100">
-                        {app.libelle_action}
-                      </Button>
-                    )}
-                  </div>
-                )}
-              </div>
-            </div>
-          ))
-        )}
-      </div>
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }

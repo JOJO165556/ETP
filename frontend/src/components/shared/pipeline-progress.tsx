@@ -53,18 +53,11 @@ function IconeEtape({ statut }: { statut: StatutEtape }) {
   if (statut === "active") {
     return (
       <div className="relative flex h-6 w-6 items-center justify-center">
-        <div 
-          className="absolute inset-0 rounded-full animate-ping opacity-20"
-          style={{ backgroundColor: couleur }}
-        />
-        <div 
-          className="relative h-5 w-5 rounded-full border-2 flex items-center justify-center"
+        <div
+          className="relative flex h-5 w-5 items-center justify-center rounded-full border-2"
           style={{ borderColor: couleur }}
         >
-          <div 
-            className="h-2 w-2 rounded-full"
-            style={{ backgroundColor: couleur }}
-          />
+          <div className="h-2 w-2 rounded-full" style={{ backgroundColor: couleur }} />
         </div>
       </div>
     );

@@ -4,20 +4,14 @@ import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import {
-  Sparkles,
+  Target,
   ArrowRight,
   ShieldCheck,
   MapPin,
-  Cpu,
-  BarChart3,
-  Users,
   User,
   Building2,
   CheckCircle2,
   Lock,
-  Layers,
-  ChevronRight,
-  Search,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -56,8 +50,8 @@ export default function LandingPage() {
             <a href="#recruteurs" className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">
               Pour les Entreprises
             </a>
-            <a href="#matching-ia" className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">
-              Matching IA
+            <a href="#comment-ca-marche" className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">
+              Comment ça marche
             </a>
             <a href="#securite" className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">
               Souveraineté & RGPD
@@ -100,8 +94,8 @@ export default function LandingPage() {
               transition={{ duration: 0.5 }}
               className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-4 py-1.5 text-xs font-semibold text-primary mb-8"
             >
-              <Sparkles size={14} />
-              <span>Matching sémantique PostGIS & IA souveraine de recrutement</span>
+              <Target size={14} />
+              <span>La plateforme qui connecte les bons profils aux bonnes équipes</span>
             </motion.div>
 
             {/* Main title */}
@@ -170,14 +164,14 @@ export default function LandingPage() {
         </section>
 
         {/* 3. Interactive Matching Preview Card */}
-        <section id="matching-ia" className="py-12 border-y border-border/40 bg-muted/20">
+        <section id="comment-ca-marche" className="py-12 border-y border-border/40 bg-muted/20">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="mx-auto max-w-3xl text-center mb-10">
               <h2 className="text-2xl sm:text-3xl font-bold tracking-tight" style={{ fontFamily: "var(--font-heading)" }}>
                 Un scoring d'adéquation en temps réel
               </h2>
               <p className="mt-2 text-sm text-muted-foreground">
-                Notre algorithme évalue les compétences clés, l'expérience et la proximité géographique sans biais subjectif.
+                Chaque candidature est évaluée selon les compétences, l'expérience et la proximité géographique — de façon objective et reproductible.
               </p>
             </div>
 
@@ -208,12 +202,12 @@ export default function LandingPage() {
                 <div className="rounded-xl border border-border/60 bg-muted/40 p-4">
                   <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Rayon géographique</p>
                   <p className="mt-1 text-sm font-semibold text-foreground">Rayon de 12 km respecté</p>
-                  <p className="mt-1 text-xs text-emerald-500">PostGIS optimisé</p>
+                  <p className="mt-1 text-xs text-emerald-500">Zone de trajet respectée</p>
                 </div>
                 <div className="rounded-xl border border-border/60 bg-muted/40 p-4">
                   <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Traitement CV</p>
                   <p className="mt-1 text-sm font-semibold text-foreground">Extraction structurée</p>
-                  <p className="mt-1 text-xs text-emerald-500">Parsed en 1.8 seconde</p>
+                  <p className="mt-1 text-xs text-emerald-500">Analysé en quelques secondes</p>
                 </div>
               </div>
             </div>

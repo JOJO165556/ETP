@@ -3,7 +3,7 @@ import { Check } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
 
 const FEATURES = [
-  "IA de matching qui classe les talents par adéquation réelle",
+  "Un algorithme qui classe les talents selon leur adéquation réelle au poste",
   "Offres géolocalisées avec recherche par rayon de trajet",
   "Un pipeline que toute l'équipe peut piloter ensemble",
 ];
@@ -12,7 +12,7 @@ const FEATURES = [
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex min-h-dvh">
-      <div className="relative hidden flex-col justify-between overflow-hidden bg-[#1d40d9] p-10 text-white lg:flex lg:w-[46%] xl:w-[44%]">
+      <div className="relative hidden flex-col justify-between overflow-hidden bg-primary p-10 text-primary-foreground lg:flex lg:w-[46%] xl:w-[44%]">
         <div
           aria-hidden="true"
           className="pointer-events-none absolute inset-0"

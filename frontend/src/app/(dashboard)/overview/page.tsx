@@ -2,46 +2,40 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import {
-  Eye,
-  Zap,
-  ClipboardList,
-  MapPin,
-  LocateFixed,
-  Edit2,
-} from "lucide-react";
-import { cn } from "@/lib/utils";
-import { jobsService } from "@/services/jobs.service";
-import { analyticsService } from "@/services/analytics.service";
-import { usersService } from "@/services/users.service";
+import { ClipboardList, Eye, LocateFixed, MapPin, Pencil, Search } from "lucide-react";
+
 import { JobCard } from "@/components/shared/job-card";
+import { PageHeader } from "@/components/shared/page-header";
+import { StatePanel } from "@/components/shared/state-panel";
 import { Button } from "@/components/ui/button";
-import {
-  useGeolocalisation,
-  type PositionLocale,
-} from "@/hooks/use-geolocation";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useGeolocalisation, type PositionLocale } from "@/hooks/use-geolocation";
+import { analyticsService } from "@/services/analytics.service";
+import { jobsService } from "@/services/jobs.service";
+import { usersService } from "@/services/users.service";
 import type { Job } from "@/types/domain";
 
-/* Page d'accueil (vue d'ensemble) du tableau de bord — données réelles du backend */
-export default function OverviewPage() {
+interface Indicateurs {
+  vuesProfil: number;
+  evolutionVues: number;
+  correspondances: number;
+  candidaturesActives: number;
+}
+
+export default function VueEnsemblePage() {
   const [prenom, setPrenom] = useState<string | null>(null);
-  const [offresRecommandees, setOffresRecommandees] = useState<Job[]>([]);
+  const [indicateurs, setIndicateurs] = useState<Indicateurs | null>(null);
+  const [offres, setOffres] = useState<Job[]>([]);
   const [offresLocales, setOffresLocales] = useState<Job[]>([]);
-  const [vuesProfil, setVuesProfil] = useState(0);
-  const [evolutionVues, setEvolutionVues] = useState(0);
-  const [nouveauxMatchs, setNouveauxMatchs] = useState(0);
-  const [candidaturesActives, setCandidaturesActives] = useState(0);
   const [chargement, setChargement] = useState(true);
+  const [erreur, setErreur] = useState(false);
 
   const chargerOffresLocales = useCallback(async (position: PositionLocale) => {
     try {
-      const offres = await jobsService.getOffresLocales(
-        position.latitude,
-        position.longitude
+      setOffresLocales(
+        await jobsService.getOffresLocales(position.latitude, position.longitude)
       );
-      setOffresLocales(offres);
-    } catch (erreur) {
-      console.error("Erreur de chargement des offres locales", erreur);
+    } catch {
       setOffresLocales([]);
     }
   }, []);
@@ -52,200 +46,190 @@ export default function OverviewPage() {
     demander: demanderLocalisation,
   } = useGeolocalisation(chargerOffresLocales);
 
-  useEffect(() => {
-    async function chargerDonnees() {
-      try {
-        const [profil, resume, offres] = await Promise.all([
-          usersService.getMonProfil(),
-          analyticsService.getMonResume(),
-          jobsService.getOffres({ limit: 3 }),
-        ]);
-        setPrenom(profil.profile?.first_name ?? null);
-        setVuesProfil(resume.vues_profil);
-        setEvolutionVues(resume.evolution_vues);
-        setNouveauxMatchs(resume.nouveaux_matchs);
-        setCandidaturesActives(resume.candidatures_actives);
-        setOffresRecommandees(offres);
-      } catch (erreur) {
-        console.error("Erreur de chargement", erreur);
-      } finally {
-        setChargement(false);
-      }
+  const charger = useCallback(async () => {
+    setChargement(true);
+    setErreur(false);
+    try {
+      const [profil, resume, recommandations] = await Promise.all([
+        usersService.getMonProfil(),
+        analyticsService.getMonResume(),
+        jobsService.getOffres({ limit: 3 }),
+      ]);
+      setPrenom(profil.profile?.first_name ?? null);
+      setIndicateurs({
+        vuesProfil: resume.vues_profil,
+        evolutionVues: resume.evolution_vues,
+        correspondances: resume.nouveaux_matchs,
+        candidaturesActives: resume.candidatures_actives,
+      });
+      setOffres(recommandations);
+    } catch {
+      setErreur(true);
+    } finally {
+      setChargement(false);
     }
-    chargerDonnees();
   }, []);
 
-  const STATS = [
+  useEffect(() => {
+    charger();
+  }, [charger]);
+
+  const cartes = [
     {
-      title: "VUES DU PROFIL",
-      value: vuesProfil,
-      subtext:
-        vuesProfil > 0 ? `+${evolutionVues} cette semaine` : "Aucune vue",
-      icon: Eye,
-      iconColor: "text-primary",
-      bg: "bg-card",
+      titre: "Vues du profil",
+      valeur: indicateurs?.vuesProfil ?? 0,
+      note:
+        (indicateurs?.evolutionVues ?? 0) > 0
+          ? `+${indicateurs?.evolutionVues} cette semaine`
+          : "Pas de nouvelle vue",
+      Icone: Eye,
+      teinte: "text-primary bg-primary/10",
     },
     {
-      title: "NOUVEAUX MATCHS",
-      value: nouveauxMatchs,
-      subtext: nouveauxMatchs > 0 ? "Action requise" : "Aucun",
-      icon: Zap,
-      iconColor: "text-warning",
-      bg: "bg-card",
+      titre: "Nouvelles correspondances",
+      valeur: indicateurs?.correspondances ?? 0,
+      note: (indicateurs?.correspondances ?? 0) > 0 ? "À découvrir" : "Aucune pour l'instant",
+      Icone: Search,
+      teinte: "text-warning bg-warning/10",
     },
     {
-      title: "CANDIDATURES ACTIVES",
-      value: candidaturesActives,
-      subtext: "En cours",
-      icon: ClipboardList,
-      iconColor: "text-muted-foreground",
-      bg: "bg-card",
+      titre: "Candidatures en cours",
+      valeur: indicateurs?.candidaturesActives ?? 0,
+      note: "Suivi actif",
+      Icone: ClipboardList,
+      teinte: "text-muted-foreground bg-muted",
     },
   ];
 
   return (
-    <div className="space-y-10 p-8 lg:p-12">
-      {/* En-tête de la page */}
-      <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
-        <div className="space-y-1">
-          <p className="text-sm font-medium text-[var(--color-primary)]">Bon retour parmi nous</p>
-          <h1 className="text-3xl font-bold tracking-tight text-[var(--color-foreground)]">
-            Bonjour, {prenom ?? "candidat"}
-          </h1>
-        </div>
-        <Link
-          href="/settings"
-          className="flex items-center gap-2 rounded-md border border-[var(--border-subtle)] bg-[var(--surface-card)] px-4 py-2.5 text-sm font-medium text-[var(--color-foreground)] transition-colors duration-150 hover:bg-[var(--surface-popover)] active:scale-[0.98] @media/hover:hover:bg-[var(--surface-popover)]"
-        >
-          <Edit2 size={16} className="text-[var(--color-muted-foreground)]" />
-          Mettre à jour le profil
-        </Link>
-      </div>
+    <div className="mx-auto w-full max-w-6xl space-y-8 p-6 lg:p-10">
+      <PageHeader
+        title={`Bonjour${prenom ? `, ${prenom}` : ""}`}
+        description="Voici l'essentiel de votre recherche d'emploi aujourd'hui."
+        actions={
+          <Button variant="outline" render={<Link href="/settings" />} className="gap-2">
+            <Pencil size={15} aria-hidden="true" />
+            Mettre à jour mon profil
+          </Button>
+        }
+      />
 
-      {/* Cartes de statistiques (KPI) */}
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-        {STATS.map((stat) => (
-          <div
-            key={stat.title}
-            className={cn(
-              "relative flex flex-col justify-between overflow-hidden rounded-xl border border-[var(--border-subtle)] p-6 bg-[var(--surface-card)] transition-shadow duration-200 hover:shadow-md",
-              stat.bg
-            )}
-          >
-            {/* Icône décorative en arrière-plan */}
-            <div className="absolute top-0 right-0 p-6 opacity-20">
-              <stat.icon size={48} className={stat.iconColor} />
-            </div>
-
-            <div className="relative z-10 space-y-4">
-              <p className="text-xs font-semibold tracking-wider text-[var(--color-muted-foreground)] uppercase">
-                {stat.title}
-              </p>
-              <div className="flex items-baseline gap-3">
-                <span className="text-4xl font-bold text-[var(--color-foreground)]">{stat.value}</span>
-                <span className="text-sm font-medium text-[var(--color-muted-foreground)]">
-                  {stat.subtext}
-                </span>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Grille de contenu principal */}
-      <div className="grid grid-cols-1 gap-8 xl:grid-cols-3">
-        {/* Liste des offres recommandées */}
-        <div className="space-y-6 xl:col-span-2">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl font-bold text-[var(--color-foreground)]">Offres Recommandées</h2>
-            <Link
-              href="/jobs"
-              className="text-sm font-medium text-[var(--color-primary)] hover:underline transition-colors duration-150"
-            >
-              Voir tout le fil
-            </Link>
-          </div>
-
-          <div className="space-y-4">
-            {chargement ? (
-              <div className="py-8 text-[var(--color-muted-foreground)]">Recherche de correspondances...</div>
-            ) : offresRecommandees.length === 0 ? (
-              <div className="rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-card)] p-8 text-center text-sm text-[var(--color-muted-foreground)]">
-                Aucune offre publiée pour le moment.
-              </div>
-            ) : (
-              offresRecommandees.map((job) => <JobCard key={job.id} offre={job} />)
-            )}
-          </div>
-        </div>
-
-        {/* Opportunités locales géolocalisées */}
-        <div className="space-y-6">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl font-bold text-[var(--color-foreground)]">Opportunités locales</h2>
-            <MapPin size={20} className="text-[var(--color-muted-foreground)]" />
-          </div>
-
-          <div className="relative h-[300px] w-full overflow-hidden rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-canvas)]">
-            {/* Motif de grille décoratif */}
-            <div
-              className="absolute inset-0 opacity-20"
-              style={{
-                backgroundImage:
-                  "linear-gradient(rgba(255, 255, 255, 0.2) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.2) 1px, transparent 1px)",
-                backgroundSize: "20px 20px",
-              }}
-            />
-
-            <div className="relative z-10 flex h-full flex-col p-4">
-              <div className="mb-3 flex items-center justify-between">
-                <span className="flex items-center gap-2 rounded-md border border-[var(--border-subtle)] bg-[var(--surface-popover)] px-3 py-1.5 text-xs font-medium text-[var(--color-foreground)] backdrop-blur-md">
-                  <div className="h-2 w-2 rounded-full bg-[var(--color-primary)]" />
-                  Offres autour de chez vous
-                </span>
-                <LocateFixed size={18} className="text-[var(--color-muted-foreground)]" />
-              </div>
-
-              {offresLocales.length === 0 ? (
-                <div className="flex flex-1 flex-col items-center justify-center gap-3 text-center">
-                  <MapPin size={40} className="opacity-40" />
-                  <p className="max-w-[220px] text-xs leading-relaxed text-[var(--color-muted-foreground)]">
-                    {erreurLocalisation ??
-                      "Autorisez la localisation pour voir les offres à proximité."}
+      {erreur ? (
+        <StatePanel
+          tone="error"
+          title="Votre espace n'a pas pu se charger"
+          description="La connexion au serveur a échoué. Vos données n'ont pas été modifiées."
+          actionLabel="Réessayer"
+          onAction={charger}
+        />
+      ) : (
+        <>
+          <section aria-label="Indicateurs" className="grid gap-4 sm:grid-cols-3">
+            {cartes.map(({ titre, valeur, note, Icone, teinte }) => (
+              <div key={titre} className="rounded-xl border border-border bg-card p-5">
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+                    {titre}
                   </p>
-                  {!erreurLocalisation && (
-                    <Button
-                      onClick={demanderLocalisation}
-                      disabled={localisationEnCours}
-                      variant="outline"
-                      size="sm"
-                    >
-                      {localisationEnCours ? "Localisation..." : "Activer la localisation"}
-                    </Button>
-                  )}
+                  <span className={`flex h-8 w-8 items-center justify-center rounded-lg ${teinte}`}>
+                    <Icone size={16} aria-hidden="true" />
+                  </span>
                 </div>
+                {chargement ? (
+                  <Skeleton className="mt-4 h-9 w-16" />
+                ) : (
+                  <p className="mt-3 text-3xl font-semibold tracking-tight text-foreground">
+                    {valeur}
+                  </p>
+                )}
+                <p className="mt-1 text-xs text-muted-foreground">{note}</p>
+              </div>
+            ))}
+          </section>
+
+          <div className="grid gap-8 xl:grid-cols-3">
+            <section className="space-y-4 xl:col-span-2" aria-label="Offres recommandées">
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg font-semibold text-foreground">Offres pour vous</h2>
+                <Link
+                  href="/jobs"
+                  className="text-sm font-medium text-primary underline-offset-4 hover:underline"
+                >
+                  Voir toutes les offres
+                </Link>
+              </div>
+
+              {chargement ? (
+                <div className="space-y-3">
+                  {[0, 1, 2].map((i) => (
+                    <Skeleton key={i} className="h-28 w-full rounded-xl" />
+                  ))}
+                </div>
+              ) : offres.length === 0 ? (
+                <StatePanel
+                  title="Aucune offre publiée"
+                  description="De nouvelles offres apparaîtront ici dès leur publication."
+                />
               ) : (
-                <div className="flex-1 space-y-2 overflow-y-auto">
-                  {offresLocales.map((offre) => (
-                    <Link
-                      key={offre.id}
-                      href={`/jobs/${offre.id}`}
-                      className="block rounded-lg border border-[var(--border-subtle)] bg-[var(--surface-card)] p-3 transition-colors duration-150 hover:border-[var(--color-primary)]/40 active:scale-[0.98] @media/hover:hover:border-[var(--color-primary)]/40"
-                    >
-                      <p className="truncate text-sm font-semibold text-[var(--color-foreground)]">
-                        {offre.title}
-                      </p>
-                      <p className="truncate text-xs text-[var(--color-muted-foreground)]">
-                        {offre.company_name} • {offre.location}
-                      </p>
-                    </Link>
+                <div className="space-y-3">
+                  {offres.map((offre) => (
+                    <JobCard key={offre.id} offre={offre} />
                   ))}
                 </div>
               )}
-            </div>
+            </section>
+
+            <section className="space-y-4" aria-label="Offres à proximité">
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg font-semibold text-foreground">Près de chez vous</h2>
+                <LocateFixed size={18} className="text-muted-foreground" aria-hidden="true" />
+              </div>
+
+              <div className="rounded-xl border border-border bg-card p-4">
+                {offresLocales.length === 0 ? (
+                  <div className="flex flex-col items-center gap-3 py-6 text-center">
+                    <span className="flex h-10 w-10 items-center justify-center rounded-full bg-muted text-muted-foreground">
+                      <MapPin size={18} aria-hidden="true" />
+                    </span>
+                    <p className="max-w-[230px] text-sm leading-relaxed text-muted-foreground">
+                      {erreurLocalisation ??
+                        "Autorisez votre position pour voir les offres proches de votre trajet."}
+                    </p>
+                    {!erreurLocalisation && (
+                      <Button
+                        onClick={demanderLocalisation}
+                        disabled={localisationEnCours}
+                        variant="outline"
+                        size="sm"
+                      >
+                        {localisationEnCours ? "Localisation..." : "Activer la localisation"}
+                      </Button>
+                    )}
+                  </div>
+                ) : (
+                  <ul className="space-y-2">
+                    {offresLocales.map((offre) => (
+                      <li key={offre.id}>
+                        <Link
+                          href={`/jobs/${offre.id}`}
+                          className="block rounded-lg border border-border p-3 transition-colors hover:border-primary/40 hover:bg-muted/40"
+                        >
+                          <p className="truncate text-sm font-medium text-foreground">
+                            {offre.title}
+                          </p>
+                          <p className="truncate text-xs text-muted-foreground">
+                            {offre.company_name} · {offre.location}
+                          </p>
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            </section>
           </div>
-        </div>
-      </div>
+        </>
+      )}
     </div>
   );
 }

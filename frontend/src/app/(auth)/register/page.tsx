@@ -293,7 +293,7 @@ function RegisterForm() {
         <p className="text-sm text-muted-foreground">
           {role === "candidate"
             ? "Accédez aux offres géolocalisées et faites matcher votre CV par IA."
-            : "Pilotez vos recrutements avec scoring de pertinence et pipeline Kanban."}
+            : "Suivez chaque candidature étape par étape, avec toute votre équipe."}
         </p>
       </div>
 
@@ -339,7 +339,7 @@ function RegisterForm() {
         </button>
       </div>
 
-      {/* Bouton SSO Google */}
+      {/* Bouton SSO Google — toujours visible */}
       <Button
         type="button"
         variant="outline"
@@ -351,38 +351,161 @@ function RegisterForm() {
           <Loader2 size={16} className="animate-spin" aria-hidden="true" />
         ) : (
           <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true">
-            <path
-              fill="#FFC107"
-              d="M43.6 20H24v8h11.3C33.6 33.2 29.3 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.9 1.1 8 3l5.7-5.7C34.5 6.4 29.5 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20c11 0 19.7-8 19.7-20 0-1.3-.1-2.7-.1-4z"
-            />
-            <path
-              fill="#FF3D00"
-              d="M6.3 14.7l6.6 4.8C14.5 16 18.9 13 24 13c3.1 0 5.9 1.1 8 3l5.7-5.7C34.5 6.4 29.5 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"
-            />
-            <path
-              fill="#4CAF50"
-              d="M24 44c5.2 0 10-1.9 13.6-5.1l-6.3-5.4C29.3 35.1 26.8 36 24 36c-5.2 0-9.6-3.3-11.3-8H6.1C9.4 38.6 16.2 44 24 44z"
-            />
-            <path
-              fill="#1976D2"
-              d="M43.6 20H24v8h11.3c-.8 2.3-2.3 4.2-4.2 5.5l6.3 5.4C41.2 35.9 44 30.4 44 24c0-1.3-.1-2.7-.4-4z"
-            />
+            <path fill="#FFC107" d="M43.6 20H24v8h11.3C33.6 33.2 29.3 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.9 1.1 8 3l5.7-5.7C34.5 6.4 29.5 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20c11 0 19.7-8 19.7-20 0-1.3-.1-2.7-.1-4z" />
+            <path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.5 16 18.9 13 24 13c3.1 0 5.9 1.1 8 3l5.7-5.7C34.5 6.4 29.5 4 24 4 16.3 4 9.7 8.3 6.3 14.7z" />
+            <path fill="#4CAF50" d="M24 44c5.2 0 10-1.9 13.6-5.1l-6.3-5.4C29.3 35.1 26.8 36 24 36c-5.2 0-9.6-3.3-11.3-8H6.1C9.4 38.6 16.2 44 24 44z" />
+            <path fill="#1976D2" d="M43.6 20H24v8h11.3c-.8 2.3-2.3 4.2-4.2 5.5l6.3 5.4C41.2 35.9 44 30.4 44 24c0-1.3-.1-2.7-.4-4z" />
           </svg>
         )}
-        S'inscrire avec Google ({role === "candidate" ? "Candidat" : "Recruteur"})
+        Continuer avec Google
       </Button>
 
-      {/* Séparateur */}
-      <div className="flex items-center gap-3">
-        <div className="flex-1 border-t border-border" />
-        <span className="text-xs font-medium tracking-wider text-muted-foreground uppercase">
-          ou avec votre adresse email
-        </span>
-        <div className="flex-1 border-t border-border" />
-      </div>
+      {/*
+       * Parcours recruteur : le formulaire email est masqué.
+       * Le backend (/auth/register) force CANDIDATE sur tous les comptes email.
+       * Seul le chemin OAuth (Firebase) transmet le rôle recruteur.
+       */}
+      {role === "candidate" && (
+        <>
+          {/* Séparateur */}
+          <div className="flex items-center gap-3">
+            <div className="flex-1 border-t border-border" />
+            <span className="text-xs font-medium tracking-wider text-muted-foreground uppercase">
+              ou avec votre adresse email
+            </span>
+            <div className="flex-1 border-t border-border" />
+          </div>
 
-      {/* Message d'erreur */}
-      {error && (
+          {/* Message d'erreur */}
+          {error && (
+            <div
+              role="alert"
+              className="rounded-lg border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm font-medium text-destructive"
+            >
+              {error}
+            </div>
+          )}
+
+          {/* Formulaire email/mot de passe, candidats uniquement */}
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <label htmlFor="first_name" className="block text-sm font-medium text-foreground">
+                  Prénom
+                </label>
+                <Input
+                  id="first_name"
+                  type="text"
+                  placeholder="Alexandre"
+                  {...register("first_name")}
+                  className="h-10"
+                />
+                {errors.first_name && (
+                  <p className="text-xs text-destructive">{errors.first_name.message}</p>
+                )}
+              </div>
+              <div className="space-y-1.5">
+                <label htmlFor="last_name" className="block text-sm font-medium text-foreground">
+                  Nom
+                </label>
+                <Input
+                  id="last_name"
+                  type="text"
+                  placeholder="Martin"
+                  {...register("last_name")}
+                  className="h-10"
+                />
+                {errors.last_name && (
+                  <p className="text-xs text-destructive">{errors.last_name.message}</p>
+                )}
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <label htmlFor="email" className="block text-sm font-medium text-foreground">
+                Adresse email
+              </label>
+              <div className="relative">
+                <Mail
+                  size={16}
+                  className="absolute top-1/2 left-3 -translate-y-1/2 text-muted-foreground"
+                  aria-hidden="true"
+                />
+                <Input
+                  id="email"
+                  type="email"
+                  autoComplete="email"
+                  placeholder="alexandre.martin@exemple.com"
+                  {...register("email")}
+                  className="h-10 pl-9"
+                />
+              </div>
+              {errors.email && (
+                <p className="text-xs text-destructive">{errors.email.message}</p>
+              )}
+            </div>
+
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <label htmlFor="password" className="block text-sm font-medium text-foreground">
+                  Mot de passe
+                </label>
+                <span className="text-[11px] text-muted-foreground">8 caractères minimum</span>
+              </div>
+              <div className="relative">
+                <Lock
+                  size={16}
+                  className="absolute top-1/2 left-3 -translate-y-1/2 text-muted-foreground"
+                  aria-hidden="true"
+                />
+                <Input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  autoComplete="new-password"
+                  placeholder="••••••••••••"
+                  {...register("password")}
+                  className="h-10 pr-10 pl-9"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((v) => !v)}
+                  className="absolute top-1/2 right-3 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  aria-label={showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
+                >
+                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
+
+              {/* Jauge isolée mémoïsée : zéro impact sur les autres inputs */}
+              <PasswordStrengthIndicator password={currentPassword} />
+
+              {errors.password && (
+                <p className="text-xs text-destructive">{errors.password.message}</p>
+              )}
+            </div>
+
+            <div className="pt-2">
+              <Button
+                type="submit"
+                disabled={isSubmitting}
+                className="w-full h-11 gap-2 text-sm font-semibold shadow-sm"
+              >
+                {isSubmitting ? (
+                  <Loader2 size={16} className="animate-spin" />
+                ) : (
+                  <>
+                    Créer mon compte
+                    <ArrowRight size={16} />
+                  </>
+                )}
+              </Button>
+            </div>
+          </form>
+        </>
+      )}
+
+      {/* Parcours recruteur : message d'erreur OAuth affiché ici si besoin */}
+      {role === "recruiter" && error && (
         <div
           role="alert"
           className="rounded-lg border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm font-medium text-destructive"
@@ -390,122 +513,6 @@ function RegisterForm() {
           {error}
         </div>
       )}
-
-      {/* Formulaire complet */}
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
-        <div className="grid grid-cols-2 gap-3">
-          <div className="space-y-1.5">
-            <label htmlFor="first_name" className="block text-sm font-medium text-foreground">
-              Prénom
-            </label>
-            <Input
-              id="first_name"
-              type="text"
-              placeholder="Alexandre"
-              {...register("first_name")}
-              className="h-10"
-            />
-            {errors.first_name && (
-              <p className="text-xs text-destructive">{errors.first_name.message}</p>
-            )}
-          </div>
-          <div className="space-y-1.5">
-            <label htmlFor="last_name" className="block text-sm font-medium text-foreground">
-              Nom
-            </label>
-            <Input
-              id="last_name"
-              type="text"
-              placeholder="Martin"
-              {...register("last_name")}
-              className="h-10"
-            />
-            {errors.last_name && (
-              <p className="text-xs text-destructive">{errors.last_name.message}</p>
-            )}
-          </div>
-        </div>
-
-        <div className="space-y-1.5">
-          <label htmlFor="email" className="block text-sm font-medium text-foreground">
-            Adresse email professionnelle ou personnelle
-          </label>
-          <div className="relative">
-            <Mail
-              size={16}
-              className="absolute top-1/2 left-3 -translate-y-1/2 text-muted-foreground"
-              aria-hidden="true"
-            />
-            <Input
-              id="email"
-              type="email"
-              autoComplete="email"
-              placeholder="alexandre.martin@exemple.com"
-              {...register("email")}
-              className="h-10 pl-9"
-            />
-          </div>
-          {errors.email && (
-            <p className="text-xs text-destructive">{errors.email.message}</p>
-          )}
-        </div>
-
-        <div className="space-y-1.5">
-          <div className="flex items-center justify-between">
-            <label htmlFor="password" className="block text-sm font-medium text-foreground">
-              Mot de passe sécurisé
-            </label>
-            <span className="text-[11px] text-muted-foreground">8 caractères minimum</span>
-          </div>
-          <div className="relative">
-            <Lock
-              size={16}
-              className="absolute top-1/2 left-3 -translate-y-1/2 text-muted-foreground"
-              aria-hidden="true"
-            />
-            <Input
-              id="password"
-              type={showPassword ? "text" : "password"}
-              autoComplete="new-password"
-              placeholder="••••••••••••"
-              {...register("password")}
-              className="h-10 pr-10 pl-9"
-            />
-            <button
-              type="button"
-              onClick={() => setShowPassword((v) => !v)}
-              className="absolute top-1/2 right-3 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-              aria-label={showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
-            >
-              {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-            </button>
-          </div>
-
-          {/* Jauge isolée mémoïsée : zéro impact sur les autres inputs */}
-          <PasswordStrengthIndicator password={currentPassword} />
-
-          {errors.password && (
-            <p className="text-xs text-destructive">{errors.password.message}</p>
-          )}
-        </div>
-
-        <div className="pt-2">
-          <Button
-            type="submit"
-            disabled={isSubmitting}
-            className="w-full h-11 gap-2 text-sm font-semibold shadow-sm"
-          >
-            {isSubmitting ? (
-              <Loader2 size={16} className="animate-spin" />
-            ) : (
-              <>
-                Créer mon compte {role === "candidate" ? "Candidat" : "Recruteur"}
-                <ArrowRight size={16} />
-              </>
-            )}
-          </Button>
-        </div>
-      </form>
 
       {/* Pied de formulaire */}
       <div className="border-t border-border pt-4 text-center">

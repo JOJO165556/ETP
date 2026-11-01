@@ -10,6 +10,8 @@ import { MatchScoreRing } from "@/components/shared/match-score-ring";
 import { SkillBar } from "@/components/shared/skill-bar";
 import { JobCard } from "@/components/shared/job-card";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import { StatePanel } from "@/components/shared/state-panel";
 import type { AnalyseCompetence, Job } from "@/types/domain";
 
 function formaterDate(iso: string | null | undefined): string {
@@ -121,12 +123,32 @@ export default function DetailOffrePage({
 
   if (chargement) {
     return (
-      <div className="p-8 text-muted-foreground">Chargement des détails de l'offre...</div>
+      <div className="space-y-4 p-6 lg:p-10">
+        <Skeleton className="h-4 w-48" />
+        <Skeleton className="h-36 w-full rounded-xl" />
+        <div className="grid gap-4 md:grid-cols-2">
+          <Skeleton className="h-32 rounded-xl" />
+          <Skeleton className="h-32 rounded-xl" />
+        </div>
+      </div>
     );
   }
 
   if (!offre) {
-    return <div className="p-8 text-destructive">Offre introuvable.</div>;
+    return (
+      <div className="p-6 lg:p-10">
+        <StatePanel
+          tone="error"
+          title="Cette offre est introuvable"
+          description="Elle a peut-être été retirée ou son adresse a changé."
+        />
+        <div className="mt-4 text-center">
+          <Button variant="outline" render={<Link href="/jobs" />}>
+            Revenir aux offres
+          </Button>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -134,26 +156,26 @@ export default function DetailOffrePage({
       {/* Contenu principal */}
       <div className="flex-1 space-y-8 p-6 lg:p-10 lg:pr-8">
         {/* Breadcrumb */}
-        <div className="flex items-center gap-2 text-sm text-[var(--color-muted-foreground)]">
-          <Link href="/jobs" className="hover:text-[var(--color-foreground)] transition-colors duration-150">
+        <div className="flex items-center gap-2 text-sm text-[var(--text-muted)]">
+          <Link href="/jobs" className="hover:text-[var(--text-primary)] transition-colors duration-150">
             Fil d'offres
           </Link>
           <ChevronRight size={14} />
-          <span className="text-[var(--color-foreground)]">{offre.title}</span>
+          <span className="text-[var(--text-primary)]">{offre.title}</span>
         </div>
 
         {/* En-tête de l'offre */}
         <div className="flex flex-col gap-6 rounded-2xl border border-[var(--border-subtle)] bg-[var(--surface-card)] p-8 md:flex-row md:items-center md:justify-between transition-shadow duration-200 hover:shadow-md">
           <div className="flex items-start gap-5">
-            <div className="bg-gradient-to-br from-[var(--color-slate-900)] to-[var(--color-neutral-900)] flex h-16 w-16 items-center justify-center rounded-xl shadow-inner">
-              <span className="text-xl font-bold text-[var(--color-foreground)]">
+            <div className="flex h-16 w-16 items-center justify-center rounded-xl bg-muted">
+              <span className="text-xl font-semibold text-foreground">
                 {(offre.company_name ?? "?").substring(0, 2).toUpperCase()}
               </span>
             </div>
             <div className="space-y-2">
-              <h1 className="text-2xl font-bold text-[var(--color-foreground)]">{offre.title}</h1>
-              <div className="flex flex-wrap items-center gap-3 text-sm text-[var(--color-muted-foreground)]">
-                <span className="flex items-center gap-1.5 text-[var(--color-foreground)]">
+              <h1 className="text-2xl font-bold text-[var(--text-primary)]">{offre.title}</h1>
+              <div className="flex flex-wrap items-center gap-3 text-sm text-[var(--text-muted)]">
+                <span className="flex items-center gap-1.5 text-[var(--text-primary)]">
                   <Building2 size={16} /> {offre.company_name}
                 </span>
                 {offre.location && (
@@ -165,7 +187,7 @@ export default function DetailOffrePage({
                   </>
                 )}
               </div>
-              <div className="flex flex-wrap items-center gap-3 pt-1 text-sm text-[var(--color-muted-foreground)]">
+              <div className="flex flex-wrap items-center gap-3 pt-1 text-sm text-[var(--text-muted)]">
                 {offre.contract_type && (
                   <>
                     <span className="flex items-center gap-1.5">
@@ -175,7 +197,7 @@ export default function DetailOffrePage({
                   </>
                 )}
                 {offre.salary_range && (
-                  <span className="flex items-center gap-1.5 text-[var(--color-success)]">
+                  <span className="flex items-center gap-1.5 text-[var(--success)]">
                     <Banknote size={16} /> {offre.salary_range}
                   </span>
                 )}
@@ -205,17 +227,16 @@ export default function DetailOffrePage({
             <Button
               onClick={handlePostuler}
               disabled={postulant}
-              className="shadow-lg transition-colors duration-150 active:scale-[0.98] @media/hover:hover:scale-100"
+              className="min-w-[190px]"
             >
-              <span className="text-lg">⚡</span>{" "}
-              {postulant ? "Envoi..." : "Candidature Rapide"}
+              {postulant ? "Envoi en cours..." : "Postuler à cette offre"}
             </Button>
             {messageCandidature && (
-              <p className="max-w-[260px] text-right text-xs font-medium text-[var(--color-muted-foreground)]">
+              <p className="max-w-[260px] text-right text-xs font-medium text-[var(--text-muted)]">
                 {messageCandidature}
               </p>
             )}
-            <p className="text-xs font-medium text-[var(--color-muted-foreground)]">
+            <p className="text-xs font-medium text-[var(--text-muted)]">
               {offre.posted_at ? `Publiée le ${formaterDate(offre.posted_at)}` : "Publication récente"}{" "}
               • {offre.applicants_count ?? 0} candidats
             </p>
@@ -228,10 +249,10 @@ export default function DetailOffrePage({
           <div className="flex items-center gap-6 rounded-2xl border border-[var(--border-subtle)] bg-[var(--surface-card)] p-6 transition-shadow duration-200 hover:shadow-md">
             <MatchScoreRing score={offre.match_score ?? 0} />
             <div className="space-y-2">
-              <h3 className="font-bold text-[var(--color-foreground)]">
+              <h3 className="font-bold text-[var(--text-primary)]">
                 {offre.match_score != null ? `${Math.round(offre.match_score)}% de correspondance` : "Score non disponible"}
               </h3>
-              <p className="text-sm leading-relaxed text-[var(--color-muted-foreground)]">
+              <p className="text-sm leading-relaxed text-[var(--text-muted)]">
                 {offre.match_score != null && offre.match_score >= 70
                   ? "Votre profil s'aligne bien avec les prérequis de cette offre."
                   : "Votre profil ne couvre pas encore l'essentiel des compétences demandées."}
@@ -242,8 +263,8 @@ export default function DetailOffrePage({
           {/* Analyse des compétences */}
           {analyse.length > 0 && (
             <div className="rounded-2xl border border-[var(--border-subtle)] bg-[var(--surface-card)] p-6 transition-shadow duration-200 hover:shadow-md">
-              <h3 className="mb-5 flex items-center gap-2 font-bold text-[var(--color-foreground)]">
-                <CheckCircle2 size={18} className="text-[var(--color-primary)]" /> Analyse des compétences
+              <h3 className="mb-5 flex items-center gap-2 font-bold text-[var(--text-primary)]">
+                <CheckCircle2 size={18} className="text-[var(--brand-primary)]" /> Analyse des compétences
               </h3>
               <div className="space-y-5">
                 {analyse.map((skill, idx) => (
@@ -262,23 +283,23 @@ export default function DetailOffrePage({
         {/* Contenu texte */}
         <div className="space-y-8">
           <section>
-            <h2 className="mb-4 text-xl font-bold text-[var(--color-foreground)]">À propos du poste</h2>
-            <div className="text-sm leading-relaxed text-[var(--color-foreground)]/85">
+            <h2 className="mb-4 text-xl font-bold text-[var(--text-primary)]">À propos du poste</h2>
+            <div className="text-sm leading-relaxed text-[var(--text-primary)]/85">
               {offre.description ? (
                 <p>{offre.description}</p>
               ) : (
-                <p className="text-[var(--color-muted-foreground)]">Aucune description disponible pour cette offre.</p>
+                <p className="text-[var(--text-muted)]">Aucune description disponible pour cette offre.</p>
               )}
             </div>
           </section>
 
           {responsabilites.length > 0 && (
             <section>
-              <h2 className="mb-4 text-xl font-bold text-[var(--color-foreground)]">Responsabilités</h2>
+              <h2 className="mb-4 text-xl font-bold text-[var(--text-primary)]">Responsabilités</h2>
               <ul className="space-y-3">
                 {responsabilites.map((resp, idx) => (
-                  <li key={idx} className="flex gap-3 text-sm text-[var(--color-foreground)]/85">
-                    <CheckCircle2 size={16} className="mt-0.5 shrink-0 text-[var(--color-primary)]" />
+                  <li key={idx} className="flex gap-3 text-sm text-[var(--text-primary)]/85">
+                    <CheckCircle2 size={16} className="mt-0.5 shrink-0 text-[var(--brand-primary)]" />
                     <span>{resp}</span>
                   </li>
                 ))}
@@ -292,11 +313,11 @@ export default function DetailOffrePage({
       <aside className="border-[var(--border-subtle)] bg-[var(--surface-canvas)] w-full space-y-6 border-l p-6 lg:w-[350px]">
         {/* Offres similaires */}
         <div>
-          <h3 className="mb-4 text-xs font-semibold tracking-wider text-[var(--color-muted-foreground)] uppercase">
+          <h3 className="mb-4 text-xs font-semibold tracking-wider text-[var(--text-muted)] uppercase">
             Rôles similaires
           </h3>
           {offresSimilaires.length === 0 ? (
-            <p className="border-[var(--border-subtle)] bg-[var(--surface-card)] rounded-xl border p-5 text-sm text-[var(--color-muted-foreground)]">
+            <p className="border-[var(--border-subtle)] bg-[var(--surface-card)] rounded-xl border p-5 text-sm text-[var(--text-muted)]">
               Aucune offre similaire pour le moment.
             </p>
           ) : (

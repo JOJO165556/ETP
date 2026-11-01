@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ShieldCheck, HelpCircle } from "lucide-react";
+import { ShieldCheck } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
 
 export const metadata: Metadata = {
@@ -32,14 +32,11 @@ export default function OnboardingLayout({ children }: { children: React.ReactNo
         </div>
 
         <div className="flex items-center gap-4">
-          <div className="hidden items-center gap-1.5 rounded-full border border-border bg-muted px-3 py-1 text-[10px] font-bold tracking-wider text-muted-foreground sm:flex">
+          <div className="hidden items-center gap-1.5 rounded-full border border-border bg-muted px-3 py-1 text-[10px] font-medium tracking-wide text-muted-foreground sm:flex">
             <ShieldCheck size={12} className="text-success" />
-            SYS.SECURE
+            Connexion sécurisée
           </div>
           <ThemeToggle />
-          <button className="text-muted-foreground transition-colors hover:text-foreground">
-            <HelpCircle size={20} />
-          </button>
         </div>
       </header>
 
