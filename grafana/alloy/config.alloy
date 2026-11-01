@@ -1,9 +1,22 @@
 // grafana/alloy/config.alloy
 // Collecteur Alloy — pousse les métriques Prometheus de l'API FastAPI vers Grafana Cloud
+//
+// Variables d'environnement requises (Render Worker) :
+//   METRICS_HOST         — hôte:port de l'API FastAPI, sans schéma
+//                          (ex: api-etp.onrender.com:443)
+//   METRICS_PATH         — chemin de l'endpoint métriques (ex: /metrics)
+//   GRAFANA_CLOUD_URL    — URL Remote Write Grafana Cloud
+//                          (ex: https://prometheus-prod-XX.grafana.net/api/prom/push)
+//   GRAFANA_CLOUD_USER   — identifiant numérique Grafana Cloud (Prometheus instance ID)
+//   GRAFANA_CLOUD_PASSWORD — clé API Grafana Cloud (scope metrics:write)
 
 prometheus.scrape "etp_api" {
-  targets = [{ __address__ = env("METRICS_URL") }]
-  forward_to = [prometheus.remote_write.grafana_cloud.receiver]
+  targets = [{
+    __address__      = env("METRICS_HOST"),
+    __scheme__       = "https",
+    __metrics_path__ = env("METRICS_PATH"),
+  }]
+  forward_to      = [prometheus.remote_write.grafana_cloud.receiver]
   scrape_interval = "15s"
 }
 

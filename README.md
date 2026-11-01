@@ -127,7 +127,7 @@ Login Grafana : `admin` / variable `GRAFANA_ADMIN_PASSWORD` (défaut: `admin`)
 ### Production (Grafana Cloud)
 Les métriques sont poussées vers Grafana Cloud via Grafana Alloy déployé sur Render.  
 Accès : votre workspace Grafana Cloud sur grafana.com  
-Configuration : `grafana/alloy/config.alloy` — variables requises : `METRICS_URL`, `GRAFANA_CLOUD_URL`, `GRAFANA_CLOUD_USER`, `GRAFANA_CLOUD_PASSWORD`
+Configuration : `grafana/alloy/config.alloy` — variables requises : `METRICS_HOST`, `METRICS_PATH`, `GRAFANA_CLOUD_URL`, `GRAFANA_CLOUD_USER`, `GRAFANA_CLOUD_PASSWORD`
 
 ---
 
