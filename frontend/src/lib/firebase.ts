@@ -19,8 +19,6 @@ import {
   signInWithPhoneNumber,
   signOut,
   sendPasswordResetEmail,
-  setPersistence,
-  inMemoryPersistence,
   RecaptchaVerifier,
   GoogleAuthProvider,
   FacebookAuthProvider,
@@ -78,14 +76,6 @@ function getFirebaseApp(): FirebaseApp | null {
   if (_app) return _app;
   if (!isFirebaseConfigured()) return null;
   _app = initializeApp(getFirebaseConfig());
-  /*
-   * Persistence en mémoire uniquement : empêche Firebase de charger son iframe
-   * tiers (firebaseapp.com/__/auth/iframe) au démarrage, ce qui est bloqué par
-   * Firefox ETP et les navigateurs avec partitionnement de cookies tiers.
-   * La session ETP est gérée par nos propres cookies HttpOnly — pas besoin de
-   * la persistence Firebase côté client.
-   */
-  setPersistence(getAuth(_app), inMemoryPersistence).catch(() => {});
   return _app;
 }
 
@@ -124,8 +114,12 @@ function toSessionUser(user: User): FirebaseSessionUser {
 
 /** Connexion Google via popup. */
 export async function signInWithGoogle(): Promise<FirebaseSessionUser> {
-  const auth = getAuth(getFirebaseApp()!);
-  const result = await signInWithPopup(auth, new GoogleAuthProvider());
+  const app = getFirebaseApp()!;
+  const auth = getAuth(app);
+  const provider = new GoogleAuthProvider();
+  // signInWithPopup doit être appelé le plus tôt possible dans le handler
+  // pour que Firefox ne considère pas le popup comme non-initié par l'utilisateur.
+  const result = await signInWithPopup(auth, provider);
   return toSessionUser(result.user);
 }
 
