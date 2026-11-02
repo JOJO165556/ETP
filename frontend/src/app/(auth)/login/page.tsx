@@ -95,10 +95,10 @@ export default function LoginPage() {
       const user = kind === "google"
         ? await signInWithGoogle()
         : await signInWithFacebook();
-      const ok = await exchangeFirebaseSession(user);
-      if (!ok) throw new Error("session");
+      await exchangeFirebaseSession(user);
       await completeLogin(null);
     } catch (err) {
+      console.error("[handleSocial Error]", err);
       const code =
         typeof err === "object" && err !== null && "code" in err
           ? String((err as { code?: unknown }).code)
@@ -110,11 +110,20 @@ export default function LoginPage() {
         // L'utilisateur a fermé le popup : pas d'erreur à afficher.
         return;
       }
-      setError(
-        code === "auth/unauthorized-domain"
-          ? "Domaine non autorisé par Firebase. Ajoutez cette adresse aux domaines autorisés puis réessayez."
-          : "Connexion sociale annulée ou échouée."
-      );
+      if (code === "auth/popup-blocked") {
+        setError(
+          "La fenêtre de connexion a été bloquée par votre navigateur (Firefox). Veuillez autoriser les fenêtres pop-up pour ce site."
+        );
+        return;
+      }
+      if (code === "auth/unauthorized-domain") {
+        setError(
+          "Domaine non autorisé par Firebase. Ajoutez cette adresse aux domaines autorisés puis réessayez."
+        );
+        return;
+      }
+      const message = err instanceof Error ? err.message : "";
+      setError(message || "Connexion sociale annulée ou échouée.");
     } finally {
       setSocialBusy(null);
     }

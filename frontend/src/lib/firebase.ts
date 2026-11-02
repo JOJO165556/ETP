@@ -14,7 +14,6 @@ import { initializeApp, type FirebaseApp } from "firebase/app";
 import {
   getAuth,
   signInWithPopup,
-  signInWithRedirect,
   getRedirectResult,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
@@ -214,7 +213,9 @@ export async function exchangeFirebaseSession(
 ): Promise<boolean> {
   const auth = getAuth(getFirebaseApp()!);
   const idToken = await auth.currentUser?.getIdToken();
-  if (!idToken) return false;
+  if (!idToken) {
+    throw new Error("Jeton d'authentification Firebase introuvable.");
+  }
 
   const headers: Record<string, string> = { "Content-Type": "application/json" };
   const appCheckToken = await getFirebaseAppCheckToken();
@@ -222,12 +223,30 @@ export async function exchangeFirebaseSession(
     headers["X-Firebase-AppCheck"] = appCheckToken;
   }
 
-  const res = await fetch("/api/v1/auth/firebase", {
-    method: "POST",
-    headers,
-    body: JSON.stringify({ id_token: idToken, ...profile }),
-  });
-  if (!res.ok) return false;
+  let res: Response;
+  try {
+    res = await fetch("/api/v1/auth/firebase", {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ id_token: idToken, ...profile }),
+    });
+  } catch (netErr) {
+    console.error("[exchangeFirebaseSession] Erreur réseau:", netErr);
+    throw new Error("Impossible de joindre le serveur d'authentification.");
+  }
+
+  if (!res.ok) {
+    const errBody = await res.text().catch(() => "");
+    let detail = "";
+    try {
+      const parsed = JSON.parse(errBody);
+      detail = parsed.detail || errBody;
+    } catch {
+      detail = errBody;
+    }
+    console.error("[exchangeFirebaseSession] Échec backend:", res.status, detail);
+    throw new Error(detail || `Erreur serveur (${res.status})`);
+  }
 
   const tokens = await res.json();
   const cookie = await fetch("/api/auth/set-cookie", {
@@ -235,5 +254,8 @@ export async function exchangeFirebaseSession(
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(tokens),
   });
-  return cookie.ok;
+  if (!cookie.ok) {
+    throw new Error("Erreur lors de la configuration de la session.");
+  }
+  return true;
 }
