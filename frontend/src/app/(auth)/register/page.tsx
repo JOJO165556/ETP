@@ -205,10 +205,10 @@ function RegisterForm() {
       const user = provider === "google"
         ? await signInWithGoogle()
         : await signInWithFacebook();
-      const ok = await exchangeFirebaseSession(user, { role });
-      if (!ok) throw new Error("session");
+      await exchangeFirebaseSession(user, { role });
       handlePostAuthRedirect(role);
     } catch (err: unknown) {
+      console.error("[handleOAuthSignup Error]", err);
       const code =
         typeof err === "object" && err !== null && "code" in err
           ? String((err as { code?: unknown }).code)
@@ -217,13 +217,21 @@ function RegisterForm() {
         code === "auth/popup-closed-by-user" ||
         code === "auth/cancelled-popup-request"
       ) {
-        setSocialBusy(null);
         return;
       }
+      if (code === "auth/popup-blocked") {
+        setError(
+          "La fenêtre de connexion a été bloquée par votre navigateur (Firefox). Veuillez autoriser les fenêtres pop-up pour ce site."
+        );
+        return;
+      }
+      if (code === "auth/unauthorized-domain") {
+        setError("Ce domaine n'est pas encore autorisé dans la console Firebase.");
+        return;
+      }
+      const message = err instanceof Error ? err.message : "";
       setError(
-        code === "auth/unauthorized-domain"
-          ? "Ce domaine n'est pas encore autorisé dans la console Firebase."
-          : `Connexion avec ${provider === "google" ? "Google" : "Facebook"} annulée ou indisponible.`
+        message || `Connexion avec ${provider === "google" ? "Google" : "Facebook"} annulée ou indisponible.`
       );
     } finally {
       setSocialBusy(null);
