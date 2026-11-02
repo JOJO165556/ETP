@@ -10,6 +10,11 @@ const PUBLIC_ROUTES = [...AUTH_PAGES, "/leave"];
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
+  // Routes internes Firebase Auth (iframe, handler, etc.)
+  if (pathname.startsWith("/__/")) {
+    return NextResponse.next();
+  }
+
   const isAuthPage = AUTH_PAGES.some(
     (route) => pathname === route || pathname.startsWith(`${route}/`)
   );

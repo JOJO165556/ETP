@@ -54,22 +54,35 @@ const nextConfig: NextConfig = {
               "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://www.google.com https://www.gstatic.com https://accounts.google.com https://apis.google.com https://fonts.googleapis.com https://www.googleadservices.com",
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://www.gstatic.com",
               "font-src 'self' https://fonts.gstatic.com",
-              "img-src 'self' data: blob: https://avatars.githubusercontent.com https://www.googleapis.com http://www.google.com https://lh3.googleusercontent.com",
+              "img-src 'self' data: blob: https://avatars.githubusercontent.com https://www.googleapis.com http://www.google.com https://lh3.googleusercontent.com https://*.googleusercontent.com https://*.facebook.com https://*.fbsbx.com",
               // Firebase Auth iframe (popup + redirect) — doit être autorisé explicitement
-              "frame-src 'self' https://*.firebaseapp.com https://accounts.google.com https://www.google.com",
-              "connect-src 'self' http://localhost:8000 https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com https://firestore.googleapis.com https://www.gstatic.com https://accounts.google.com https://oauth2.googleapis.com https://apis.google.com",
+              "frame-src 'self' https://*.firebaseapp.com https://accounts.google.com https://www.google.com https://www.facebook.com https://web.facebook.com https://*.facebook.com",
+              "connect-src 'self' http://localhost:8000 https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com https://firestore.googleapis.com https://www.gstatic.com https://accounts.google.com https://oauth2.googleapis.com https://apis.google.com https://*.facebook.com https://graph.facebook.com",
             ].join("; "),
           },
         ],
       },
       {
         // Firebase signInWithPopup nécessite que la page parente puisse
-        // communiquer avec la popup Google via window.closed / postMessage.
+        // communiquer avec la popup Google / Facebook via window.closed / postMessage.
         // COOP: same-origin isole le contexte et casse ce canal.
         // On désactive COOP uniquement sur les pages d'authentification.
-        source: "/(login|register|forgot-password|reset-password)",
+        source: "/:path(login|register|forgot-password|reset-password)/:subpath*",
         headers: [
           { key: "Cross-Origin-Opener-Policy", value: "unsafe-none" },
+        ],
+      },
+      {
+        source: "/:path(login|register|forgot-password|reset-password)",
+        headers: [
+          { key: "Cross-Origin-Opener-Policy", value: "unsafe-none" },
+        ],
+      },
+      {
+        // L'iframe Firebase Auth doit pouvoir être chargée depuis ce domaine.
+        source: "/__/:path*",
+        headers: [
+          { key: "X-Frame-Options", value: "SAMEORIGIN" },
         ],
       },
     ];
