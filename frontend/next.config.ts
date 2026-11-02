@@ -62,6 +62,16 @@ const nextConfig: NextConfig = {
           },
         ],
       },
+      {
+        // Firebase signInWithPopup nécessite que la page parente puisse
+        // communiquer avec la popup Google via window.closed / postMessage.
+        // COOP: same-origin isole le contexte et casse ce canal.
+        // On désactive COOP uniquement sur les pages d'authentification.
+        source: "/(login|register|forgot-password|reset-password)",
+        headers: [
+          { key: "Cross-Origin-Opener-Policy", value: "unsafe-none" },
+        ],
+      },
     ];
   },
 
