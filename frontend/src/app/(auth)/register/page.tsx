@@ -188,14 +188,9 @@ function RegisterForm() {
   /* Récupère le résultat de la redirection OAuth au retour — uniquement si on revient de Firebase */
   useEffect(() => {
     if (!isFirebaseConfigured()) return;
-    const isOAuthReturn =
-      window.location.hash.includes("state=") ||
-      window.location.search.includes("state=");
-    if (!isOAuthReturn) return;
-
     getGoogleRedirectResult()
       .then(async (user) => {
-        if (!user) return;
+        if (!user) return; // pas de redirect en cours — silencieux
         setSocialBusy("google");
         const ok = await exchangeFirebaseSession(user, { role });
         if (!ok) throw new Error("session");

@@ -57,14 +57,9 @@ export default function LoginPage() {
   /* Récupère le résultat de la redirection Google au retour sur la page. */
   useEffect(() => {
     if (!firebaseReady) return;
-    const isOAuthReturn =
-      window.location.hash.includes("state=") ||
-      window.location.search.includes("state=");
-    if (!isOAuthReturn) return;
-
     getGoogleRedirectResult()
       .then(async (user) => {
-        if (!user) return; // pas de redirect en cours — silencieux
+        if (!user) return;
         setSocialBusy("google");
         const ok = await exchangeFirebaseSession(user);
         if (!ok) throw new Error("session");
