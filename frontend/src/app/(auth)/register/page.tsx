@@ -169,7 +169,7 @@ function RegisterForm() {
   );
   const [error, setError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
-  const [socialBusy, setSocialBusy] = useState<boolean>(false);
+  const [socialBusy, setSocialBusy] = useState<"google" | "facebook" | null>(null);
 
   // mode "onBlur" : validation uniquement au changement de champ pour garantir une frappe instantanée sans freeze
   const {
@@ -185,19 +185,23 @@ function RegisterForm() {
 
   const currentPassword = watch("password");
 
-  /* Récupère le résultat de la redirection Google au retour sur la page. */
+  /* Récupère le résultat de la redirection OAuth au retour — uniquement si on revient de Firebase */
   useEffect(() => {
     if (!isFirebaseConfigured()) return;
+    const isOAuthReturn =
+      window.location.hash.includes("state=") ||
+      window.location.search.includes("state=");
+    if (!isOAuthReturn) return;
+
     getGoogleRedirectResult()
       .then(async (user) => {
-        if (!user) return; // pas de redirect en cours — silencieux
-        setSocialBusy(true);
+        if (!user) return;
+        setSocialBusy("google");
         const ok = await exchangeFirebaseSession(user, { role });
         if (!ok) throw new Error("session");
         handlePostAuthRedirect(role);
       })
       .catch((err: unknown) => {
-        // Popup fermé ou annulé : pas d'erreur à afficher
         const code =
           typeof err === "object" && err !== null && "code" in err
             ? String((err as { code?: unknown }).code)
@@ -206,13 +210,11 @@ function RegisterForm() {
           code === "auth/popup-closed-by-user" ||
           code === "auth/cancelled-popup-request"
         ) {
-          setSocialBusy(false);
+          setSocialBusy(null);
           return;
         }
-        if (code) {
-          setError("Connexion Google annulée ou indisponible.");
-        }
-        setSocialBusy(false);
+        if (code) setError("Connexion annulée ou indisponible.");
+        setSocialBusy(null);
       });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -233,7 +235,7 @@ function RegisterForm() {
       return;
     }
     setError(null);
-    setSocialBusy(true);
+    setSocialBusy(provider);
     try {
       if (provider === "google") {
         await signInWithGoogle();
@@ -250,7 +252,7 @@ function RegisterForm() {
         code === "auth/popup-closed-by-user" ||
         code === "auth/cancelled-popup-request"
       ) {
-        setSocialBusy(false);
+        setSocialBusy(null);
         return;
       }
       setError(
@@ -258,7 +260,7 @@ function RegisterForm() {
           ? "Ce domaine n'est pas encore autorisé dans la console Firebase."
           : `Inscription avec ${provider === "google" ? "Google" : "Facebook"} annulée ou indisponible.`
       );
-      setSocialBusy(false);
+      setSocialBusy(null);
     }
   };
 
@@ -374,11 +376,11 @@ function RegisterForm() {
         <Button
           type="button"
           variant="outline"
-          disabled={socialBusy || isSubmitting}
+          disabled={socialBusy !== null || isSubmitting}
           onClick={() => handleOAuthSignup("google")}
           className="h-11 gap-2 text-sm font-medium border-border hover:bg-muted/50"
         >
-          {socialBusy ? (
+          {socialBusy === "google" ? (
             <Loader2 size={16} className="animate-spin" aria-hidden="true" />
           ) : (
             <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true">
@@ -393,11 +395,11 @@ function RegisterForm() {
         <Button
           type="button"
           variant="outline"
-          disabled={socialBusy || isSubmitting}
+          disabled={socialBusy !== null || isSubmitting}
           onClick={() => handleOAuthSignup("facebook")}
           className="h-11 gap-2 text-sm font-medium border-border hover:bg-muted/50"
         >
-          {socialBusy ? (
+          {socialBusy === "facebook" ? (
             <Loader2 size={16} className="animate-spin" aria-hidden="true" />
           ) : (
             <svg width="18" height="18" viewBox="0 0 24 24" fill="#1877F2" aria-hidden="true">
