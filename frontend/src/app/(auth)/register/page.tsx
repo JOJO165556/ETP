@@ -1,6 +1,6 @@
 "use client";
 
-import React, { Suspense, useEffect, useState, useMemo } from "react";
+import React, { Suspense, useState, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useSearchParams } from "next/navigation";
@@ -26,7 +26,6 @@ import {
   createAccountWithEmail,
   signInWithGoogle,
   signInWithFacebook,
-  getGoogleRedirectResult,
   exchangeFirebaseSession,
 } from "@/lib/firebase";
 import { registerSchema, type RegisterValues } from "@/lib/validations/auth";
@@ -185,35 +184,6 @@ function RegisterForm() {
 
   const currentPassword = watch("password");
 
-  /* Récupère le résultat de la redirection OAuth au retour — uniquement si on revient de Firebase */
-  useEffect(() => {
-    if (!isFirebaseConfigured()) return;
-    getGoogleRedirectResult()
-      .then(async (user) => {
-        if (!user) return; // pas de redirect en cours — silencieux
-        setSocialBusy("google");
-        const ok = await exchangeFirebaseSession(user, { role });
-        if (!ok) throw new Error("session");
-        handlePostAuthRedirect(role);
-      })
-      .catch((err: unknown) => {
-        const code =
-          typeof err === "object" && err !== null && "code" in err
-            ? String((err as { code?: unknown }).code)
-            : "";
-        if (
-          code === "auth/popup-closed-by-user" ||
-          code === "auth/cancelled-popup-request"
-        ) {
-          setSocialBusy(null);
-          return;
-        }
-        if (code) setError("Connexion annulée ou indisponible.");
-        setSocialBusy(null);
-      });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
   /* Redirection adaptée au profil — navigation dure pour éviter la boucle de redirect OAuth */
   const handlePostAuthRedirect = (selectedRole: "candidate" | "recruiter") => {
     if (selectedRole === "candidate") {
@@ -232,12 +202,12 @@ function RegisterForm() {
     setError(null);
     setSocialBusy(provider);
     try {
-      if (provider === "google") {
-        await signInWithGoogle();
-      } else {
-        await signInWithFacebook();
-      }
-      // signInWithRedirect redirige — le code suivant n'est jamais atteint
+      const user = provider === "google"
+        ? await signInWithGoogle()
+        : await signInWithFacebook();
+      const ok = await exchangeFirebaseSession(user, { role });
+      if (!ok) throw new Error("session");
+      handlePostAuthRedirect(role);
     } catch (err: unknown) {
       const code =
         typeof err === "object" && err !== null && "code" in err
@@ -253,8 +223,9 @@ function RegisterForm() {
       setError(
         code === "auth/unauthorized-domain"
           ? "Ce domaine n'est pas encore autorisé dans la console Firebase."
-          : `Inscription avec ${provider === "google" ? "Google" : "Facebook"} annulée ou indisponible.`
+          : `Connexion avec ${provider === "google" ? "Google" : "Facebook"} annulée ou indisponible.`
       );
+    } finally {
       setSocialBusy(null);
     }
   };

@@ -114,28 +114,23 @@ function toSessionUser(user: User): FirebaseSessionUser {
   };
 }
 
-/** Connexion Google via redirect (compatible tous navigateurs, évite les popup blockers). */
+/** Connexion Google via popup. */
 export async function signInWithGoogle(): Promise<FirebaseSessionUser> {
   const app = getFirebaseApp()!;
   const auth = getAuth(app);
-  await signInWithRedirect(auth, new GoogleAuthProvider());
-  // signInWithRedirect ne retourne jamais — la page est redirigée vers Google.
-  throw new Error("redirect"); // jamais atteint
+  const result = await signInWithPopup(auth, new GoogleAuthProvider());
+  return toSessionUser(result.user);
 }
 
-/** Connexion Facebook via redirect. */
+/** Connexion Facebook via popup. */
 export async function signInWithFacebook(): Promise<FirebaseSessionUser> {
   const app = getFirebaseApp()!;
   const auth = getAuth(app);
-  await signInWithRedirect(auth, new FacebookAuthProvider());
-  throw new Error("redirect"); // jamais atteint
+  const result = await signInWithPopup(auth, new FacebookAuthProvider());
+  return toSessionUser(result.user);
 }
 
-/**
- * Récupère le résultat de la redirection OAuth (Google ou Facebook) au retour.
- * À appeler au montage des pages d'auth.
- * Retourne null si aucune redirection n'est en cours.
- */
+// getGoogleRedirectResult conservé pour usage futur avec domaine custom
 export async function getGoogleRedirectResult(): Promise<FirebaseSessionUser | null> {
   const app = getFirebaseApp();
   if (!app) return null;
