@@ -3,7 +3,7 @@
 import React, { Suspense, useEffect, useState, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import {
@@ -25,6 +25,7 @@ import {
   isFirebaseConfigured,
   createAccountWithEmail,
   signInWithGoogle,
+  signInWithFacebook,
   getGoogleRedirectResult,
   exchangeFirebaseSession,
 } from "@/lib/firebase";
@@ -159,7 +160,6 @@ const PasswordStrengthIndicator = React.memo(function PasswordStrengthIndicator(
 });
 
 function RegisterForm() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const initialRoleParam = searchParams.get("role");
 
@@ -226,23 +226,21 @@ function RegisterForm() {
     }
   };
 
-  /* Connexion / Inscription Google */
-  const handleGoogleSignup = async () => {
+  /* Connexion / Inscription via provider OAuth (Google ou Facebook) */
+  const handleOAuthSignup = async (provider: "google" | "facebook") => {
     if (!isFirebaseConfigured()) {
-      setError("Le service Google OAuth n'est pas encore configuré.");
+      setError("Le service OAuth n'est pas encore configuré.");
       return;
     }
     setError(null);
     setSocialBusy(true);
     try {
-      const user = await signInWithGoogle();
-      const ok = await exchangeFirebaseSession(user, {
-        role,
-      });
-      if (!ok) {
-        throw new Error("L'échange d'authentification a échoué.");
+      if (provider === "google") {
+        await signInWithGoogle();
+      } else {
+        await signInWithFacebook();
       }
-      handlePostAuthRedirect(role);
+      // signInWithRedirect redirige — le code suivant n'est jamais atteint
     } catch (err: unknown) {
       const code =
         typeof err === "object" && err !== null && "code" in err
@@ -257,10 +255,9 @@ function RegisterForm() {
       }
       setError(
         code === "auth/unauthorized-domain"
-          ? "Ce domaine web n'est pas encore autorisé dans la console Firebase (Settings > Authorized Domains)."
-          : "Inscription avec Google annulée ou indisponible."
+          ? "Ce domaine n'est pas encore autorisé dans la console Firebase."
+          : `Inscription avec ${provider === "google" ? "Google" : "Facebook"} annulée ou indisponible.`
       );
-    } finally {
       setSocialBusy(false);
     }
   };
@@ -372,26 +369,44 @@ function RegisterForm() {
         </button>
       </div>
 
-      {/* Bouton SSO Google — toujours visible */}
-      <Button
-        type="button"
-        variant="outline"
-        disabled={socialBusy || isSubmitting}
-        onClick={handleGoogleSignup}
-        className="w-full h-11 gap-2.5 text-sm font-medium border-border hover:bg-muted/50"
-      >
-        {socialBusy ? (
-          <Loader2 size={16} className="animate-spin" aria-hidden="true" />
-        ) : (
-          <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true">
-            <path fill="#FFC107" d="M43.6 20H24v8h11.3C33.6 33.2 29.3 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.9 1.1 8 3l5.7-5.7C34.5 6.4 29.5 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20c11 0 19.7-8 19.7-20 0-1.3-.1-2.7-.1-4z" />
-            <path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.5 16 18.9 13 24 13c3.1 0 5.9 1.1 8 3l5.7-5.7C34.5 6.4 29.5 4 24 4 16.3 4 9.7 8.3 6.3 14.7z" />
-            <path fill="#4CAF50" d="M24 44c5.2 0 10-1.9 13.6-5.1l-6.3-5.4C29.3 35.1 26.8 36 24 36c-5.2 0-9.6-3.3-11.3-8H6.1C9.4 38.6 16.2 44 24 44z" />
-            <path fill="#1976D2" d="M43.6 20H24v8h11.3c-.8 2.3-2.3 4.2-4.2 5.5l6.3 5.4C41.2 35.9 44 30.4 44 24c0-1.3-.1-2.7-.4-4z" />
-          </svg>
-        )}
-        Continuer avec Google
-      </Button>
+      {/* Boutons SSO — Google + Facebook, en grille 2 colonnes */}
+      <div className="grid grid-cols-2 gap-3">
+        <Button
+          type="button"
+          variant="outline"
+          disabled={socialBusy || isSubmitting}
+          onClick={() => handleOAuthSignup("google")}
+          className="h-11 gap-2 text-sm font-medium border-border hover:bg-muted/50"
+        >
+          {socialBusy ? (
+            <Loader2 size={16} className="animate-spin" aria-hidden="true" />
+          ) : (
+            <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true">
+              <path fill="#FFC107" d="M43.6 20H24v8h11.3C33.6 33.2 29.3 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.9 1.1 8 3l5.7-5.7C34.5 6.4 29.5 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20c11 0 19.7-8 19.7-20 0-1.3-.1-2.7-.1-4z" />
+              <path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.5 16 18.9 13 24 13c3.1 0 5.9 1.1 8 3l5.7-5.7C34.5 6.4 29.5 4 24 4 16.3 4 9.7 8.3 6.3 14.7z" />
+              <path fill="#4CAF50" d="M24 44c5.2 0 10-1.9 13.6-5.1l-6.3-5.4C29.3 35.1 26.8 36 24 36c-5.2 0-9.6-3.3-11.3-8H6.1C9.4 38.6 16.2 44 24 44z" />
+              <path fill="#1976D2" d="M43.6 20H24v8h11.3c-.8 2.3-2.3 4.2-4.2 5.5l6.3 5.4C41.2 35.9 44 30.4 44 24c0-1.3-.1-2.7-.4-4z" />
+            </svg>
+          )}
+          Google
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          disabled={socialBusy || isSubmitting}
+          onClick={() => handleOAuthSignup("facebook")}
+          className="h-11 gap-2 text-sm font-medium border-border hover:bg-muted/50"
+        >
+          {socialBusy ? (
+            <Loader2 size={16} className="animate-spin" aria-hidden="true" />
+          ) : (
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="#1877F2" aria-hidden="true">
+              <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.469h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.469h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
+            </svg>
+          )}
+          Facebook
+        </Button>
+      </div>
 
       {/*
        * Parcours recruteur : le formulaire email est masqué.
