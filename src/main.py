@@ -1,3 +1,5 @@
+import asyncio
+import logging
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
@@ -49,8 +51,28 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         return response
 
 
+def _run_migrations() -> None:
+    """Exécute les migrations Alembic automatiquement au démarrage."""
+    try:
+        import os
+        from alembic import command
+        from alembic.config import Config
+
+        ini_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "alembic.ini")
+        if not os.path.exists(ini_path):
+            ini_path = "alembic.ini"
+        alembic_cfg = Config(ini_path)
+        command.upgrade(alembic_cfg, "head")
+        logging.getLogger(__name__).info("Migrations de base de données appliquées avec succès.")
+    except Exception as exc:
+        logging.getLogger(__name__).warning("Avertissement lors de l'application des migrations : %s", exc)
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    # Exécution automatique des migrations de base de données
+    await asyncio.to_thread(_run_migrations)
+
     # Initialisation des buckets MinIO / S3 pour les CVs
     storage_service = AsyncStorageService()
     await storage_service.initialize_buckets()

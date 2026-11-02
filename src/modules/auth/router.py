@@ -108,113 +108,131 @@ async def firebase_login(
     Facebook ou Phone). Le verifie cote serveur avec firebase-admin, cree ou
     lie le compte local (firebase_uid) puis emet les JWT ETP.
     """
-    app_check_token = await extract_app_check_token(request)
-    if not verify_app_check_token(app_check_token):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Verification App Check echouee.",
-        )
-
-    claims = verify_id_token(body.id_token)
-    if claims is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="ID token Firebase invalide.",
-        )
-
-    firebase_uid: str | None = claims.get("uid")
-    email: str | None = claims.get("email")
-    if not firebase_uid:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="ID token Firebase sans identifiant utilisateur.",
-        )
-
-    # Les comptes sans email (Phone pur) utilisent un email de substitution
-    if not email:
-        email = f"{firebase_uid}{_FALLBACK_EMAIL_SUFFIX}"
-
-    provider_name = extract_provider(claims)
     try:
-        auth_provider = AuthProvider(provider_name)
-    except ValueError:
-        auth_provider = AuthProvider.EMAIL
+        app_check_token = await extract_app_check_token(request)
+        if not verify_app_check_token(app_check_token):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Verification App Check echouee.",
+            )
 
-    # Les providers sociaux et Phone verifient deja l'identite a la source.
-    # Pour email/password (Firebase), on se fie au claim email_verified.
-    email_verified = bool(claims.get("email_verified")) or auth_provider in (
-        AuthProvider.GOOGLE,
-        AuthProvider.FACEBOOK,
-        AuthProvider.PHONE,
-    )
+        claims = verify_id_token(body.id_token)
+        if claims is None:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="ID token Firebase invalide.",
+            )
 
-    user_repo = UserRepository(db)
-    user = await user_repo.get_by_firebase_uid(firebase_uid)
+        firebase_uid: str | None = claims.get("uid")
+        email: str | None = claims.get("email")
+        if not firebase_uid:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="ID token Firebase sans identifiant utilisateur.",
+            )
 
-    if user is None:
-        # Lien par email si un compte local existe deja sans UID Firebase
-        user = await user_repo.get_by_email(email)
-        if user is not None:
-            user.firebase_uid = firebase_uid
-            user.auth_provider = auth_provider
-            if email_verified:
-                user.is_verified = True
-        else:
-            # Self-service (social ou email) : autorise candidat ou recruteur.
-            # company_admin et superadmin restent strictement protégés.
-            valid_roles = (UserRole.CANDIDATE, UserRole.RECRUITER, "candidate", "recruiter")
-            if body.role is not None and body.role not in valid_roles:
-                raise HTTPException(
-                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                    detail="Role non autorise lors de la creation via Firebase.",
-                )
-            target_role = UserRole.RECRUITER if body.role in (UserRole.RECRUITER, "recruiter") else UserRole.CANDIDATE
-            user = await user_repo.create({
-                "email": email,
-                "firebase_uid": firebase_uid,
-                "hashed_password": "",  # Auth 100% Firebase : aucun mot de passe local
-                "role": target_role,
-                "auth_provider": auth_provider,
-                "is_verified": email_verified,
-            })
+        # Les comptes sans email (Phone pur) utilisent un email de substitution
+        if not email:
+            email = f"{firebase_uid}{_FALLBACK_EMAIL_SUFFIX}"
 
-    if not user.is_active:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Ce compte a ete desactive.",
+        provider_name = extract_provider(claims)
+        try:
+            auth_provider = AuthProvider(provider_name)
+        except ValueError:
+            auth_provider = AuthProvider.EMAIL
+
+        # Les providers sociaux et Phone verifient deja l'identite a la source.
+        # Pour email/password (Firebase), on se fie au claim email_verified.
+        email_verified = bool(claims.get("email_verified")) or auth_provider in (
+            AuthProvider.GOOGLE,
+            AuthProvider.FACEBOOK,
+            AuthProvider.GITHUB,
+            AuthProvider.PHONE,
         )
 
-    # Le bypass d'authentification Firebase ne doit pas contourner la
-    # verification d'email obligatoire pour les comptes email/password.
-    if not user.is_verified:
+        user_repo = UserRepository(db)
+        user = await user_repo.get_by_firebase_uid(firebase_uid)
+
+        if user is None:
+            # Lien par email si un compte local existe deja sans UID Firebase
+            user = await user_repo.get_by_email(email)
+            if user is not None:
+                user.firebase_uid = firebase_uid
+                user.auth_provider = auth_provider
+                if email_verified:
+                    user.is_verified = True
+            else:
+                # Self-service (social ou email) : autorise candidat ou recruteur.
+                # company_admin et superadmin restent strictement protégés.
+                valid_roles = (UserRole.CANDIDATE, UserRole.RECRUITER, "candidate", "recruiter")
+                if body.role is not None and body.role not in valid_roles:
+                    raise HTTPException(
+                        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                        detail="Role non autorise lors de la creation via Firebase.",
+                    )
+                target_role = UserRole.RECRUITER if body.role in (UserRole.RECRUITER, "recruiter") else UserRole.CANDIDATE
+                user = await user_repo.create({
+                    "email": email,
+                    "firebase_uid": firebase_uid,
+                    "hashed_password": "",  # Auth 100% Firebase : aucun mot de passe local
+                    "role": target_role,
+                    "auth_provider": auth_provider,
+                    "is_verified": email_verified,
+                })
+
+        if not user.is_active:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Ce compte a ete desactive.",
+            )
+
+        # Le bypass d'authentification Firebase ne doit pas contourner la
+        # verification d'email obligatoire pour les comptes email/password.
+        if not user.is_verified:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=UNVERIFIED_EMAIL_DETAIL,
+            )
+
+        # Inscription 100% Firebase : projection du profil (nom) si fourni, ou déduit des claims OAuth
+        first_name = body.first_name
+        last_name = body.last_name
+        if not first_name and not last_name and claims.get("name"):
+            parts = str(claims["name"]).strip().split(" ", 1)
+            first_name = parts[0]
+            last_name = parts[1] if len(parts) > 1 else None
+
+        if first_name or last_name:
+            from src.modules.users.repository import UserProfileRepository
+            profile_repo = UserProfileRepository(db)
+            profile = await profile_repo.get_by_user_id(str(user.id))
+            if profile:
+                if first_name:
+                    profile.first_name = first_name
+                if last_name:
+                    profile.last_name = last_name
+            else:
+                await profile_repo.create({
+                    "user_id": str(user.id),
+                    "first_name": first_name,
+                    "last_name": last_name,
+                })
+
+        await db.commit()
+
+        access_token = create_access_token(subject=str(user.id))
+        refresh_token = create_refresh_token(subject=str(user.id))
+        return Token(access_token=access_token, refresh_token=refresh_token)
+
+    except HTTPException:
+        raise
+    except Exception as exc:
+        import logging
+        logging.getLogger(__name__).exception("Erreur inattendue dans firebase_login: %s", exc)
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail=UNVERIFIED_EMAIL_DETAIL,
-        )
-
-    # Inscription 100% Firebase : projection du profil (nom) si fourni.
-    # NB : UserRepository.create cree deja le profil vide automatiquement.
-    if body.first_name or body.last_name:
-        from src.modules.users.repository import UserProfileRepository
-        profile_repo = UserProfileRepository(db)
-        profile = await profile_repo.get_by_user_id(str(user.id))
-        if profile:
-            if body.first_name:
-                profile.first_name = body.first_name
-            if body.last_name:
-                profile.last_name = body.last_name
-        else:
-            await profile_repo.create({
-                "user_id": str(user.id),
-                "first_name": body.first_name,
-                "last_name": body.last_name,
-            })
-
-    await db.commit()
-
-    access_token = create_access_token(subject=str(user.id))
-    refresh_token = create_refresh_token(subject=str(user.id))
-    return Token(access_token=access_token, refresh_token=refresh_token)
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Erreur interne d'authentification : {str(exc)}",
+        ) from exc
 
 
 @router.get("/me", summary="Profil de l'utilisateur connecté")

@@ -9,7 +9,6 @@ import asyncio
 import logging
 import json
 import os
-from functools import lru_cache
 from typing import Any, Optional
 
 from fastapi import HTTPException, Request, status
@@ -22,6 +21,7 @@ logger = logging.getLogger(__name__)
 FIREBASE_PROVIDER_MAP = {
     "google.com": "google",
     "facebook.com": "facebook",
+    "github.com": "github",
     "phone": "phone",
 }
 
@@ -54,24 +54,38 @@ def _load_certificate() -> dict[str, Any]:
         with open(path, "r", encoding="utf-8") as f:
             return json.load(f)
 
+    private_key = (
+        (settings.FIREBASE_PRIVATE_KEY or "")
+        .strip()
+        .strip('"')
+        .strip("'")
+        .replace("\\n", "\n")
+    )
     return {
         "type": "service_account",
         "project_id": settings.FIREBASE_PROJECT_ID,
         "private_key_id": settings.FIREBASE_PRIVATE_KEY_ID,
-        "private_key": (settings.FIREBASE_PRIVATE_KEY or "").replace("\\n", "\n"),
+        "private_key": private_key,
         "client_email": settings.FIREBASE_CLIENT_EMAIL,
         "client_id": settings.FIREBASE_CLIENT_ID,
+        "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+        "token_uri": "https://oauth2.googleapis.com/token",
+        "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+        "client_x509_cert_url": f"https://www.googleapis.com/robot/v1/metadata/x509/{settings.FIREBASE_CLIENT_EMAIL}",
+        "universe_domain": "googleapis.com",
     }
 
 
-@lru_cache(maxsize=1)
 def _get_app():
-    """Initialise (une seule fois) l'app firebase-admin."""
+    """Initialise ou recupere l'application firebase-admin."""
     import firebase_admin
     from firebase_admin import credentials
 
-    cert = credentials.Certificate(_load_certificate())
-    return firebase_admin.initialize_app(cert)
+    try:
+        return firebase_admin.get_app()
+    except ValueError:
+        cert = credentials.Certificate(_load_certificate())
+        return firebase_admin.initialize_app(cert)
 
 
 def _get_auth():
@@ -103,15 +117,17 @@ def verify_id_token(id_token: str) -> Optional[dict[str, Any]]:
         logger.warning("Initialisation Firebase echouee : %s", exc)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Firebase non configure sur le serveur.",
+            detail=f"Firebase non configure sur le serveur : {exc}",
         ) from exc
     try:
-        return auth.verify_id_token(id_token, check_revoked=True)
+        # Note: check_revoked=False valide cryptographiquement le JWT avec les cles
+        # publiques Google sans appel reseau bloquant suplementaire a chaque requete.
+        return auth.verify_id_token(id_token, check_revoked=False)
     except Exception as exc:
         logger.warning("Verification ID token echouee : %s", exc)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Session Firebase invalide ou expiree.",
+            detail=f"Session Firebase invalide ou expiree : {exc}",
         ) from exc
 
 

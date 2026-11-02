@@ -24,6 +24,7 @@ class AuthProvider(str, Enum):
     EMAIL = "email"
     GOOGLE = "google"
     FACEBOOK = "facebook"
+    GITHUB = "github"
     PHONE = "phone"
 
 

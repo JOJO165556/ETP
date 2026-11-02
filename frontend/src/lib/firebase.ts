@@ -14,7 +14,6 @@ import { initializeApp, type FirebaseApp } from "firebase/app";
 import {
   getAuth,
   signInWithPopup,
-  signInWithRedirect,
   getRedirectResult,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
@@ -24,6 +23,7 @@ import {
   RecaptchaVerifier,
   GoogleAuthProvider,
   FacebookAuthProvider,
+  GithubAuthProvider,
   type ConfirmationResult,
   type User,
 } from "firebase/auth";
@@ -130,6 +130,17 @@ export async function signInWithFacebook(): Promise<FirebaseSessionUser> {
   return toSessionUser(result.user);
 }
 
+/** Connexion GitHub via popup. */
+export async function signInWithGithub(): Promise<FirebaseSessionUser> {
+  const app = getFirebaseApp()!;
+  const auth = getAuth(app);
+  const provider = new GithubAuthProvider();
+  provider.addScope("read:user");
+  provider.addScope("user:email");
+  const result = await signInWithPopup(auth, provider);
+  return toSessionUser(result.user);
+}
+
 // getGoogleRedirectResult conservé pour usage futur avec domaine custom
 export async function getGoogleRedirectResult(): Promise<FirebaseSessionUser | null> {
   const app = getFirebaseApp();
@@ -214,7 +225,9 @@ export async function exchangeFirebaseSession(
 ): Promise<boolean> {
   const auth = getAuth(getFirebaseApp()!);
   const idToken = await auth.currentUser?.getIdToken();
-  if (!idToken) return false;
+  if (!idToken) {
+    throw new Error("Jeton d'authentification Firebase introuvable.");
+  }
 
   const headers: Record<string, string> = { "Content-Type": "application/json" };
   const appCheckToken = await getFirebaseAppCheckToken();
@@ -222,12 +235,30 @@ export async function exchangeFirebaseSession(
     headers["X-Firebase-AppCheck"] = appCheckToken;
   }
 
-  const res = await fetch("/api/v1/auth/firebase", {
-    method: "POST",
-    headers,
-    body: JSON.stringify({ id_token: idToken, ...profile }),
-  });
-  if (!res.ok) return false;
+  let res: Response;
+  try {
+    res = await fetch("/api/v1/auth/firebase", {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ id_token: idToken, ...profile }),
+    });
+  } catch (netErr) {
+    console.error("[exchangeFirebaseSession] Erreur réseau:", netErr);
+    throw new Error("Impossible de joindre le serveur d'authentification.");
+  }
+
+  if (!res.ok) {
+    const errBody = await res.text().catch(() => "");
+    let detail = "";
+    try {
+      const parsed = JSON.parse(errBody);
+      detail = parsed.detail || errBody;
+    } catch {
+      detail = errBody;
+    }
+    console.error("[exchangeFirebaseSession] Échec backend:", res.status, detail);
+    throw new Error(detail || `Erreur serveur (${res.status})`);
+  }
 
   const tokens = await res.json();
   const cookie = await fetch("/api/auth/set-cookie", {
@@ -235,5 +266,8 @@ export async function exchangeFirebaseSession(
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(tokens),
   });
-  return cookie.ok;
+  if (!cookie.ok) {
+    throw new Error("Erreur lors de la configuration de la session.");
+  }
+  return true;
 }
