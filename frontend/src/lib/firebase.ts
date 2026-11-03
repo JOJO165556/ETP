@@ -23,6 +23,7 @@ import {
   RecaptchaVerifier,
   GoogleAuthProvider,
   FacebookAuthProvider,
+  GithubAuthProvider,
   type ConfirmationResult,
   type User,
 } from "firebase/auth";
@@ -126,6 +127,17 @@ export async function signInWithFacebook(): Promise<FirebaseSessionUser> {
   const app = getFirebaseApp()!;
   const auth = getAuth(app);
   const result = await signInWithPopup(auth, new FacebookAuthProvider());
+  return toSessionUser(result.user);
+}
+
+/** Connexion GitHub via popup. */
+export async function signInWithGithub(): Promise<FirebaseSessionUser> {
+  const app = getFirebaseApp()!;
+  const auth = getAuth(app);
+  const provider = new GithubAuthProvider();
+  provider.addScope("read:user");
+  provider.addScope("user:email");
+  const result = await signInWithPopup(auth, provider);
   return toSessionUser(result.user);
 }
 

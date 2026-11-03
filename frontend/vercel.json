@@ -5,8 +5,8 @@
   "outputDirectory": ".next",
   "rewrites": [
     {
-      "source": "/__/firebase/:path*",
-      "destination": "https://etp-s-59e57.firebaseapp.com/__/firebase/:path*"
+      "source": "/__/:path*",
+      "destination": "https://etp-s-59e57.firebaseapp.com/__/:path*"
     }
   ]
 }

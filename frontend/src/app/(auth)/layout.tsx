@@ -1,76 +1,72 @@
 import Image from "next/image";
-import { Check } from "lucide-react";
+import Link from "next/link";
+import { ShieldCheck } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
-
-const FEATURES = [
-  "Un algorithme qui classe les talents selon leur adéquation réelle au poste",
-  "Offres géolocalisées avec recherche par rayon de trajet",
-  "Un pipeline que toute l'équipe peut piloter ensemble",
-];
-
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex min-h-dvh">
-      <div className="relative hidden flex-col justify-between overflow-hidden bg-primary p-10 text-primary-foreground lg:flex lg:w-[46%] xl:w-[44%]">
+    <div className="relative flex min-h-dvh flex-col justify-between bg-muted/20 text-foreground">
+      {/* Halo lumineux d'arrière-plan pour une ambiance sobre et moderne */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 overflow-hidden"
+      >
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/3 w-[640px] h-[320px] bg-primary/10 rounded-full blur-3xl dark:bg-primary/15" />
+        <div className="absolute bottom-0 right-10 w-[480px] h-[240px] bg-primary/5 rounded-full blur-3xl dark:bg-primary/10" />
         <div
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-0"
+          className="absolute inset-0 opacity-[0.025] dark:opacity-[0.04]"
           style={{
-            backgroundImage:
-              "radial-gradient(ellipse 80% 60% at 50% -10%, rgba(255,255,255,0.08) 0%, transparent 70%)",
+            backgroundImage: "radial-gradient(currentColor 1px, transparent 1px)",
+            backgroundSize: "24px 24px",
           }}
         />
-
-        <div className="relative z-10 flex items-center gap-2.5">
-          <Image
-            src="/etp_logo.webp"
-            alt="ETP"
-            width={32}
-            height={32}
-            priority
-            className="h-8 w-8 rounded-full object-cover ring-1 ring-white/20"
-          />
-          <span className="text-base font-semibold tracking-wide">ETP</span>
-        </div>
-
-        <div className="relative z-10 space-y-8">
-          <h2 className="text-[2.15rem] leading-tight font-bold tracking-tight">
-            Là où les meilleures équipes et les meilleurs talents se rencontrent enfin.
-          </h2>
-
-          <ul className="space-y-3">
-            {FEATURES.map((f) => (
-              <li key={f} className="flex items-start gap-3 text-sm text-white/85">
-                <span className="mt-0.5 flex h-4.5 w-4.5 shrink-0 items-center justify-center rounded-full bg-white/20">
-                  <Check size={11} strokeWidth={2.5} />
-                </span>
-                {f}
-              </li>
-            ))}
-          </ul>
-
-          <div className="rounded-xl border border-white/15 bg-white/10 p-5 backdrop-blur-sm">
-            <p className="text-xs font-semibold tracking-wider text-white/90 uppercase">
-              Standard d'ingénierie & Conformité
-            </p>
-            <p className="mt-2 text-sm leading-relaxed text-white/85">
-              Traitement confidentiel des données, chiffrement de bout en bout et hébergement souverain certifié RGPD.
-            </p>
-          </div>
-        </div>
-
-        <p className="relative z-10 text-xs text-white/40">
-          &copy; {new Date().getFullYear()} Enterprise Talent Platform
-        </p>
       </div>
 
-      <div className="bg-background relative flex flex-1 flex-col items-center justify-center px-6 py-12 sm:px-10">
-        <div className="absolute top-5 right-5">
+      {/* En-tête de navigation */}
+      <header className="relative z-10 flex items-center justify-between px-6 py-5 sm:px-12">
+        <Link href="/" className="group flex items-center gap-3 transition-opacity hover:opacity-90">
+          <div className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-background shadow-sm ring-1 ring-border">
+            <Image
+              src="/etp_logo.webp"
+              alt="ETP Platform"
+              width={32}
+              height={32}
+              priority
+              className="h-7 w-7 rounded-lg object-cover"
+            />
+          </div>
+          <div>
+            <span
+              className="text-base font-bold tracking-tight text-foreground"
+              style={{ fontFamily: "var(--font-heading)" }}
+            >
+              ETP
+            </span>
+            <span className="block text-[10px] font-medium tracking-wider text-muted-foreground uppercase">
+              Talent Platform
+            </span>
+          </div>
+        </Link>
+        <div className="flex items-center gap-2">
           <ThemeToggle />
         </div>
-        {children}
-      </div>
+      </header>
+
+      {/* Carte centrale moderne et flottante */}
+      <main className="relative z-10 flex flex-1 items-center justify-center px-4 py-8 sm:px-6">
+        <div className="w-full max-w-[480px] rounded-2xl border border-border/80 bg-card/95 p-6 shadow-xl shadow-foreground/[0.03] backdrop-blur-md sm:p-9">
+          {children}
+        </div>
+      </main>
+
+      {/* Pied de page discret et conforme */}
+      <footer className="relative z-10 flex flex-col items-center justify-center gap-2 px-6 py-5 text-center text-xs text-muted-foreground sm:flex-row sm:justify-between sm:px-12">
+        <div className="flex items-center gap-1.5">
+          <ShieldCheck size={14} className="text-primary" />
+          <span>Données sécurisées & hébergement souverain certifié RGPD</span>
+        </div>
+        <p>&copy; {new Date().getFullYear()} ETP • Tous droits réservés</p>
+      </footer>
     </div>
   );
 }

@@ -146,6 +146,7 @@ async def firebase_login(
         email_verified = bool(claims.get("email_verified")) or auth_provider in (
             AuthProvider.GOOGLE,
             AuthProvider.FACEBOOK,
+            AuthProvider.GITHUB,
             AuthProvider.PHONE,
         )
 

@@ -21,6 +21,7 @@ logger = logging.getLogger(__name__)
 FIREBASE_PROVIDER_MAP = {
     "google.com": "google",
     "facebook.com": "facebook",
+    "github.com": "github",
     "phone": "phone",
 }
 

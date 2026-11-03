@@ -78,6 +78,13 @@ const nextConfig: NextConfig = {
           { key: "Cross-Origin-Opener-Policy", value: "unsafe-none" },
         ],
       },
+      {
+        // L'iframe Firebase Auth doit pouvoir être chargée depuis ce domaine.
+        source: "/__/:path*",
+        headers: [
+          { key: "X-Frame-Options", value: "SAMEORIGIN" },
+        ],
+      },
     ];
   },
 
