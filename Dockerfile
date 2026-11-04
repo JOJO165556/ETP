@@ -63,4 +63,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
     CMD curl -f http://localhost:8000/health/ready || exit 1
 
 # Commande par defaut — migrations automatiques au demarrage puis uvicorn
-CMD ["sh", "-c", "alembic upgrade head && exec uvicorn src.main:app --host 0.0.0.0 --port 8000 --workers 2"]
+CMD ["sh", "-c", "cd /app && alembic upgrade head && exec uvicorn src.main:app --host 0.0.0.0 --port 8000 --workers 2"]

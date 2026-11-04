@@ -53,19 +53,27 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 
 def _run_migrations() -> None:
     """Exécute les migrations Alembic automatiquement au démarrage."""
-    try:
-        import os
-        from alembic import command
-        from alembic.config import Config
+    import os
+    from alembic import command
+    from alembic.config import Config
 
-        ini_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "alembic.ini")
-        if not os.path.exists(ini_path):
-            ini_path = "alembic.ini"
+    log = logging.getLogger(__name__)
+
+    # Racine du projet = deux niveaux au-dessus de src/main.py
+    project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    ini_path = os.path.join(project_root, "alembic.ini")
+    if not os.path.exists(ini_path):
+        log.error("alembic.ini introuvable dans %s — migrations ignorées.", project_root)
+        return
+
+    try:
         alembic_cfg = Config(ini_path)
+        # Forcer script_location en absolu pour éviter tout problème de cwd
+        alembic_cfg.set_main_option("script_location", os.path.join(project_root, "alembic"))
         command.upgrade(alembic_cfg, "head")
-        logging.getLogger(__name__).info("Migrations de base de données appliquées avec succès.")
-    except Exception as exc:
-        logging.getLogger(__name__).warning("Avertissement lors de l'application des migrations : %s", exc)
+        log.info("Migrations appliquees avec succes.")
+    except Exception:
+        log.exception("Echec des migrations Alembic au demarrage — details ci-dessus.")
 
 
 @asynccontextmanager

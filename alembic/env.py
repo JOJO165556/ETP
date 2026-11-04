@@ -26,7 +26,7 @@ from src.modules.ai.models import AIAuditLog, AIJobConfig, AIProviderConfig
 
 target_metadata = Base.metadata
 
-# Réutilisation de DATABASE_URL si définie (Docker / Neon), sinon reconstruction depuis les variables
+# Réutilisation de DATABASE_URL si définie (Render / Neon / Docker), sinon reconstruction depuis les variables
 _raw_url = os.getenv("DATABASE_URL", "")
 if _raw_url:
     # Alembic requiert un driver synchrone — on convertit vers postgresql+psycopg2://
@@ -37,14 +37,16 @@ if _raw_url:
         DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql+psycopg2://", 1)
     elif DATABASE_URL.startswith("postgresql://"):
         DATABASE_URL = DATABASE_URL.replace("postgresql://", "postgresql+psycopg2://", 1)
-    # Neon fournit souvent ssl=require ou sslmode=require, psycopg2 a besoin de sslmode=require
+    # Neon / Render fournissent sslmode=require ; psycopg2 accepte les deux formes
     if "ssl=require" in DATABASE_URL and "sslmode=require" not in DATABASE_URL:
         DATABASE_URL = DATABASE_URL.replace("ssl=require", "sslmode=require")
 else:
-    DATABASE_URL = (
-        f"postgresql+psycopg2://{os.getenv('POSTGRES_USER')}:{os.getenv('POSTGRES_PASSWORD')}"
-        f"@{os.getenv('POSTGRES_SERVER', 'localhost')}:5432/{os.getenv('POSTGRES_DB')}"
-    )
+    # Fallback : reconstruction depuis les variables individuelles
+    _user = os.getenv("POSTGRES_USER", "postgres")
+    _pwd = os.getenv("POSTGRES_PASSWORD", "postgres")
+    _host = os.getenv("POSTGRES_SERVER", "localhost")
+    _db = os.getenv("POSTGRES_DB", "etp_db")
+    DATABASE_URL = f"postgresql+psycopg2://{_user}:{_pwd}@{_host}:5432/{_db}"
 
 def include_object(object, name, type_, reflected, compare_to):
     """Filtre pour ignorer les tables système PostGIS et Tiger Geocoder."""
