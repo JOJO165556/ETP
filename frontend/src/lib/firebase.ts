@@ -58,9 +58,18 @@ export function isFirebaseConfigured(): boolean {
 }
 
 function getFirebaseConfig(): FirebaseWebConfig {
+  // authDomain DOIT pointer vers le domaine Firebase natif (*.firebaseapp.com),
+  // pas vers tryetp.vercel.app. Firebase injecte un iframe caché sur ce domaine
+  // pour relayer les messages avec la popup — l'utilisation du domaine Vercel
+  // déclencherait X-Frame-Options:DENY et casserait silencieusement le popup.
+  const rawAuthDomain = process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN ?? "";
+  const authDomain = rawAuthDomain.includes("vercel.app")
+    ? `${process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID}.firebaseapp.com`
+    : rawAuthDomain;
+
   return {
     apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-    authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+    authDomain,
     projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
     storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
     messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,

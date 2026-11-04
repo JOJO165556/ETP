@@ -38,7 +38,17 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       {
-        source: "/(.*)",
+        // Routes Firebase Auth internes — pas de X-Frame-Options restrictif
+        // (Firebase embed un iframe caché pour relayer les messages popup)
+        source: "/__/:path*",
+        headers: [
+          { key: "X-Content-Type-Options", value: "nosniff" },
+          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+        ],
+      },
+      {
+        // Toutes les autres routes
+        source: "/((?!__/).*)",
         headers: [
           { key: "X-Frame-Options", value: "DENY" },
           { key: "X-Content-Type-Options", value: "nosniff" },
@@ -51,22 +61,20 @@ const nextConfig: NextConfig = {
             key: "Content-Security-Policy",
             value: [
               "default-src 'self'",
-              "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://www.google.com https://www.gstatic.com https://accounts.google.com https://apis.google.com https://fonts.googleapis.com https://www.googleadservices.com",
+              "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://www.google.com https://www.gstatic.com https://accounts.google.com https://apis.google.com https://fonts.googleapis.com",
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://www.gstatic.com",
               "font-src 'self' https://fonts.gstatic.com",
-              "img-src 'self' data: blob: https://avatars.githubusercontent.com https://www.googleapis.com http://www.google.com https://lh3.googleusercontent.com https://*.googleusercontent.com https://*.facebook.com https://*.fbsbx.com",
-              // Firebase Auth iframe (popup + redirect) — doit être autorisé explicitement
-              "frame-src 'self' https://*.firebaseapp.com https://accounts.google.com https://www.google.com https://www.facebook.com https://web.facebook.com https://*.facebook.com",
-              "connect-src 'self' http://localhost:8000 https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com https://firestore.googleapis.com https://www.gstatic.com https://accounts.google.com https://oauth2.googleapis.com https://apis.google.com https://*.facebook.com https://graph.facebook.com",
+              "img-src 'self' data: blob: https://avatars.githubusercontent.com https://www.googleapis.com https://lh3.googleusercontent.com https://*.googleusercontent.com https://*.facebook.com https://*.fbsbx.com",
+              // Firebase popup ouvre une fenêtre sur firebaseapp.com et accounts.google.com
+              "frame-src 'self' https://*.firebaseapp.com https://accounts.google.com https://www.google.com https://www.facebook.com https://*.facebook.com https://github.com",
+              "connect-src 'self' http://localhost:8000 https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com https://firestore.googleapis.com https://www.gstatic.com https://accounts.google.com https://oauth2.googleapis.com https://apis.google.com https://*.facebook.com https://graph.facebook.com https://api.github.com",
             ].join("; "),
           },
         ],
       },
       {
-        // Firebase signInWithPopup nécessite que la page parente puisse
-        // communiquer avec la popup Google / Facebook via window.closed / postMessage.
-        // COOP: same-origin isole le contexte et casse ce canal.
-        // On désactive COOP uniquement sur les pages d'authentification.
+        // Firebase signInWithPopup : COOP same-origin coupe la communication
+        // entre la page parente et la popup. Désactivé sur les pages auth.
         source: "/:path(login|register|forgot-password|reset-password)/:subpath*",
         headers: [
           { key: "Cross-Origin-Opener-Policy", value: "unsafe-none" },
@@ -76,13 +84,6 @@ const nextConfig: NextConfig = {
         source: "/:path(login|register|forgot-password|reset-password)",
         headers: [
           { key: "Cross-Origin-Opener-Policy", value: "unsafe-none" },
-        ],
-      },
-      {
-        // L'iframe Firebase Auth doit pouvoir être chargée depuis ce domaine.
-        source: "/__/:path*",
-        headers: [
-          { key: "X-Frame-Options", value: "SAMEORIGIN" },
         ],
       },
     ];

@@ -2,11 +2,5 @@
   "framework": "nextjs",
   "installCommand": "npm install",
   "buildCommand": "npm run build",
-  "outputDirectory": ".next",
-  "rewrites": [
-    {
-      "source": "/__/:path*",
-      "destination": "https://etp-s-59e57.firebaseapp.com/__/:path*"
-    }
-  ]
+  "outputDirectory": ".next"
 }
