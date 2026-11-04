@@ -1,5 +1,5 @@
 from logging.config import fileConfig
-from sqlalchemy import create_engine, pool
+from sqlalchemy import create_engine
 from alembic import context
 import os
 from dotenv import load_dotenv
@@ -16,13 +16,13 @@ if config.config_file_name is not None:
 
 # Import des modèles pour l'autogenerate
 from src.core.database import Base
-from src.modules.users.models import User, Profile
-from src.modules.companies.models import Company
-from src.modules.jobs.models import Job
-from src.modules.applications.models import Application
-from src.modules.interviews.models import Interview
-from src.modules.notifications.models import Notification
-from src.modules.ai.models import AIAuditLog, AIJobConfig, AIProviderConfig
+from src.modules.users.models import User, Profile  # noqa: F401
+from src.modules.companies.models import Company  # noqa: F401
+from src.modules.jobs.models import Job  # noqa: F401
+from src.modules.applications.models import Application  # noqa: F401
+from src.modules.interviews.models import Interview  # noqa: F401
+from src.modules.notifications.models import Notification  # noqa: F401
+from src.modules.ai.models import AIAuditLog, AIJobConfig, AIProviderConfig  # noqa: F401
 
 target_metadata = Base.metadata
 
@@ -88,22 +88,38 @@ def run_migrations_offline() -> None:
 
 def run_migrations_online() -> None:
     """Run migrations in 'online' mode."""
+    import logging
+    _log = logging.getLogger("alembic.env")
+
+    # Masquer le mot de passe dans les logs
+    _safe_url = DATABASE_URL.split("@")[-1] if "@" in DATABASE_URL else DATABASE_URL
+    _log.info("Connexion DB pour migrations : ...@%s", _safe_url)
+
     connectable = create_engine(DATABASE_URL)
 
-    with connectable.connect() as connection:
-        # Assure la présence des extensions requises (PostGIS & btree_gist pour Neon/cloud)
-        try:
-            from sqlalchemy import text
-            connection.execute(text("CREATE EXTENSION IF NOT EXISTS postgis;"))
-            connection.execute(text("CREATE EXTENSION IF NOT EXISTS btree_gist;"))
-            connection.commit()
-        except Exception:
-            pass  # Non bloquant si déjà créées ou gérées en amont
+    # Extensions PostgreSQL requises (PostGIS, btree_gist) — doivent être créées
+    # en AUTOCOMMIT : CREATE EXTENSION est interdit dans une transaction explicite.
+    # On utilise une connexion brute distincte pour éviter de polluer la transaction Alembic.
+    try:
+        raw = connectable.raw_connection()
+        raw.set_isolation_level(0)  # AUTOCOMMIT
+        cur = raw.cursor()
+        cur.execute("CREATE EXTENSION IF NOT EXISTS postgis;")
+        cur.execute("CREATE EXTENSION IF NOT EXISTS btree_gist;")
+        cur.execute("CREATE EXTENSION IF NOT EXISTS pgcrypto;")
+        cur.close()
+        raw.close()
+    except Exception as ext_err:
+        import logging
+        logging.getLogger("alembic.env").warning(
+            "Extensions PostgreSQL non créées (droits insuffisants ou déjà présentes) : %s", ext_err
+        )
 
+    with connectable.connect() as connection:
         context.configure(
-            connection=connection, 
+            connection=connection,
             target_metadata=target_metadata,
-            include_object=include_object 
+            include_object=include_object,
         )
 
         with context.begin_transaction():
