@@ -147,6 +147,7 @@ function RegisterForm() {
   const [otpCode, setOtpCode] = useState("");
   const [otpBusy, setOtpBusy] = useState(false);
   const [pendingEmail, setPendingEmail] = useState("");
+  const [pendingTokens, setPendingTokens] = useState<AuthTokens | null>(null);
 
   const {
     register,
@@ -186,13 +187,7 @@ function RegisterForm() {
         email: data.email,
         password: data.password,
       });
-
-      const res = await fetch("/api/auth/set-cookie", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(tokens),
-      });
-      if (!res.ok) throw new Error("Erreur de session.");
+      setPendingTokens(tokens);
 
       /* Envoyer l'OTP de vérification par email (tolérant aux aléas réseau) */
       try {
@@ -217,7 +212,28 @@ function RegisterForm() {
     setError(null);
     setOtpBusy(true);
     try {
-      await api.post("/auth/verify-otp", { email: pendingEmail, code: otpCode });
+      const resOtp = await api.post<{ access_token?: string; refresh_token?: string }>("/auth/verify-otp", {
+        email: pendingEmail,
+        code: otpCode,
+      });
+
+      const finalTokens =
+        resOtp.access_token && resOtp.refresh_token
+          ? {
+              access_token: resOtp.access_token,
+              refresh_token: resOtp.refresh_token,
+              token_type: "bearer",
+            }
+          : pendingTokens;
+
+      if (finalTokens) {
+        await fetch("/api/auth/set-cookie", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(finalTokens),
+        });
+      }
+
       handlePostAuthRedirect(role);
     } catch {
       setError("Code invalide ou expiré. Vérifiez votre email.");

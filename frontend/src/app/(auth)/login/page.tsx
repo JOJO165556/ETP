@@ -45,6 +45,7 @@ export default function LoginPage() {
   const [otpCode, setOtpCode] = useState("");
   const [otpBusy, setOtpBusy] = useState(false);
   const [pendingEmail, setPendingEmail] = useState("");
+  const [pendingTokens, setPendingTokens] = useState<AuthTokens | null>(null);
 
   const {
     register,
@@ -62,12 +63,7 @@ export default function LoginPage() {
       const tokens = await api.post<AuthTokens>("/auth/login", formData, {
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
       });
-      const res = await fetch("/api/auth/set-cookie", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(tokens),
-      });
-      if (!res.ok) throw new Error("session");
+      setPendingTokens(tokens);
 
       // Demander un OTP de vérification par email après connexion réussie
       try {
@@ -98,7 +94,28 @@ export default function LoginPage() {
     setError(null);
     setOtpBusy(true);
     try {
-      await api.post("/auth/verify-otp", { email: pendingEmail, code: otpCode });
+      const resOtp = await api.post<{ access_token?: string; refresh_token?: string }>("/auth/verify-otp", {
+        email: pendingEmail,
+        code: otpCode,
+      });
+
+      const finalTokens =
+        resOtp.access_token && resOtp.refresh_token
+          ? {
+              access_token: resOtp.access_token,
+              refresh_token: resOtp.refresh_token,
+              token_type: "bearer",
+            }
+          : pendingTokens;
+
+      if (finalTokens) {
+        await fetch("/api/auth/set-cookie", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(finalTokens),
+        });
+      }
+
       await completeLogin(null);
       router.refresh();
     } catch {

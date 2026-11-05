@@ -18,12 +18,16 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
 
   const res = await fetch(`${API_V1}${endpoint}`, { ...options, headers });
 
-  // 401 Non autorisé : redirection gérée proprement
-  if (res.status === 401) {
+  // 401 Non autorisé ou 403 session invalide : nettoyage et redirection
+  if (
+    res.status === 401 ||
+    (res.status === 403 && (endpoint.includes("/users/me") || endpoint.includes("/auth/me")))
+  ) {
     if (typeof window !== "undefined") {
-      window.location.href = "/login";
+      fetch("/api/auth/logout").catch(() => {});
+      window.location.href = "/login?error=session_expired";
     }
-    throw new Error("Session expirée");
+    throw new Error("Session expirée ou non autorisée");
   }
 
   if (!res.ok) {

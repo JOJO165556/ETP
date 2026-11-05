@@ -33,6 +33,14 @@ export function middleware(request: NextRequest) {
     request.cookies.get("etp_access_token")?.value ??
     request.headers.get("authorization")?.replace("Bearer ", "");
 
+  /* Si paramètre ?logout ou ?error présent sur une page auth, réinitialiser la session */
+  if (isAuthPage && (request.nextUrl.searchParams.has("logout") || request.nextUrl.searchParams.has("error"))) {
+    const response = NextResponse.next();
+    response.cookies.delete("etp_access_token");
+    response.cookies.delete("etp_refresh_token");
+    return response;
+  }
+
   /* Session ouverte sur une page d'authentification : retour à l'espace. */
   if (!isApiRoute && isAuthPage && accessToken) {
     return NextResponse.redirect(new URL("/overview", request.url));

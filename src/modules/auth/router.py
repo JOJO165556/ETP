@@ -354,5 +354,14 @@ async def verify_otp_endpoint(
         user.is_verified = True
         user.modified_by = str(user.id)
         await db.commit()
-    return {"message": "Code vérifié avec succès.", "verified": True}
+
+    access_token = create_access_token(subject=str(user.id)) if user else None
+    refresh_token = create_refresh_token(subject=str(user.id)) if user else None
+
+    return {
+        "message": "Code vérifié avec succès.",
+        "verified": True,
+        "access_token": access_token,
+        "refresh_token": refresh_token,
+    }
 
