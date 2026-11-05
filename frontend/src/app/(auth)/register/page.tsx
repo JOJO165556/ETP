@@ -152,14 +152,23 @@ function RegisterForm() {
     register,
     handleSubmit,
     watch,
+    reset,
     formState: { errors, isSubmitting },
   } = useForm<RegisterValues>({
     resolver: zodResolver(registerSchema),
     mode: "onBlur",
-    defaultValues: { first_name: "", last_name: "", email: "", password: "" },
+    defaultValues: { email: "", password: "" },
   });
 
   const currentPassword = watch("password");
+
+  const handleRoleChange = (newRole: "candidate" | "recruiter") => {
+    if (newRole !== role) {
+      setRole(newRole);
+      reset({ email: "", password: "" });
+      setError(null);
+    }
+  };
 
   const handlePostAuthRedirect = (selectedRole: "candidate" | "recruiter") => {
     if (selectedRole === "candidate") {
@@ -174,8 +183,6 @@ function RegisterForm() {
     setError(null);
     try {
       const tokens = await api.post<AuthTokens>("/auth/register", {
-        first_name: data.first_name,
-        last_name: data.last_name,
         email: data.email,
         password: data.password,
       });
@@ -252,7 +259,7 @@ function RegisterForm() {
         <div className="relative grid grid-cols-2 gap-1 rounded-xl bg-muted/60 p-1 border border-border/80">
           <button
             type="button"
-            onClick={() => setRole("candidate")}
+            onClick={() => handleRoleChange("candidate")}
             className={`relative z-10 flex items-center justify-center gap-2 rounded-lg py-2.5 text-xs font-semibold transition-colors ${
               role === "candidate" ? "text-foreground" : "text-muted-foreground hover:text-foreground"
             }`}
@@ -271,7 +278,7 @@ function RegisterForm() {
           </button>
           <button
             type="button"
-            onClick={() => setRole("recruiter")}
+            onClick={() => handleRoleChange("recruiter")}
             className={`relative z-10 flex items-center justify-center gap-2 rounded-lg py-2.5 text-xs font-semibold transition-colors ${
               role === "recruiter" ? "text-foreground" : "text-muted-foreground hover:text-foreground"
             }`}
@@ -311,39 +318,6 @@ function RegisterForm() {
       {/* Étape 1 : formulaire inscription */}
       {!otpStep && (
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <label htmlFor="first_name" className="block text-xs font-semibold text-foreground">
-                Prénom
-              </label>
-              <Input
-                id="first_name"
-                type="text"
-                placeholder="Alexandre"
-                {...register("first_name")}
-                className="h-11 rounded-xl text-sm border-border/80 focus-visible:ring-primary/20"
-              />
-              {errors.first_name && (
-                <p className="text-xs text-destructive">{errors.first_name.message}</p>
-              )}
-            </div>
-            <div className="space-y-1.5">
-              <label htmlFor="last_name" className="block text-xs font-semibold text-foreground">
-                Nom
-              </label>
-              <Input
-                id="last_name"
-                type="text"
-                placeholder="Martin"
-                {...register("last_name")}
-                className="h-11 rounded-xl text-sm border-border/80 focus-visible:ring-primary/20"
-              />
-              {errors.last_name && (
-                <p className="text-xs text-destructive">{errors.last_name.message}</p>
-              )}
-            </div>
-          </div>
-
           <div className="space-y-1.5">
             <label htmlFor="email" className="block text-xs font-semibold text-foreground">
               Adresse email
@@ -358,7 +332,7 @@ function RegisterForm() {
                 id="email"
                 type="email"
                 autoComplete="email"
-                placeholder="alexandre.martin@exemple.com"
+                placeholder={role === "candidate" ? "alexandre.martin@exemple.com" : "recrutement@entreprise.com"}
                 {...register("email")}
                 className="h-11 rounded-xl pr-4 pl-10 text-sm border-border/80 focus-visible:ring-primary/20"
               />

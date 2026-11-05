@@ -183,12 +183,16 @@ class AuthService:
         display_name = None
         if data.first_name or data.last_name:
             display_name = " ".join(filter(None, [data.first_name, data.last_name]))
-        firebase_uid = await provision_user(
-            email=data.email,
-            password=data.password,
-            user_id=str(user.id),
-            display_name=display_name,
-        )
+        try:
+            firebase_uid = await provision_user(
+                email=data.email,
+                password=data.password,
+                user_id=str(user.id),
+                display_name=display_name,
+            )
+        except Exception as exc:
+            logger.warning("provision_user echec non bloquant: %s", exc)
+            firebase_uid = None
 
         if firebase_uid:
             user.firebase_uid = firebase_uid

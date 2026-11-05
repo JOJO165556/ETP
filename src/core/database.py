@@ -28,6 +28,22 @@ async_session_maker = AsyncSessionLocal
 # Registre centralisé pour les métadonnées SQLAlchemy et les futures migrations 
 Base = declarative_base()
 
+def _load_all_models() -> None:
+    """Charge les modeles ORM pour resoudre les relations declares en chaines."""
+    try:
+        import src.modules.users.models  # noqa: F401
+        import src.modules.companies.models  # noqa: F401
+        import src.modules.jobs.models  # noqa: F401
+        import src.modules.applications.models  # noqa: F401
+        import src.modules.interviews.models  # noqa: F401
+        import src.modules.notifications.models  # noqa: F401
+        import src.modules.ai.models  # noqa: F401
+    except Exception:
+        pass
+
+
+_load_all_models()
+
 async def get_db() -> AsyncGenerator[AsyncSession, None]:
     """Dependacy injection provider pour les sessions SQL asynchrones
     

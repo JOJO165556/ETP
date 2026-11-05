@@ -8,8 +8,8 @@ export const loginSchema = z.object({
 export type LoginValues = z.infer<typeof loginSchema>;
 
 export const registerSchema = z.object({
-  first_name: z.string().min(2, "Le prénom doit contenir au moins 2 caractères."),
-  last_name: z.string().min(2, "Le nom doit contenir au moins 2 caractères."),
+  first_name: z.string().optional(),
+  last_name: z.string().optional(),
   email: z.string().email("Adresse email invalide."),
   password: z
     .string()
