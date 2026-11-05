@@ -337,13 +337,22 @@ async def send_otp_endpoint(body: OtpRequest):
 
 
 @router.post("/verify-otp", status_code=200, summary="Vérifier un code OTP")
-async def verify_otp_endpoint(body: OtpVerifyRequest):
-    """Valide le code OTP saisi."""
+async def verify_otp_endpoint(
+    body: OtpVerifyRequest,
+    db: AsyncSession = Depends(get_db),
+):
+    """Valide le code OTP saisi et marque le compte comme vérifié."""
     is_valid = await verify_otp(str(body.email), body.code)
     if not is_valid:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Code de vérification invalide ou expiré.",
         )
+    user_repo = UserRepository(db)
+    user = await user_repo.get_by_email(str(body.email))
+    if user and not user.is_verified:
+        user.is_verified = True
+        user.modified_by = str(user.id)
+        await db.commit()
     return {"message": "Code vérifié avec succès.", "verified": True}
 

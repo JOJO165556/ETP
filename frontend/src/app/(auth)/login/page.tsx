@@ -70,10 +70,25 @@ export default function LoginPage() {
       if (!res.ok) throw new Error("session");
 
       // Demander un OTP de vérification par email après connexion réussie
-      await api.post("/auth/send-otp", { email: data.email });
+      try {
+        await api.post("/auth/send-otp", { email: data.email });
+      } catch (otpErr) {
+        console.warn("send-otp non bloquant:", otpErr);
+      }
       setPendingEmail(data.email);
       setOtpStep(true);
-    } catch {
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "";
+      if (msg.includes("confirmer") || msg.includes("non vérifié") || msg.includes("403")) {
+        try {
+          await api.post("/auth/send-otp", { email: data.email });
+          setPendingEmail(data.email);
+          setOtpStep(true);
+          return;
+        } catch {
+          // ignore
+        }
+      }
       setError("Email ou mot de passe incorrect.");
     }
   };

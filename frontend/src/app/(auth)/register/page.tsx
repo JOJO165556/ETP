@@ -194,8 +194,12 @@ function RegisterForm() {
       });
       if (!res.ok) throw new Error("Erreur de session.");
 
-      /* Envoyer l'OTP de vérification par email */
-      await api.post("/auth/send-otp", { email: data.email });
+      /* Envoyer l'OTP de vérification par email (tolérant aux aléas réseau) */
+      try {
+        await api.post("/auth/send-otp", { email: data.email });
+      } catch (otpErr) {
+        console.warn("send-otp non bloquant:", otpErr);
+      }
       setPendingEmail(data.email);
       setOtpStep(true);
     } catch (err: unknown) {
