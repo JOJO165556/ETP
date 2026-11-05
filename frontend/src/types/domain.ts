@@ -30,7 +30,7 @@ export interface Offre {
   is_active: boolean;
 }
 
-/* Alias publié — permet d'importer Job ou Offre selon le contexte */
+/* Alias publié : permet d'importer Job ou Offre selon le contexte */
 export type Job = Offre;
 
 export interface FiltresOffres {
@@ -146,7 +146,7 @@ export interface ProfilCandidat {
   recherchable: boolean;
 }
 
-// Vivier de talents (vue recruteur) — aligné sur UserBriefResponse du backend
+// Vivier de talents (vue recruteur) : aligné sur UserBriefResponse du backend
 
 export interface CandidatVivier {
   id: UserId;

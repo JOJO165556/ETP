@@ -1,5 +1,5 @@
 /*
- * Client Firebase Auth — migration de l'OAuth custom (Authlib) vers Firebase :
+ * Client Firebase Auth : migration de l'OAuth custom (Authlib) vers Firebase :
  * Google, Facebook, email/password et Phone + App Check.
  *
  * Le projet n'est PAS encore cree dans Firebase, toutes les valeurs ci-dessous
@@ -60,7 +60,7 @@ export function isFirebaseConfigured(): boolean {
 function getFirebaseConfig(): FirebaseWebConfig {
   // authDomain DOIT pointer vers le domaine Firebase natif (*.firebaseapp.com),
   // pas vers tryetp.vercel.app. Firebase injecte un iframe caché sur ce domaine
-  // pour relayer les messages avec la popup — l'utilisation du domaine Vercel
+  // pour relayer les messages avec la popup, l'utilisation du domaine Vercel
   // déclencherait X-Frame-Options:DENY et casserait silencieusement le popup.
   const rawAuthDomain = process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN ?? "";
   const authDomain = rawAuthDomain.includes("vercel.app")

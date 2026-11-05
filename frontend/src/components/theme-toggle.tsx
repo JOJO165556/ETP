@@ -4,7 +4,7 @@ import { Moon, Sun } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useTheme } from "@/components/theme-provider";
 
-/* Interrupteur de thème clair/sombre — utilisable partout (sidebar, header, auth...). */
+/* Interrupteur de thème clair/sombre : utilisable partout (sidebar, header, auth...). */
 export function ThemeToggle({ className }: { className?: string }) {
   const { theme, basculer } = useTheme();
   const estSombre = theme === "dark";

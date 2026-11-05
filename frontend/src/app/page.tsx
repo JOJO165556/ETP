@@ -33,14 +33,9 @@ export default function LandingPage() {
                 className="object-cover"
               />
             </div>
-            <div className="flex flex-col">
-              <span className="text-base font-bold tracking-tight" style={{ fontFamily: "var(--font-heading)" }}>
-                ETP
-              </span>
-              <span className="text-[10px] font-medium tracking-wider text-muted-foreground uppercase">
-                Talent Platform
-              </span>
-            </div>
+            <span className="text-base font-bold tracking-tight" style={{ fontFamily: "var(--font-heading)" }}>
+              ETP
+            </span>
           </Link>
 
           <nav className="hidden items-center gap-8 md:flex">
@@ -171,7 +166,7 @@ export default function LandingPage() {
                 Un scoring d'adéquation en temps réel
               </h2>
               <p className="mt-2 text-sm text-muted-foreground">
-                Chaque candidature est évaluée selon les compétences, l'expérience et la proximité géographique — de façon objective et reproductible.
+                Chaque candidature est évaluée selon les compétences, l'expérience et la proximité géographique, de façon objective et reproductible.
               </p>
             </div>
 
@@ -320,10 +315,10 @@ export default function LandingPage() {
             <div className="relative h-6 w-6 overflow-hidden rounded-md">
               <Image src="/etp_logo.webp" alt="ETP" fill className="object-cover" />
             </div>
-            <span className="text-sm font-semibold tracking-tight">ETP &middot; Enterprise Talent Platform</span>
+            <span className="text-sm font-semibold tracking-tight">ETP</span>
           </div>
           <p className="text-xs text-muted-foreground">
-            &copy; {new Date().getFullYear()} ETP. Tous droits réservés. Hébergé de manière souveraine.
+            &copy; {new Date().getFullYear()} ETP. Tous droits réservés.
           </p>
           <div className="flex items-center gap-6 text-xs text-muted-foreground">
             <Link href="/login" className="hover:text-foreground transition-colors">Connexion</Link>

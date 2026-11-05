@@ -11,8 +11,9 @@ from src.core.security import (
 from src.modules.auth.schemas import (
     Token, RegisterRequest, RefreshTokenRequest, ChangePasswordRequest,
     FirebaseLoginRequest, ForgotPasswordRequest, ResetPasswordRequest,
-    ResendVerificationRequest
+    ResendVerificationRequest, OtpRequest, OtpVerifyRequest,
 )
+from src.core.otp import send_otp, verify_otp
 from src.modules.auth.constants import UNVERIFIED_EMAIL_DETAIL
 from src.modules.auth.dependencies import get_current_user
 from src.modules.auth.services import AuthService
@@ -321,3 +322,28 @@ async def reset_password(
     user.hashed_password = get_password_hash(new_password)
     await db.commit()
     return {"message": "Mot de passe réinitialisé avec succès."}
+
+
+@router.post("/send-otp", status_code=200, summary="Envoyer un code OTP par email")
+async def send_otp_endpoint(body: OtpRequest):
+    """Envoie un code OTP à 6 chiffres via Resend et le stocke dans Redis (10 minutes)."""
+    sent = await send_otp(str(body.email))
+    if not sent:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Échec de l'envoi du code de vérification.",
+        )
+    return {"message": "Code envoyé avec succès."}
+
+
+@router.post("/verify-otp", status_code=200, summary="Vérifier un code OTP")
+async def verify_otp_endpoint(body: OtpVerifyRequest):
+    """Valide le code OTP saisi."""
+    is_valid = await verify_otp(str(body.email), body.code)
+    if not is_valid:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Code de vérification invalide ou expiré.",
+        )
+    return {"message": "Code vérifié avec succès.", "verified": True}
+

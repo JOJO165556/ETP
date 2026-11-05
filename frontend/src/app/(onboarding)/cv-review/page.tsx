@@ -39,7 +39,7 @@ const CLAZZ_CHAMPS =
 
 const CONTRATS = ["CDI", "CDD", "Freelance", "Stage", "Alternance", "Intérim"];
 
-/* Page de validation des données extraites du CV (Étape 3 de l'onboarding) — données réelles */
+/* Page de validation des données extraites du CV (Étape 3 de l'onboarding) : données réelles */
 export default function CVReviewPage() {
   const router = useRouter();
 
@@ -393,7 +393,7 @@ export default function CVReviewPage() {
                   <div className="flex flex-wrap items-center gap-2">
                     {skills.length === 0 && (
                       <p className="text-sm text-muted-foreground">
-                        Aucune compétence extraite — ajoutez vos savoir-faire manuellement.
+                        Aucune compétence extraite : ajoutez vos savoir-faire manuellement.
                       </p>
                     )}
                     {skills.map((skill) => (
@@ -446,7 +446,7 @@ export default function CVReviewPage() {
 
                   {experiences.length === 0 && (
                     <p className="text-sm text-muted-foreground">
-                      Aucune expérience enregistrée — ajoutez les postes de votre parcours.
+                      Aucune expérience enregistrée : ajoutez les postes de votre parcours.
                     </p>
                   )}
 

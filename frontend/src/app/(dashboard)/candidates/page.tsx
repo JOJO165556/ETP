@@ -28,7 +28,7 @@ function periode(debut: string | null, fin: string | null, enCours: boolean): st
   };
   const debutFmt = format(debut);
   if (!debutFmt) return fin ? `${format(fin)} (antérieur)` : "";
-  return `${debutFmt} — ${enCours ? "aujourd'hui" : fin ? format(fin) : "à ce jour"}`;
+  return `${debutFmt} à ${enCours ? "aujourd'hui" : fin ? format(fin) : "ce jour"}`;
 }
 
 export default function CandidatsPage() {

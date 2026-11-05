@@ -39,7 +39,7 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
   return res.json() as Promise<T>;
 }
 
-// Interface HTTP unifiée — utiliser ces méthodes dans tous les services
+// Interface HTTP unifiée : utiliser ces méthodes dans tous les services
 export const api = {
   get: <T>(url: string, options?: RequestInit) =>
     request<T>(url, { method: "GET", ...options }),
