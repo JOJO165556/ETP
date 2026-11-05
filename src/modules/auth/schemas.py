@@ -90,3 +90,20 @@ class ResetPasswordRequest(BaseModel):
     })
     token: str = Field(min_length=1)
     new_password: str = Field(min_length=8, max_length=128)
+
+
+class OtpRequest(BaseModel):
+    """Demande d'envoi d'un code OTP par email."""
+    model_config = ConfigDict(extra="forbid", json_schema_extra={
+        "example": {"email": "jean.dupont@example.com"}
+    })
+    email: EmailStr
+
+
+class OtpVerifyRequest(BaseModel):
+    """Vérification d'un code OTP."""
+    model_config = ConfigDict(extra="forbid", json_schema_extra={
+        "example": {"email": "jean.dupont@example.com", "code": "123456"}
+    })
+    email: EmailStr
+    code: str = Field(min_length=6, max_length=6, description="Code OTP à 6 chiffres")

@@ -33,14 +33,9 @@ export default function LandingPage() {
                 className="object-cover"
               />
             </div>
-            <div className="flex flex-col">
-              <span className="text-base font-bold tracking-tight" style={{ fontFamily: "var(--font-heading)" }}>
-                ETP
-              </span>
-              <span className="text-[10px] font-medium tracking-wider text-muted-foreground uppercase">
-                Talent Platform
-              </span>
-            </div>
+            <span className="text-base font-bold tracking-tight" style={{ fontFamily: "var(--font-heading)" }}>
+              ETP
+            </span>
           </Link>
 
           <nav className="hidden items-center gap-8 md:flex">
@@ -53,9 +48,6 @@ export default function LandingPage() {
             <a href="#comment-ca-marche" className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">
               Comment ça marche
             </a>
-            <a href="#securite" className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">
-              Souveraineté & RGPD
-            </a>
           </nav>
 
           <div className="flex items-center gap-3">
@@ -63,12 +55,6 @@ export default function LandingPage() {
             <Link href="/login">
               <Button variant="ghost" size="sm" className="font-semibold text-xs sm:text-sm">
                 Se connecter
-              </Button>
-            </Link>
-            <Link href="/register">
-              <Button size="sm" className="font-semibold text-xs sm:text-sm shadow-sm gap-1.5">
-                Inscription gratuite
-                <ArrowRight size={14} />
               </Button>
             </Link>
           </div>
@@ -164,14 +150,14 @@ export default function LandingPage() {
         </section>
 
         {/* 3. Interactive Matching Preview Card */}
-        <section id="comment-ca-marche" className="py-12 border-y border-border/40 bg-muted/20">
+        <section id="comment-ca-marche" className="scroll-mt-20 py-12 border-y border-border/40 bg-muted/20">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="mx-auto max-w-3xl text-center mb-10">
               <h2 className="text-2xl sm:text-3xl font-bold tracking-tight" style={{ fontFamily: "var(--font-heading)" }}>
                 Un scoring d'adéquation en temps réel
               </h2>
               <p className="mt-2 text-sm text-muted-foreground">
-                Chaque candidature est évaluée selon les compétences, l'expérience et la proximité géographique — de façon objective et reproductible.
+                Chaque candidature est évaluée selon les compétences, l'expérience et la proximité géographique, de façon objective et reproductible.
               </p>
             </div>
 
@@ -219,9 +205,9 @@ export default function LandingPage() {
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-stretch">
               {/* Carte Candidat */}
-              <div id="candidats" className="flex flex-col justify-between rounded-3xl border border-border bg-card p-8 sm:p-10 shadow-sm relative overflow-hidden group hover:border-primary/50 transition-colors">
+              <div id="candidats" className="scroll-mt-24 flex flex-col justify-between rounded-3xl border border-border bg-card p-8 sm:p-10 shadow-sm relative overflow-visible group hover:border-primary/50 transition-colors">
                 <div className="space-y-6">
-                  <div className="h-12 w-12 rounded-2xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center">
+                  <div className="relative z-10 h-12 w-12 shrink-0 rounded-2xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center">
                     <User size={24} />
                   </div>
                   <div>
@@ -256,9 +242,9 @@ export default function LandingPage() {
               </div>
 
               {/* Carte Recruteur */}
-              <div id="recruteurs" className="flex flex-col justify-between rounded-3xl border border-border bg-card p-8 sm:p-10 shadow-sm relative overflow-hidden group hover:border-primary/50 transition-colors">
+              <div id="recruteurs" className="scroll-mt-24 flex flex-col justify-between rounded-3xl border border-border bg-card p-8 sm:p-10 shadow-sm relative overflow-visible group hover:border-primary/50 transition-colors">
                 <div className="space-y-6">
-                  <div className="h-12 w-12 rounded-2xl bg-primary/10 text-primary flex items-center justify-center">
+                  <div className="relative z-10 h-12 w-12 shrink-0 rounded-2xl bg-primary/10 text-primary flex items-center justify-center">
                     <Building2 size={24} />
                   </div>
                   <div>
@@ -294,41 +280,20 @@ export default function LandingPage() {
             </div>
           </div>
         </section>
-
-        {/* 5. Sécurité & RGPD */}
-        <section id="securite" className="py-16 border-t border-border/40 bg-muted/10">
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-center">
-            <div className="mx-auto max-w-3xl">
-              <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary mb-4">
-                <Lock size={22} />
-              </div>
-              <h2 className="text-2xl sm:text-3xl font-bold tracking-tight" style={{ fontFamily: "var(--font-heading)" }}>
-                Sécurité certifiée & Hébergement souverain
-              </h2>
-              <p className="mt-3 text-sm sm:text-base text-muted-foreground leading-relaxed">
-                ETP est conçu dès la première ligne de code pour respecter les plus hautes exigences de protection des données : chiffrement complet, tokens sécurisés HttpOnly, et conformité stricte au RGPD.
-              </p>
-            </div>
-          </div>
-        </section>
       </main>
 
-      {/* 6. Footer */}
-      <footer className="border-t border-border/40 bg-background py-12">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-6">
+      {/* 5. Footer */}
+      <footer className="border-t border-border/40 bg-background py-8">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2.5">
             <div className="relative h-6 w-6 overflow-hidden rounded-md">
               <Image src="/etp_logo.webp" alt="ETP" fill className="object-cover" />
             </div>
-            <span className="text-sm font-semibold tracking-tight">ETP &middot; Enterprise Talent Platform</span>
+            <span className="text-sm font-semibold tracking-tight">ETP</span>
           </div>
           <p className="text-xs text-muted-foreground">
-            &copy; {new Date().getFullYear()} ETP. Tous droits réservés. Hébergé de manière souveraine.
+            &copy; {new Date().getFullYear()} ETP. Tous droits réservés.
           </p>
-          <div className="flex items-center gap-6 text-xs text-muted-foreground">
-            <Link href="/login" className="hover:text-foreground transition-colors">Connexion</Link>
-            <Link href="/register" className="hover:text-foreground transition-colors">Inscription</Link>
-          </div>
         </div>
       </footer>
     </div>

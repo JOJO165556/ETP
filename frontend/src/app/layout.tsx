@@ -24,7 +24,7 @@ const jetbrainsMono = JetBrains_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: "ETP — Enterprise Talent Platform",
+    default: "ETP : Enterprise Talent Platform",
     template: "%s | ETP",
   },
   description:

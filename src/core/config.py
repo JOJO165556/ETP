@@ -55,6 +55,7 @@ class Settings(BaseSettings):
     SMTP_SSL: bool = False
     SMTP_TIMEOUT: int = 15
     RESEND_API_KEY: Optional[str] = None
+    RESEND_FROM_EMAIL: str = "noreply@etp-platform.com"
 
     BACKEND_CORS_ORIGINS: List[AnyHttpUrl] = [
         "http://localhost:3000",

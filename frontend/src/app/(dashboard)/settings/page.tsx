@@ -52,7 +52,7 @@ const CLAZZ_CHAMPS =
 
 const SELECT_CONTRATS = ["CDI", "CDD", "Freelance", "Stage", "Alternance", "Intérim"];
 
-/* Page de profil et paramètres du candidat — données réelles (informations,
+/* Page de profil et paramètres du candidat : données réelles (informations,
    compétences, expériences professionnelles, formations, visibilité). */
 export default function ProfilPage() {
   const [profil, setProfil] = useState<UserProfil | null>(null);
@@ -484,7 +484,7 @@ export default function ProfilPage() {
                     </div>
                     <p className="text-sm font-medium text-foreground/80">{exp.entreprise}</p>
                     <p className="text-xs text-muted-foreground">
-                      {formaterDateFR(exp.date_debut)} — {exp.en_cours ? "Aujourd'hui" : formaterDateFR(exp.date_fin)}
+                      {formaterDateFR(exp.date_debut)} à {exp.en_cours ? "Aujourd'hui" : formaterDateFR(exp.date_fin)}
                     </p>
                     {exp.description && (
                       <p className="text-sm leading-relaxed text-foreground/70">{exp.description}</p>

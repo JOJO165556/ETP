@@ -5,6 +5,10 @@
 @custom-variant dark (&:is(.dark *));
 
 @layer base {
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+  
   :root {
     /* PRIMITIVE TOKENS (Couleurs brutes) */
     

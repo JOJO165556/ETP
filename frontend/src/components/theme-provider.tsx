@@ -14,7 +14,7 @@ export const THEME_STORAGE_KEY = "etp-theme";
 
 const ThemeContext = createContext<ThemeContextValue | null>(null);
 
-/* Fournisseur de thème — mode clair par défaut partout, persisté en localStorage.
+/* Fournisseur de thème : mode clair par défaut partout, persisté en localStorage.
    Le script inline dans app/layout.tsx applique déjà la classe avant le paint. */
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setThemeState] = useState<Theme>("light");
