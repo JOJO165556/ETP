@@ -76,6 +76,25 @@ const NAVIGATION: Record<Role, NavSection[]> = {
   ],
 };
 
+export function calculerInitiales(nomComplet?: string | null, email?: string | null): string {
+  if (nomComplet && nomComplet.trim() && nomComplet !== email) {
+    const parties = nomComplet.trim().split(/\s+/).filter(Boolean);
+    if (parties.length >= 2) {
+      return (parties[0][0] + parties[1][0]).toUpperCase();
+    }
+    return parties[0].slice(0, 2).toUpperCase();
+  }
+  if (email && email.includes("@")) {
+    const partieLocale = email.split("@")[0];
+    const sousParties = partieLocale.split(/[._-]+/).filter(Boolean);
+    if (sousParties.length >= 2) {
+      return (sousParties[0][0] + sousParties[1][0]).toUpperCase();
+    }
+    return partieLocale.slice(0, 2).toUpperCase();
+  }
+  return "U";
+}
+
 export type Role = "CANDIDAT" | "RECRUITER" | "ADMIN";
 
 export function normaliserRole(role?: string | null): Role {
@@ -97,11 +116,14 @@ interface SidebarProps {
   onToggle: () => void;
   onNavigate?: () => void;
   mobile?: boolean;
+  nomComplet?: string | null;
+  email?: string | null;
 }
 
-export function Sidebar({ role, collapsed, onToggle, onNavigate, mobile }: SidebarProps) {
+export function Sidebar({ role, collapsed, onToggle, onNavigate, mobile, nomComplet, email }: SidebarProps) {
   const chemin = usePathname();
   const sections = NAVIGATION[role];
+  const initiales = calculerInitiales(nomComplet, email);
 
   return (
     <aside
@@ -216,17 +238,42 @@ export function Sidebar({ role, collapsed, onToggle, onNavigate, mobile }: Sideb
         ))}
       </nav>
 
-      <div className="border-t border-sidebar-border p-3">
+      {/* Pied de sidebar : Profil & Déconnexion en bas à gauche */}
+      <div className="border-t border-sidebar-border p-3 space-y-2">
+        <Link
+          href="/settings"
+          onClick={onNavigate}
+          title={collapsed && !mobile ? (nomComplet ?? email ?? "Mon profil") : undefined}
+          className={cn(
+            "flex items-center gap-2.5 rounded-lg p-2 transition-colors hover:bg-sidebar-accent",
+            collapsed && !mobile ? "justify-center" : "justify-start"
+          )}
+        >
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
+            {initiales}
+          </span>
+          {!(collapsed && !mobile) && (
+            <div className="min-w-0 flex-1 text-left">
+              <p className="truncate text-xs font-semibold text-foreground">
+                {nomComplet && nomComplet !== email ? nomComplet : LIBELLE_ROLE[role]}
+              </p>
+              <p className="truncate text-[11px] text-muted-foreground">
+                {email ?? LIBELLE_ROLE[role]}
+              </p>
+            </div>
+          )}
+        </Link>
+
         <Link
           href="/api/auth/logout"
           onClick={onNavigate}
           title={collapsed && !mobile ? "Se déconnecter" : undefined}
           className={cn(
-            "group flex items-center gap-3 rounded-md py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-foreground",
-            collapsed && !mobile ? "justify-center px-2" : "px-3"
+            "group flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive",
+            collapsed && !mobile ? "justify-center" : "justify-start"
           )}
         >
-          <LogOut className="h-[18px] w-[18px] shrink-0" aria-hidden="true" />
+          <LogOut className="h-4 w-4 shrink-0" aria-hidden="true" />
           {!(collapsed && !mobile) && <span>Se déconnecter</span>}
         </Link>
       </div>
@@ -264,12 +311,7 @@ export function TopBar({ title, onOpenMenu, nomComplet, email, role }: TopBarPro
     };
   }, [menuOuvert]);
 
-  const initiales = (nomComplet ?? email ?? "?")
-    .split(/[\s@.]+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((partie) => partie.charAt(0).toUpperCase())
-    .join("");
+  const initiales = calculerInitiales(nomComplet, email);
 
   return (
     <header className="flex h-16 shrink-0 items-center justify-between gap-4 border-b border-border bg-background px-4 lg:px-8">
@@ -315,7 +357,7 @@ export function TopBar({ title, onOpenMenu, nomComplet, email, role }: TopBarPro
             >
               <div className="px-2.5 py-2">
                 <p className="truncate text-sm font-semibold text-popover-foreground">
-                  {nomComplet ?? "Mon compte"}
+                  {nomComplet && nomComplet !== email ? nomComplet : LIBELLE_ROLE[role]}
                 </p>
                 <p className="truncate text-xs text-muted-foreground">
                   {email ?? LIBELLE_ROLE[role]}
@@ -347,7 +389,19 @@ export function TopBar({ title, onOpenMenu, nomComplet, email, role }: TopBarPro
   );
 }
 
-export function MobileDrawer({ open, onClose, role }: { open: boolean; onClose: () => void; role: Role }) {
+export function MobileDrawer({
+  open,
+  onClose,
+  role,
+  nomComplet,
+  email,
+}: {
+  open: boolean;
+  onClose: () => void;
+  role: Role;
+  nomComplet?: string | null;
+  email?: string | null;
+}) {
   if (!open) return null;
   return (
     <div className="fixed inset-0 z-50 lg:hidden">
@@ -366,7 +420,15 @@ export function MobileDrawer({ open, onClose, role }: { open: boolean; onClose: 
         >
           <X size={18} />
         </button>
-        <Sidebar role={role} collapsed={false} onToggle={() => {}} onNavigate={onClose} mobile />
+        <Sidebar
+          role={role}
+          collapsed={false}
+          onToggle={() => {}}
+          onNavigate={onClose}
+          mobile
+          nomComplet={nomComplet}
+          email={email}
+        />
       </div>
     </div>
   );

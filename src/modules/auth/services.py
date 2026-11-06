@@ -149,11 +149,11 @@ class AuthService:
         )
         return {"message": "Déconnexion réussie."}
 
-    async def register(self, data: RegisterRequest) -> Token:
+    async def register(self, data: RegisterRequest, role: UserRole = UserRole.CANDIDATE) -> Token:
         """Inscrit un nouvel utilisateur et retourne les tokens.
 
-        Le rôle est *toujours* CANDIDATE : aucun rôle ne peut être fourni par
-        le client (RegisterRequest n'expose pas de champ role).
+        Le rôle par défaut est CANDIDATE. Seul RECRUITER peut être demandé explicitement
+        via le point d'entrée dédié aux recruteurs.
         """
         existing = await self.user_repo.get_by_email(data.email)
         if existing:
@@ -165,7 +165,7 @@ class AuthService:
         user = await self.user_repo.create({
             "email": data.email,
             "hashed_password": get_password_hash(data.password),
-            "role": UserRole.CANDIDATE,
+            "role": role,
             "is_active": True,
             "is_verified": False,
         })

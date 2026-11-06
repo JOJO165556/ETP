@@ -64,9 +64,21 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex h-dvh w-full overflow-hidden bg-background text-foreground">
       <div className="hidden lg:flex">
-        <Sidebar role={role} collapsed={collapsed} onToggle={() => setCollapsed((v) => !v)} />
+        <Sidebar
+          role={role}
+          collapsed={collapsed}
+          onToggle={() => setCollapsed((v) => !v)}
+          nomComplet={nomComplet}
+          email={email}
+        />
       </div>
-      <MobileDrawer open={drawerOuvert} onClose={() => setDrawerOuvert(false)} role={role} />
+      <MobileDrawer
+        open={drawerOuvert}
+        onClose={() => setDrawerOuvert(false)}
+        role={role}
+        nomComplet={nomComplet}
+        email={email}
+      />
 
       <div className="flex min-w-0 flex-1 flex-col">
         <TopBar

@@ -50,19 +50,43 @@ export default function VueEnsemblePage() {
     setChargement(true);
     setErreur(false);
     try {
-      const [profil, resume, recommandations] = await Promise.all([
+      const [profilResult, resumeResult, offresResult] = await Promise.allSettled([
         usersService.getMonProfil(),
         analyticsService.getMonResume(),
         jobsService.getOffres({ limit: 3 }),
       ]);
-      setPrenom(profil.profile?.first_name ?? null);
-      setIndicateurs({
-        vuesProfil: resume.vues_profil,
-        evolutionVues: resume.evolution_vues,
-        correspondances: resume.nouveaux_matchs,
-        candidaturesActives: resume.candidatures_actives,
-      });
-      setOffres(recommandations);
+
+      if (profilResult.status === "fulfilled") {
+        setPrenom(profilResult.value.profile?.first_name ?? null);
+      }
+
+      if (resumeResult.status === "fulfilled") {
+        const resume = resumeResult.value;
+        setIndicateurs({
+          vuesProfil: resume.vues_profil ?? 0,
+          evolutionVues: resume.evolution_vues ?? 0,
+          correspondances: resume.nouveaux_matchs ?? 0,
+          candidaturesActives: resume.candidatures_actives ?? 0,
+        });
+      } else {
+        setIndicateurs({
+          vuesProfil: 0,
+          evolutionVues: 0,
+          correspondances: 0,
+          candidaturesActives: 0,
+        });
+      }
+
+      if (offresResult.status === "fulfilled") {
+        setOffres(offresResult.value ?? []);
+      } else {
+        setOffres([]);
+      }
+
+      // Si le profil n'a pas pu être chargé du tout, afficher l'état d'erreur
+      if (profilResult.status === "rejected") {
+        setErreur(true);
+      }
     } catch {
       setErreur(true);
     } finally {

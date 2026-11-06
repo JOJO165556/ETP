@@ -36,13 +36,22 @@ async def login_for_access_token(
     return await service.authenticate_user(form_data)
 
 
-@router.post("/register", response_model=Token, summary="Créer un compte")
+@router.post("/register", response_model=Token, summary="Créer un compte candidat")
 async def register(
     body: RegisterRequest,
     db: AsyncSession = Depends(get_db)
 ) -> Token:
     service = AuthService(db)
-    return await service.register(body)
+    return await service.register(body, role=UserRole.CANDIDATE)
+
+
+@router.post("/register/recruiter", response_model=Token, summary="Créer un compte recruteur")
+async def register_recruiter(
+    body: RegisterRequest,
+    db: AsyncSession = Depends(get_db)
+) -> Token:
+    service = AuthService(db)
+    return await service.register(body, role=UserRole.RECRUITER)
 
 
 @router.post("/refresh", response_model=Token, summary="Rafraîchir les tokens")

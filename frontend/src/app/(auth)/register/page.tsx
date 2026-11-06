@@ -182,8 +182,9 @@ function RegisterForm() {
   /* Inscription email/mot de passe : API FastAPI directe */
   const onSubmit = async (data: RegisterValues) => {
     setError(null);
+    const endpoint = role === "recruiter" ? "/auth/register/recruiter" : "/auth/register";
     try {
-      const tokens = await api.post<AuthTokens>("/auth/register", {
+      const tokens = await api.post<AuthTokens>(endpoint, {
         email: data.email,
         password: data.password,
       });
@@ -199,11 +200,20 @@ function RegisterForm() {
       setOtpStep(true);
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "";
-      setError(
-        message.includes("existe deja")
-          ? "Un compte avec cette adresse email existe déjà. Veuillez vous connecter."
-          : "Une erreur est survenue lors de l'inscription. Veuillez réessayer."
-      );
+      if (message.includes("existe deja") || message.includes("409")) {
+        // Le compte existe déjà. Tentons de renvoyer l'OTP au cas où l'inscription n'était pas terminée.
+        try {
+          await api.post("/auth/send-otp", { email: data.email });
+          setPendingEmail(data.email);
+          setOtpStep(true);
+          return;
+        } catch {
+          // Si déjà actif et validé, orienter vers login
+        }
+        setError("Un compte avec cette adresse email existe déjà. Veuillez vous connecter.");
+      } else {
+        setError("Une erreur est survenue lors de l'inscription. Veuillez réessayer.");
+      }
     }
   };
 
