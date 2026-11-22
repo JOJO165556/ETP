@@ -11,19 +11,39 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useGeolocalisation, type PositionLocale } from "@/hooks/use-geolocation";
 import { jobsService } from "@/services/jobs.service";
+import { usersService } from "@/services/users.service";
+import { JobsManager } from "@/components/recruiter/jobs-manager";
 import type { Job } from "@/types/domain";
-
-type Tri = "correspondance" | "recent";
 
 export default function OffresPage() {
   const [offres, setOffres] = useState<Job[]>([]);
   const [chargement, setChargement] = useState(true);
   const [erreur, setErreur] = useState(false);
   const [recherche, setRecherche] = useState("");
-  const [tri, setTri] = useState<Tri>("correspondance");
   const [offresLocales, setOffresLocales] = useState<Job[]>([]);
+  const [role, setRole] = useState<string | null>(null);
+  const [companyId, setCompanyId] = useState<string | null>(null);
+  const [profilCharge, setProfilCharge] = useState(false);
+
+  useEffect(() => {
+    usersService
+      .getMonProfil()
+      .then((profil) => {
+        setRole(profil.role);
+        setCompanyId(profil.company_id ?? null);
+      })
+      .catch(() => setRole("candidate"))
+      .finally(() => setProfilCharge(true));
+  }, []);
+
+  const estRecruteur =
+    (role === "recruiter" || role === "company_admin") && companyId !== null;
 
   const charger = useCallback(async () => {
+    if (!profilCharge || estRecruteur) {
+      setChargement(false);
+      return;
+    }
     setChargement(true);
     setErreur(false);
     try {
@@ -33,7 +53,7 @@ export default function OffresPage() {
     } finally {
       setChargement(false);
     }
-  }, []);
+  }, [profilCharge, estRecruteur]);
 
   useEffect(() => {
     charger();
@@ -57,23 +77,42 @@ export default function OffresPage() {
 
   const resultats = useMemo(() => {
     const terme = recherche.trim().toLowerCase();
-    let liste = offres;
+    const liste = terme
+      ? offres.filter((offre) =>
+          [
+            offre.title,
+            offre.company_name ?? "",
+            offre.formatted_address ?? "",
+            ...(offre.required_skills ?? []),
+          ]
+            .join(" ")
+            .toLowerCase()
+            .includes(terme)
+        )
+      : offres;
 
-    if (terme) {
-      liste = liste.filter((offre) =>
-        [offre.title, offre.company_name ?? "", offre.location ?? "", ...(offre.tags ?? [])]
-          .join(" ")
-          .toLowerCase()
-          .includes(terme)
-      );
-    }
-
-    return [...liste].sort((a, b) =>
-      tri === "correspondance"
-        ? (b.match_score ?? 0) - (a.match_score ?? 0)
-        : new Date(b.posted_at ?? 0).getTime() - new Date(a.posted_at ?? 0).getTime()
+    return [...liste].sort(
+      (a, b) =>
+        new Date(b.created_at ?? 0).getTime() - new Date(a.created_at ?? 0).getTime()
     );
-  }, [offres, recherche, tri]);
+  }, [offres, recherche]);
+
+  if (!profilCharge) {
+    return (
+      <div className="space-y-4 p-6 lg:p-10">
+        <Skeleton className="h-8 w-48" />
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {[0, 1, 2].map((i) => (
+            <Skeleton key={i} className="h-40 rounded-xl" />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (estRecruteur && companyId) {
+    return <JobsManager companyId={companyId} />;
+  }
 
   return (
     <div className="mx-auto w-full max-w-6xl space-y-6 p-6 lg:p-10">
@@ -97,21 +136,6 @@ export default function OffresPage() {
             aria-label="Rechercher une offre"
             className="w-full rounded-lg border border-border bg-card py-2.5 pr-3 pl-9 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:border-ring focus:ring-2 focus:ring-ring/30"
           />
-        </div>
-
-        <div className="flex items-center gap-2">
-          <label htmlFor="tri" className="text-sm text-muted-foreground">
-            Trier par
-          </label>
-          <select
-            id="tri"
-            value={tri}
-            onChange={(event) => setTri(event.target.value as Tri)}
-            className="rounded-lg border border-border bg-card px-3 py-2 text-sm font-medium text-foreground outline-none focus:border-ring"
-          >
-            <option value="correspondance">Correspondance</option>
-            <option value="recent">Plus récentes</option>
-          </select>
         </div>
       </div>
 
@@ -184,7 +208,7 @@ export default function OffresPage() {
                       {offre.title}
                     </span>
                     <span className="block truncate text-xs text-muted-foreground">
-                      {offre.company_name} · {offre.location}
+                      {offre.company_name} · {offre.formatted_address}
                     </span>
                   </span>
                 </Link>

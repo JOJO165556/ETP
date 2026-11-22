@@ -139,6 +139,7 @@ function RegisterForm() {
   const [role, setRole] = useState<"candidate" | "recruiter">(
     initialRoleParam === "recruiter" ? "recruiter" : "candidate"
   );
+  const [companyName, setCompanyName] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
 
@@ -166,6 +167,7 @@ function RegisterForm() {
   const handleRoleChange = (newRole: "candidate" | "recruiter") => {
     if (newRole !== role) {
       setRole(newRole);
+      setCompanyName("");
       reset({ email: "", password: "" });
       setError(null);
     }
@@ -187,6 +189,9 @@ function RegisterForm() {
       const tokens = await api.post<AuthTokens>(endpoint, {
         email: data.email,
         password: data.password,
+        ...(role === "recruiter" && companyName.trim()
+          ? { company_name: companyName.trim() }
+          : {}),
       });
       setPendingTokens(tokens);
 
@@ -369,6 +374,33 @@ function RegisterForm() {
             </div>
             {errors.email && <p className="text-xs text-destructive">{errors.email.message}</p>}
           </div>
+
+          {role === "recruiter" && (
+            <div className="space-y-1.5">
+              <label htmlFor="company-name" className="block text-xs font-semibold text-foreground">
+                Nom de votre entreprise
+              </label>
+              <div className="relative">
+                <Building2
+                  size={16}
+                  className="absolute top-1/2 left-3.5 -translate-y-1/2 text-muted-foreground"
+                  aria-hidden="true"
+                />
+                <Input
+                  id="company-name"
+                  type="text"
+                  autoComplete="organization"
+                  placeholder="Ex. : TechCorp SAS"
+                  value={companyName}
+                  onChange={(e) => setCompanyName(e.target.value)}
+                  className="h-11 rounded-xl pr-4 pl-10 text-sm border-border/80 focus-visible:ring-primary/20"
+                />
+              </div>
+              <p className="text-[11px] text-muted-foreground">
+                Une entreprise sera créée pour votre espace recruteur.
+              </p>
+            </div>
+          )}
 
           <div className="space-y-1.5">
             <div className="flex items-center justify-between">

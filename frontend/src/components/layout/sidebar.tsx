@@ -1,18 +1,23 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   BarChart3,
+  Bell,
   Briefcase,
   Building2,
+  CheckCheck,
   ChevronDown,
   ClipboardList,
   LayoutDashboard,
+  Loader2,
   LogOut,
-  Settings,
+  Plug,
+  ShieldCheck,
+  SlidersHorizontal,
   User,
   Users,
   X,
@@ -20,6 +25,8 @@ import {
 
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { notificationsService } from "@/services/notifications.service";
+import type { NotificationResponse } from "@/types/domain";
 
 interface NavItem {
   libelle: string;
@@ -58,7 +65,8 @@ const NAVIGATION: Record<Role, NavSection[]> = {
       titre: "Pilotage",
       items: [
         { libelle: "Indicateurs", href: "/analytics", icone: BarChart3 },
-        { libelle: "Paramètres", href: "/settings", icone: Settings },
+        { libelle: "Entreprise", href: "/settings/general", icone: Building2 },
+        { libelle: "Mon profil", href: "/settings", icone: User },
       ],
     },
   ],
@@ -67,11 +75,25 @@ const NAVIGATION: Record<Role, NavSection[]> = {
       titre: "Administration",
       items: [
         { libelle: "Vue d'ensemble", href: "/overview", icone: LayoutDashboard },
-        { libelle: "Entreprises", href: "/companies", icone: Building2 },
-        { libelle: "Utilisateurs", href: "/users", icone: Users },
         { libelle: "Indicateurs", href: "/analytics", icone: BarChart3 },
-        { libelle: "Paramètres", href: "/settings", icone: Settings },
       ],
+    },
+    {
+      titre: "Configuration",
+      items: [
+        {
+          libelle: "Règles de présélection",
+          href: "/settings/ai-config",
+          icone: SlidersHorizontal,
+        },
+        { libelle: "Sécurité", href: "/settings/security", icone: ShieldCheck },
+        { libelle: "Connexions", href: "/settings/integrations", icone: Plug },
+        { libelle: "Entreprise", href: "/settings/general", icone: Building2 },
+      ],
+    },
+    {
+      titre: "Compte",
+      items: [{ libelle: "Mon profil", href: "/settings", icone: User }],
     },
   ],
 };
@@ -99,8 +121,8 @@ export type Role = "CANDIDAT" | "RECRUITER" | "ADMIN";
 
 export function normaliserRole(role?: string | null): Role {
   const valeur = (role ?? "").toUpperCase();
-  if (valeur.includes("RECRUIT") || valeur.includes("COMPANY")) return "RECRUITER";
   if (valeur.includes("ADMIN")) return "ADMIN";
+  if (valeur.includes("RECRUIT")) return "RECRUITER";
   return "CANDIDAT";
 }
 
@@ -289,6 +311,191 @@ interface TopBarProps {
   role: Role;
 }
 
+function formaterDateNotification(iso: string): string {
+  try {
+    return new Date(iso).toLocaleDateString("fr-FR", {
+      day: "numeric",
+      month: "short",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  } catch {
+    return "";
+  }
+}
+
+/* Cloche de notifications : liste, marquage individuel et « tout marquer comme lu ». */
+function NotificationsBell() {
+  const router = useRouter();
+  const [ouvert, setOuvert] = useState(false);
+  const [notifications, setNotifications] = useState<NotificationResponse[]>([]);
+  const [nonLues, setNonLues] = useState(0);
+  const [chargement, setChargement] = useState(false);
+  const [marquageGlobal, setMarquageGlobal] = useState(false);
+  const conteneur = useRef<HTMLDivElement>(null);
+
+  const charger = useCallback(async () => {
+    setChargement(true);
+    try {
+      const res = await notificationsService.getMesNotifications();
+      setNotifications(res.notifications);
+      setNonLues(res.unread_count);
+    } catch {
+      // ignore
+    } finally {
+      setChargement(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void charger();
+  }, [charger]);
+
+  useEffect(() => {
+    if (ouvert) void charger();
+  }, [ouvert, charger]);
+
+  useEffect(() => {
+    if (!ouvert) return;
+    const fermer = (event: MouseEvent) => {
+      if (conteneur.current && !conteneur.current.contains(event.target as Node)) {
+        setOuvert(false);
+      }
+    };
+    const echap = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setOuvert(false);
+    };
+    document.addEventListener("mousedown", fermer);
+    document.addEventListener("keydown", echap);
+    return () => {
+      document.removeEventListener("mousedown", fermer);
+      document.removeEventListener("keydown", echap);
+    };
+  }, [ouvert]);
+
+  const handleOuvrir = async (notification: NotificationResponse) => {
+    if (!notification.is_read) {
+      try {
+        await notificationsService.markAsRead(notification.id);
+        setNotifications((prev) =>
+          prev.map((n) => (n.id === notification.id ? { ...n, is_read: true } : n))
+        );
+        setNonLues((prev) => Math.max(0, prev - 1));
+      } catch {
+        // ignore
+      }
+    }
+    setOuvert(false);
+    if (notification.link) router.push(notification.link);
+  };
+
+  const handleToutMarquer = async () => {
+    setMarquageGlobal(true);
+    try {
+      await notificationsService.markAllAsRead();
+      setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
+      setNonLues(0);
+    } catch {
+      // ignore
+    } finally {
+      setMarquageGlobal(false);
+    }
+  };
+
+  return (
+    <div className="relative" ref={conteneur}>
+      <button
+        type="button"
+        onClick={() => setOuvert((v) => !v)}
+        aria-haspopup="menu"
+        aria-expanded={ouvert}
+        aria-label={
+          nonLues > 0 ? `Notifications (${nonLues} non lues)` : "Notifications"
+        }
+        className="relative rounded-full border border-border p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+      >
+        <Bell size={16} aria-hidden="true" />
+        {nonLues > 0 && (
+          <span className="absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold text-white">
+            {nonLues > 9 ? "9+" : nonLues}
+          </span>
+        )}
+      </button>
+
+      {ouvert && (
+        <div
+          role="menu"
+          className="absolute right-0 z-50 mt-2 w-80 rounded-lg border border-border bg-popover shadow-lg"
+        >
+          <div className="flex items-center justify-between border-b border-border px-3 py-2">
+            <p className="text-sm font-semibold text-popover-foreground">Notifications</p>
+            {nonLues > 0 && (
+              <button
+                type="button"
+                onClick={() => void handleToutMarquer()}
+                disabled={marquageGlobal}
+                className="flex items-center gap-1 text-xs font-medium text-primary hover:underline disabled:opacity-50"
+              >
+                {marquageGlobal ? (
+                  <Loader2 size={12} className="animate-spin" aria-hidden="true" />
+                ) : (
+                  <CheckCheck size={12} aria-hidden="true" />
+                )}
+                Tout marquer comme lu
+              </button>
+            )}
+          </div>
+          <div className="max-h-80 overflow-y-auto">
+            {chargement ? (
+              <p className="px-3 py-6 text-center text-xs text-muted-foreground">
+                Chargement…
+              </p>
+            ) : notifications.length === 0 ? (
+              <p className="px-3 py-6 text-center text-xs text-muted-foreground">
+                Aucune notification.
+              </p>
+            ) : (
+              <ul>
+                {notifications.map((notification) => (
+                  <li key={notification.id}>
+                    <button
+                      type="button"
+                      role="menuitem"
+                      onClick={() => void handleOuvrir(notification)}
+                      className={cn(
+                        "flex w-full flex-col gap-0.5 border-b border-border/60 px-3 py-2.5 text-left transition-colors hover:bg-muted",
+                        !notification.is_read && "bg-primary/5"
+                      )}
+                    >
+                      <span className="flex items-center gap-2">
+                        {!notification.is_read && (
+                          <span
+                            className="h-1.5 w-1.5 shrink-0 rounded-full bg-primary"
+                            aria-hidden="true"
+                          />
+                        )}
+                        <span className="truncate text-sm font-medium text-popover-foreground">
+                          {notification.title}
+                        </span>
+                      </span>
+                      <span className="line-clamp-2 pl-3.5 text-xs text-muted-foreground">
+                        {notification.message}
+                      </span>
+                      <span className="pl-3.5 text-[10px] text-muted-foreground/70">
+                        {formaterDateNotification(notification.created_at)}
+                      </span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function TopBar({ title, onOpenMenu, nomComplet, email, role }: TopBarProps) {
   const [menuOuvert, setMenuOuvert] = useState(false);
   const conteneur = useRef<HTMLDivElement>(null);
@@ -330,6 +537,7 @@ export function TopBar({ title, onOpenMenu, nomComplet, email, role }: TopBarPro
       </div>
 
       <div className="flex items-center gap-2">
+        <NotificationsBell />
         <div className="hidden lg:block">
           <ThemeToggle />
         </div>

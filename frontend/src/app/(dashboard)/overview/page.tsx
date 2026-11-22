@@ -242,7 +242,7 @@ export default function VueEnsemblePage() {
                             {offre.title}
                           </p>
                           <p className="truncate text-xs text-muted-foreground">
-                            {offre.company_name} · {offre.location}
+                            {offre.company_name} · {offre.formatted_address}
                           </p>
                         </Link>
                       </li>

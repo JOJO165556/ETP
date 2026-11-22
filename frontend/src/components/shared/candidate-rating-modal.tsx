@@ -28,6 +28,7 @@ export function CandidateRatingModal({
   const [hoverRating, setHoverRating] = useState(0);
   const [content, setContent] = useState(initialContent);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [erreur, setErreur] = useState<string | null>(null);
 
   if (!isOpen) return null;
 
@@ -36,13 +37,14 @@ export function CandidateRatingModal({
     if (rating === 0) return;
 
     setIsSubmitting(true);
+    setErreur(null);
     try {
       await onSubmit(rating, content);
       onClose();
       setRating(0);
       setContent("");
-    } catch (error) {
-      console.error("Erreur lors de la soumission:", error);
+    } catch {
+      setErreur("L'évaluation n'a pas pu être enregistrée. Réessayez.");
     } finally {
       setIsSubmitting(false);
     }
@@ -154,6 +156,12 @@ export function CandidateRatingModal({
               Ce commentaire n'est visible que par l'équipe de recrutement.
             </p>
           </div>
+
+          {erreur && (
+            <p role="alert" className="text-sm text-destructive">
+              {erreur}
+            </p>
+          )}
 
           {/* Actions */}
           <div className="flex gap-3 pt-2">

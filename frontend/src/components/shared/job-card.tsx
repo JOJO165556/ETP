@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { MapPin, Banknote, Clock, Building2, ArrowRight } from "lucide-react";
+import { MapPin, Clock, Building2, ArrowRight, Briefcase } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { TechBadge } from "./tech-badge";
 import type { Job } from "@/types/domain";
@@ -10,9 +10,23 @@ interface JobCardProps {
   variant?: "default" | "compact";
 }
 
+function formaterDate(iso: string | null | undefined): string {
+  if (!iso) return "";
+  try {
+    return new Date(iso).toLocaleDateString("fr-FR", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    });
+  } catch {
+    return "";
+  }
+}
+
 /* Carte d'offre d'emploi dense et aérée */
 export function JobCard({ offre, className, variant = "default" }: JobCardProps) {
   const isCompact = variant === "compact";
+  const competences = offre.required_skills ?? [];
 
   return (
     <Link
@@ -27,23 +41,17 @@ export function JobCard({ offre, className, variant = "default" }: JobCardProps)
     >
       <div className="flex items-start justify-between gap-4">
         <div className="flex-1 space-y-2">
-          {/* En-tête : badge score et date */}
+          {/* En-tête : mode de travail et date */}
           <div className="flex items-center gap-2">
-            {offre.match_score != null && (
-              <span 
-                className={cn(
-                  "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold",
-                  offre.match_score >= 80 
-                    ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" 
-                    : offre.match_score >= 60 
-                      ? "bg-indigo-500/10 text-indigo-600 dark:text-indigo-400"
-                      : "bg-amber-500/10 text-amber-600 dark:text-amber-400"
-                )}
-              >
-                {offre.match_score}% match
+            {offre.is_remote && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">
+                <Briefcase size={11} aria-hidden="true" />
+                Télétravail
               </span>
             )}
-            <span className="text-xs text-muted-foreground">{offre.posted_at}</span>
+            <span className="text-xs text-muted-foreground">
+              {formaterDate(offre.created_at)}
+            </span>
           </div>
 
           {/* Titre et entreprise */}
@@ -53,14 +61,14 @@ export function JobCard({ offre, className, variant = "default" }: JobCardProps)
             </h3>
             <div className="flex items-center gap-1 text-sm text-muted-foreground mt-0.5">
               <Building2 size={14} className="text-muted-foreground/60" />
-              {offre.company_name}
+              {offre.company_name ?? "Entreprise"}
             </div>
           </div>
         </div>
 
         {/* Bouton rapide */}
         {!isCompact && (
-          <div 
+          <div
             className={cn(
               "flex h-8 w-8 items-center justify-center rounded-full border",
               "text-muted-foreground/60",
@@ -78,36 +86,32 @@ export function JobCard({ offre, className, variant = "default" }: JobCardProps)
         "flex flex-wrap items-center gap-3 text-xs text-muted-foreground",
         isCompact ? "mt-2" : "mt-3"
       )}>
-        <span className="flex items-center gap-1.5">
-          <MapPin className="h-[12px] w-[12px] text-muted-foreground/60" aria-hidden="true" />
-          {offre.location}
-        </span>
-        {offre.salary_range && (
+        {offre.formatted_address && (
           <span className="flex items-center gap-1.5">
-            <Banknote className="h-[12px] w-[12px] text-muted-foreground/60" aria-hidden="true" />
-            {offre.salary_range}
+            <MapPin className="h-[12px] w-[12px] text-muted-foreground/60" aria-hidden="true" />
+            {offre.formatted_address}
           </span>
         )}
-        {offre.contract_type && (
+        {!offre.is_remote && offre.formatted_address && (
           <span className="flex items-center gap-1.5">
             <Clock className="h-[12px] w-[12px] text-muted-foreground/60" aria-hidden="true" />
-            {offre.contract_type}
+            Présentiel
           </span>
         )}
       </div>
 
-      {/* Badges technologiques */}
-      {offre.tags && offre.tags.length > 0 && (
+      {/* Badges des compétences requises */}
+      {competences.length > 0 && (
         <div className={cn(
           "flex flex-wrap gap-1.5",
           isCompact ? "mt-2" : "mt-3"
         )}>
-          {offre.tags.slice(0, isCompact ? 3 : 5).map((tag) => (
-            <TechBadge key={tag} libelle={tag} />
+          {competences.slice(0, isCompact ? 3 : 5).map((competence) => (
+            <TechBadge key={competence} libelle={competence} />
           ))}
-          {!isCompact && offre.tags.length > 5 && (
+          {!isCompact && competences.length > 5 && (
             <span className="text-xs text-muted-foreground">
-              +{offre.tags.length - 5}
+              +{competences.length - 5}
             </span>
           )}
         </div>

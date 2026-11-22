@@ -19,7 +19,7 @@ import { StatePanel } from "@/components/shared/state-panel";
 import { Skeleton } from "@/components/ui/skeleton";
 import { usersService } from "@/services/users.service";
 import { cn } from "@/lib/utils";
-import type { CandidatVivier, FormationResume } from "@/types/domain";
+import type { FormationResume, UserBriefResponse } from "@/types/domain";
 
 function periode(debut: string | null, fin: string | null, enCours: boolean): string {
   const format = (iso: string | null) => {
@@ -32,8 +32,8 @@ function periode(debut: string | null, fin: string | null, enCours: boolean): st
 }
 
 export default function CandidatsPage() {
-  const [candidats, setCandidats] = useState<CandidatVivier[]>([]);
-  const [actif, setActif] = useState<CandidatVivier | null>(null);
+  const [candidats, setCandidats] = useState<UserBriefResponse[]>([]);
+  const [actif, setActif] = useState<UserBriefResponse | null>(null);
   const [recherche, setRecherche] = useState("");
   const [chargement, setChargement] = useState(true);
   const [erreur, setErreur] = useState(false);
@@ -74,7 +74,7 @@ export default function CandidatsPage() {
     );
   }, [candidats, recherche]);
 
-  const telechargerCv = async (candidat: CandidatVivier) => {
+  const telechargerCv = async (candidat: UserBriefResponse) => {
     if (!candidat.has_cv) return;
     setTelechargement(candidat.id);
     try {
@@ -286,7 +286,7 @@ export default function CandidatsPage() {
                       </div>
                       <p className="mt-1 text-sm text-foreground/80">{experience.entreprise}</p>
                       <p className="mt-0.5 text-xs text-muted-foreground">
-                        {periode(experience.date_debut, experience.date_fin ?? null, experience.en_cours)}
+                        {periode(experience.date_debut ?? null, experience.date_fin ?? null, experience.en_cours)}
                       </p>
                       {experience.description && (
                         <p className="mt-2 text-sm leading-relaxed text-muted-foreground">

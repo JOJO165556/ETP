@@ -14,7 +14,7 @@ import {
 import { PageHeader } from "@/components/shared/page-header";
 import { StatePanel } from "@/components/shared/state-panel";
 import { Skeleton } from "@/components/ui/skeleton";
-import type { CandidatureAPI } from "@/types/domain";
+import type { Application } from "@/types/domain";
 
 const ETAPES: EtapeCandidature[] = ["POSTULE", "PREEVALUATION", "ENTRETIEN", "OFFRE", "EMBAUCHE"];
 
@@ -56,7 +56,7 @@ function pipeline(etapeActuelle: EtapeCandidature, rejetee: boolean): ConfigEtap
 }
 
 export default function CandidaturesPage() {
-  const [candidatures, setCandidatures] = useState<CandidatureAPI[]>([]);
+  const [candidatures, setCandidatures] = useState<Application[]>([]);
   const [chargement, setChargement] = useState(true);
   const [erreur, setErreur] = useState(false);
 
@@ -129,9 +129,9 @@ export default function CandidaturesPage() {
                 <div className="min-w-0 flex-1 space-y-3">
                   <div className="flex flex-wrap items-center gap-2">
                     <StatutBadge statut={app.statut} />
-                    {dateRelative(app.updated_at ?? app.created_at) && (
+                    {dateRelative(app.updated_at ?? app.created_at ?? null) && (
                       <span className="text-xs text-muted-foreground">
-                        {dateRelative(app.updated_at ?? app.created_at)}
+                        {dateRelative(app.updated_at ?? app.created_at ?? null)}
                       </span>
                     )}
                   </div>

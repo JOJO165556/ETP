@@ -19,11 +19,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import { StatePanel } from "@/components/shared/state-panel";
 import { ToggleSwitch } from "@/components/ui/toggle-switch";
 import { usersService } from "@/services/users.service";
-import type { ExperiencePro, FormationPro, UserProfil } from "@/types/domain";
+import type { ExperienceResponse, FormationResponse, UserResponse } from "@/types/domain";
 
-function forceProfil(profil: UserProfil | null): number {
+function forceProfil(profil: UserResponse | null): number {
   if (!profil?.profile) return 0;
   const p = profil.profile;
   let score = 0;
@@ -55,7 +57,7 @@ const SELECT_CONTRATS = ["CDI", "CDD", "Freelance", "Stage", "Alternance", "Int�
 /* Page de profil et paramètres du candidat : données réelles (informations,
    compétences, expériences professionnelles, formations, visibilité). */
 export default function ProfilPage() {
-  const [profil, setProfil] = useState<UserProfil | null>(null);
+  const [profil, setProfil] = useState<UserResponse | null>(null);
   const [chargement, setChargement] = useState(true);
   const [prenom, setPrenom] = useState("");
   const [nom, setNom] = useState("");
@@ -68,12 +70,12 @@ export default function ProfilPage() {
   const [sauvegarde, setSauvegarde] = useState(false);
   const [erreur, setErreur] = useState<string | null>(null);
 
-  const [experiences, setExperiences] = useState<ExperiencePro[]>([]);
-  const [formations, setFormations] = useState<FormationPro[]>([]);
+  const [experiences, setExperiences] = useState<ExperienceResponse[]>([]);
+  const [formations, setFormations] = useState<FormationResponse[]>([]);
 
   /* Formulaire expérience */
   const [formExpOuvert, setFormExpOuvert] = useState(false);
-  const [expEnEdition, setExpEnEdition] = useState<ExperiencePro | null>(null);
+  const [expEnEdition, setExpEnEdition] = useState<ExperienceResponse | null>(null);
   const [expPoste, setExpPoste] = useState("");
   const [expEntreprise, setExpEntreprise] = useState("");
   const [expContrat, setExpContrat] = useState("CDI");
@@ -85,7 +87,7 @@ export default function ProfilPage() {
 
   /* Formulaire formation */
   const [formFormOuvert, setFormFormOuvert] = useState(false);
-  const [formEnEdition, setFormEnEdition] = useState<FormationPro | null>(null);
+  const [formEnEdition, setFormEnEdition] = useState<FormationResponse | null>(null);
   const [formaEtablissement, setFormaEtablissement] = useState("");
   const [formaDiplome, setFormaDiplome] = useState("");
   const [formaDomaine, setFormaDomaine] = useState("");
@@ -149,7 +151,6 @@ export default function ProfilPage() {
     }
   };
 
-  /* --- Expériences : CRUD --- */
   const ouvrirAjoutExp = () => {
     setExpEnEdition(null);
     setExpPoste("");
@@ -162,7 +163,7 @@ export default function ProfilPage() {
     setFormExpOuvert(true);
   };
 
-  const ouvrirEditionExp = (exp: ExperiencePro) => {
+  const ouvrirEditionExp = (exp: ExperienceResponse) => {
     setExpEnEdition(exp);
     setExpPoste(exp.poste);
     setExpEntreprise(exp.entreprise);
@@ -217,7 +218,6 @@ export default function ProfilPage() {
     }
   };
 
-  /* --- Formations : CRUD --- */
   const ouvrirAjoutForm = () => {
     setFormEnEdition(null);
     setFormaEtablissement("");
@@ -227,7 +227,7 @@ export default function ProfilPage() {
     setFormFormOuvert(true);
   };
 
-  const ouvrirEditionForm = (formation: FormationPro) => {
+  const ouvrirEditionForm = (formation: FormationResponse) => {
     setFormEnEdition(formation);
     setFormaEtablissement(formation.etablissement);
     setFormaDiplome(formation.diplome);
@@ -283,24 +283,33 @@ export default function ProfilPage() {
 
   if (chargement) {
     return (
-      <div className="p-10 text-muted-foreground">
-        <div className="h-8 w-48 animate-pulse rounded-md bg-muted" />
-        <div className="mt-4 h-32 animate-pulse rounded-2xl bg-muted/70" />
-        <div className="mt-4 h-32 animate-pulse rounded-2xl bg-muted/70" />
+      <div className="mx-auto w-full max-w-6xl space-y-4 p-6 lg:p-10">
+        <Skeleton className="h-8 w-48" />
+        <Skeleton className="h-32 w-full rounded-xl" />
+        <Skeleton className="h-32 w-full rounded-xl" />
       </div>
     );
   }
 
   if (!profil) {
-    return <div className="p-10 text-destructive">Erreur de chargement du profil.</div>;
+    return (
+      <div className="mx-auto w-full max-w-6xl p-6 lg:p-10">
+        <StatePanel
+          tone="error"
+          title="Votre profil n'a pas pu se charger"
+          description="La connexion au serveur a échoué. Réessayez pour retrouver vos informations."
+          actionLabel="Réessayer"
+          onAction={() => window.location.reload()}
+        />
+      </div>
+    );
   }
 
   return (
-    <div className="flex h-full">
-      {/* Contenu de la page */}
-      <div className="flex-1 overflow-y-auto p-6 lg:p-10">
+    <div className="mx-auto w-full max-w-6xl p-6 lg:p-10">
+      <div className="flex-1">
         <div className="mb-6 flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-foreground">Mon Profil</h1>
+          <h1 className="text-2xl font-semibold tracking-tight text-foreground">Mon profil</h1>
           <Button onClick={enregistrer} disabled={enregistrement} className="gap-2">
             {enregistrement ? "Enregistrement..." : "Enregistrer les modifications"}
           </Button>
@@ -484,7 +493,7 @@ export default function ProfilPage() {
                     </div>
                     <p className="text-sm font-medium text-foreground/80">{exp.entreprise}</p>
                     <p className="text-xs text-muted-foreground">
-                      {formaterDateFR(exp.date_debut)} à {exp.en_cours ? "Aujourd'hui" : formaterDateFR(exp.date_fin)}
+                      {formaterDateFR(exp.date_debut)} à {exp.en_cours ? "Aujourd'hui" : formaterDateFR(exp.date_fin ?? null)}
                     </p>
                     {exp.description && (
                       <p className="text-sm leading-relaxed text-foreground/70">{exp.description}</p>
@@ -598,10 +607,10 @@ export default function ProfilPage() {
           </section>
         </div>
 
-        {/* Visibilité & Confidentialité */}
+        {/* Visibilité et confidentialité */}
         <section>
-          <h2 className="mb-4 flex items-center gap-2 text-xl font-bold text-foreground">
-            Visibilité & Confidentialité
+          <h2 className="mb-4 flex items-center gap-2 text-xl font-semibold tracking-tight text-foreground">
+            Visibilité et confidentialité
           </h2>
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="flex items-center justify-between rounded-xl border border-border bg-card p-5">
@@ -625,7 +634,7 @@ export default function ProfilPage() {
                   <Eye size={16} aria-hidden="true" />
                 </div>
                 <div>
-                  <span className="block text-sm font-medium text-foreground">Profil Public</span>
+                  <span className="block text-sm font-medium text-foreground">Profil public</span>
                   <span className="block text-xs text-muted-foreground">
                     Votre fiche est visible par les recruteurs
                   </span>
@@ -635,24 +644,6 @@ export default function ProfilPage() {
             </div>
           </div>
         </section>
-      </div>
-
-      {/* Sidebar Éditeur */}
-      <div className="border-border hidden w-64 border-l bg-background p-6 lg:block">
-        <h3 className="mb-6 text-sm font-bold text-foreground">
-          ETP Workspace <br />
-          <span className="text-xs font-normal text-muted-foreground">Éditeur de profil</span>
-        </h3>
-
-        <Button variant="secondary" className="w-full justify-start">Profil</Button>
-
-        <Button
-          onClick={enregistrer}
-          disabled={enregistrement}
-          className="mt-6 w-full gap-2"
-        >
-          <CheckCircle2 size={15} aria-hidden="true" /> Publier le Profil
-        </Button>
       </div>
     </div>
   );

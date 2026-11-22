@@ -9,6 +9,8 @@ import { PageHeader } from "@/components/shared/page-header";
 import { StatePanel } from "@/components/shared/state-panel";
 import { Skeleton } from "@/components/ui/skeleton";
 import { interviewsService, type EntretienAPI, type StatutEntretien } from "@/services/interviews.service";
+import { usersService } from "@/services/users.service";
+import { normaliserRole, type Role } from "@/components/layout/sidebar";
 import { cn } from "@/lib/utils";
 
 const STATUTS: Record<StatutEntretien, { libelle: string; variante: "success" | "secondary" | "destructive" | "warning" }> = {
@@ -40,6 +42,7 @@ function formaterHeure(iso: string): string {
 
 export default function EntretiensPage() {
   const [entretiens, setEntretiens] = useState<EntretienAPI[]>([]);
+  const [role, setRole] = useState<Role | null>(null);
   const [chargement, setChargement] = useState(true);
   const [erreur, setErreur] = useState(false);
   const [filtre, setFiltre] = useState<StatutEntretien | "tous">("tous");
@@ -49,7 +52,12 @@ export default function EntretiensPage() {
     setChargement(true);
     setErreur(false);
     try {
-      setEntretiens(await interviewsService.getAVenir());
+      const [profil, liste] = await Promise.all([
+        usersService.getMonProfil(),
+        interviewsService.getMesEntretiens(),
+      ]);
+      setRole(normaliserRole(profil.role));
+      setEntretiens(liste);
     } catch {
       setErreur(true);
     } finally {
@@ -124,7 +132,7 @@ export default function EntretiensPage() {
           title={entretiens.length === 0 ? "Aucun entretien planifié" : "Aucun entretien pour ce filtre"}
           description={
             entretiens.length === 0
-              ? "Les entretiens apparaissent ici dès qu'une date est fixée avec un candidat."
+              ? "Les entretiens apparaissent ici dès qu'une date est fixée."
               : "Changez de filtre pour voir les autres rendez-vous."
           }
         />
@@ -173,7 +181,14 @@ export default function EntretiensPage() {
                       )}
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      Référence candidature {entretien.application_id.slice(0, 8)}
+                      {[
+                        entretien.job_title,
+                        entretien.company_name,
+                        role !== "CANDIDAT" ? entretien.candidate_name : null,
+                      ]
+                        .filter(Boolean)
+                        .join(" · ") ||
+                        `Référence candidature ${entretien.application_id.slice(0, 8)}`}
                     </p>
                   </div>
                 </div>
@@ -195,7 +210,7 @@ export default function EntretiensPage() {
                       Rejoindre
                     </Button>
                   )}
-                  {entretien.status === "scheduled" && (
+                  {role !== null && role !== "CANDIDAT" && entretien.status === "scheduled" && (
                     <Button
                       variant="outline"
                       size="sm"
@@ -216,7 +231,7 @@ export default function EntretiensPage() {
 
       <p className="flex items-center gap-2 text-xs text-muted-foreground">
         <Calendar size={13} aria-hidden="true" />
-        Chaque entretien confirmé déclenche une notification par email aux personnes concernées.
+        Chaque entretien confirmé envoie une notification aux personnes concernées.
       </p>
     </div>
   );
