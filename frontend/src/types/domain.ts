@@ -1,295 +1,96 @@
-import type { JobId, CompanyId, UserId } from "./index";
+import type { components } from "./schema";
 
-// Offres d'emploi
+/*
+ * Types domaine du frontend.
+ *
+ * Les types qui reflètent l'API FastAPI sont dérivés de `schema.d.ts`,
+ * généré depuis openapi.json (npm run types:generate). Toute modification
+ * de schéma backend qui casse le type-check signale une évolution du contrat.
+ * Les types purement visuels (non adossés à l'API) restent déclarés ici.
+ */
 
-export type TypeContrat = "CDI" | "CDD" | "Freelance" | "Stage" | "Alternance";
-export type ModesTravail = "Télétravail" | "Hybride" | "Présentiel";
-export type NiveauExperience = "Junior" | "Confirmé" | "Senior" | "Lead" | "Directeur";
+export type Schemas = components["schemas"];
 
-export interface Offre {
-  id: JobId;
-  title: string;
-  company_name: string;
-  company_id: CompanyId;
-  company_logo_url?: string;
-  location: string;
-  latitude?: number;
-  longitude?: number;
-  work_mode?: ModesTravail;
-  contract_type?: TypeContrat;
-  salary_range?: string;
-  salary_min?: number;
-  salary_max?: number;
-  experience_level?: NiveauExperience;
-  tags: string[];
-  match_score?: number;
-  posted_at: string;
-  applicants_count?: number;
-  description?: string;
-  responsibilities?: string[];
-  is_active: boolean;
-}
 
-/* Alias publié : permet d'importer Job ou Offre selon le contexte */
-export type Job = Offre;
+export type JobStatus = Schemas["JobStatus"];
+export type Job = Schemas["JobResponse"];
+export type JobCreate = Schemas["JobCreate"];
+export type JobUpdate = Schemas["JobUpdate"];
+export type JobSearchFilters = Schemas["JobSearchFilters"];
 
-export interface FiltresOffres {
-  search?: string;
-  work_mode?: ModesTravail;
-  salary_min?: number;
-  salary_max?: number;
-  experience_level?: NiveauExperience;
-  tags?: string[];
-  page?: number;
-  size?: number;
-}
-
-/* Analyse d'une compétence par rapport au profil du candidat */
+/* Analyse d'une compétence par rapport au profil du candidat (vue calculée côté client) */
 export interface AnalyseCompetence {
   libelle: string;
   statut: "validee" | "manquante" | "partielle";
   note?: string;
 }
 
-export interface ResponsableRecrutement {
-  nom: string;
-  titre: string;
-  avatar_url?: string;
-}
 
-/* Détail complet d'une offre, incluant l'analyse de correspondance */
-export interface DetailOffre extends Offre {
-  overview?: string;
-  responsibilities: string[];
-  skill_analysis?: AnalyseCompetence[];
-  culture_perks?: string[];
-  hiring_manager?: ResponsableRecrutement;
-  similar_jobs?: Offre[];
-}
+export type ApplicationStage = Schemas["ApplicationStage"];
+export type Application = Schemas["ApplicationResponse"];
+export type ApplicationSubmit = Schemas["ApplicationSubmitResponse"];
+export type ApplicationStageUpdate = Schemas["ApplicationUpdateStage"];
+export type TaskStatus = Schemas["TaskStatusResponse"];
 
-// Candidatures
-
-export type EtapeCandidature =
-  "POSTULE" | "PREEVALUATION" | "ENTRETIEN" | "OFFRE" | "EMBAUCHE";
-export type StatutCandidature = "ACTIVE" | "ACTION_REQUISE" | "ARCHIVEE";
-
-export interface ActionCandidature {
-  libelle: string;
-  variante: "primaire" | "secondaire";
-  href?: string;
-}
-
-export interface Candidature {
+/* Note d'évaluation recruteur : l'API expose un dict (pas de schéma Pydantic dédié). */
+export interface ApplicationNote {
   id: string;
-  intitule_poste: string;
-  nom_entreprise: string;
-  logo_entreprise?: string;
-  lieu?: string;
-  salaire?: string;
-  statut: StatutCandidature;
-  etape_actuelle: EtapeCandidature;
-  etapes_completees: EtapeCandidature[];
-  mise_a_jour: string;
-  prochaine_action?: ActionCandidature;
-  prochain_evenement?: {
-    libelle: string;
-    date_heure: string;
-  };
-  motif_rejet?: string;
-}
-
-// Profil candidat
-
-export type NiveauCompetence = "DEBUTANT" | "INTERMEDIAIRE" | "AVANCE" | "EXPERT";
-
-export interface ExperienceProfessionnelle {
-  id: string;
-  entreprise: string;
-  poste: string;
-  type_contrat?: string;
-  date_debut: string;
-  date_fin?: string;
-  en_cours: boolean;
-  description?: string;
-  logo_entreprise?: string;
-}
-
-export interface Competence {
-  id: string;
-  nom: string;
-  niveau: NiveauCompetence;
-  est_verifiee?: boolean;
-}
-
-export interface FormationDiplome {
-  id: string;
-  etablissement: string;
-  diplome: string;
-  domaine?: string;
-  annee?: number;
-  logo_url?: string;
-}
-
-export interface ProfilCandidat {
-  id: UserId;
-  nom_complet: string;
-  titre?: string;
-  avatar_url?: string;
-  localisation?: string;
-  email: string;
-  force_profil: number; // 0 à 100
-  conseil_completion?: string;
-  experiences: ExperienceProfessionnelle[];
-  competences: Competence[];
-  formations: FormationDiplome[];
-  profil_public: boolean;
-  recherchable: boolean;
-}
-
-// Vivier de talents (vue recruteur) : aligné sur UserBriefResponse du backend
-
-export interface CandidatVivier {
-  id: UserId;
-  email: string;
-  nom_complet: string | null;
-  titre?: string | null;
-  localisation?: string | null;
-  skills: string[];
-  has_cv: boolean;
-  profil_public: boolean;
-  recherchable: boolean;
-  created_at?: string | null;
-  experiences: ExperienceResume[];
-  formations: FormationResume[];
-}
-
-// --- Types alignés sur les réponses réelles du backend FastAPI ---
-
-export interface ProfileResponse {
-  id: string;
-  user_id: string;
-  first_name: string | null;
-  last_name: string | null;
-  phone: string | null;
-  raw_address: string | null;
-  cv_key: string | null;
-  skills: string[] | null;
-  is_profile_public: boolean;
-  is_searchable: boolean;
-  experiences: ExperiencePro[] | null;
-  formations: FormationPro[] | null;
-}
-
-export interface ExperiencePro {
-  id: string;
-  profile_id: string;
-  entreprise: string;
-  poste: string;
-  type_contrat: string | null;
-  date_debut: string;
-  date_fin: string | null;
-  en_cours: boolean;
-  description: string | null;
-  ordre: number;
-}
-
-export interface FormationPro {
-  id: string;
-  profile_id: string;
-  etablissement: string;
-  diplome: string;
-  domaine: string | null;
-  annee: number;
-  ordre: number;
-}
-
-export interface ExperiencePayload {
-  entreprise: string;
-  poste: string;
-  type_contrat?: string | null;
-  date_debut: string;
-  date_fin?: string | null;
-  en_cours?: boolean;
-  description?: string | null;
-}
-
-export interface FormationPayload {
-  etablissement: string;
-  diplome: string;
-  domaine?: string | null;
-  annee: number;
-}
-
-export interface ExperienceResume {
-  poste: string;
-  entreprise: string;
-  type_contrat?: string | null;
-  date_debut: string | null;
-  date_fin: string | null;
-  en_cours: boolean;
-  description?: string | null;
-}
-
-export interface FormationResume {
-  diplome: string;
-  etablissement: string;
-  domaine?: string | null;
-  annee: number | null;
-}
-
-export interface UserProfil {
-  id: string;
-  email: string;
-  role: string;
-  is_active: boolean;
-  company_id: string | null;
-  profile: ProfileResponse | null;
-}
-
-export interface MiseAJourProfilPayload {
-  email?: string;
-  password?: string;
-  profile?: {
-    first_name?: string | null;
-    last_name?: string | null;
-    phone?: string | null;
-    raw_address?: string | null;
-    skills?: string[];
-    is_profile_public?: boolean;
-    is_searchable?: boolean;
-  };
-}
-
-/* Candidature telle que renvoyée par GET /applications/me */
-export interface CandidatureAPI {
-  id: string;
-  job_id: string;
-  candidate_id: string;
-  stage: string;
-  resume_storage_path: string | null;
-  matching_score: number | null;
-  celery_task_id: string | null;
-  celery_task_status: string | null;
-  celery_task_result: Record<string, unknown> | null;
-  job_title: string | null;
-  company_name: string | null;
+  application_id: string;
+  author_id: string;
+  content: string;
+  rating: number | null;
   created_at: string | null;
-  updated_at: string | null;
 }
 
-// Analytiques
 
-export interface ResumeAnalytiques {
-  vues_profil: number;
-  evolution_vues: number;
-  nouveaux_matchs: number;
-  candidatures_actives: number;
-  taux_entretien: number;
-  taux_offre: number;
-}
+export type InterviewStatus = Schemas["InterviewStatus"];
+export type Interview = Schemas["InterviewRead"];
+export type InterviewCreate = Schemas["InterviewCreate"];
+export type InterviewUpdate = Schemas["InterviewUpdate"];
 
-/* Alias anglais conservés pour compatibilité avec le service backend */
-export type { Offre as JobDetail, CandidatVivier as TalentPoolCandidate };
-export type { ProfilCandidat as CandidateProfile };
-export type { AnalyseCompetence as SkillAnalysis };
-export type { FiltresOffres as JobFilters };
+
+export type ProfileResponse = Schemas["ProfileResponse"];
+export type ProfileUpdate = Schemas["ProfileUpdate"];
+export type ExperienceResponse = Schemas["ExperienceResponse"];
+export type ExperienceCreate = Schemas["ExperienceCreate"];
+export type ExperienceUpdate = Schemas["ExperienceUpdate"];
+export type FormationResponse = Schemas["FormationResponse"];
+export type FormationCreate = Schemas["FormationCreate"];
+export type FormationUpdate = Schemas["FormationUpdate"];
+export type ExperienceResume = Schemas["ExperienceResume"];
+export type FormationResume = Schemas["FormationResume"];
+
+export type UserResponse = Schemas["UserResponse"];
+export type UserMeUpdate = Schemas["UserMeUpdate"];
+export type UserBriefResponse = Schemas["UserBriefResponse"];
+
+
+export type CompanyResponse = Schemas["CompanyResponse"];
+export type CompanyCreate = Schemas["CompanyCreate"];
+export type CompanyUpdate = Schemas["CompanyUpdate"];
+
+
+export type NotificationResponse = Schemas["NotificationResponse"];
+export type NotificationListResponse = Schemas["NotificationListResponse"];
+export type NotificationMarkedResponse = Schemas["NotificationMarkedResponse"];
+export type NotificationReadAllResponse = Schemas["NotificationReadAllResponse"];
+export type NotificationType = Schemas["NotificationType"];
+
+
+export type SearchResult = Schemas["SearchResult"];
+export type CandidateMatchResponse = Schemas["CandidateMatchResponse"];
+
+
+export type CandidateResume = Schemas["CandidateResume"];
+export type AnalyticsDashboard = Schemas["AnalyticsDashboard"];
+
+
+export type AIJobConfigResponse = Schemas["AIJobConfigResponse"];
+export type AIJobConfigUpdate = Schemas["AIJobConfigUpdate"];
+export type DataExportResponse = Schemas["DataExportResponse"];
+export type DataDeletionResponse = Schemas["DataDeletionResponse"];
+export type AnonymizationResponse = Schemas["AnonymizationResponse"];
+
+
+export type TokenResponse = Schemas["Token"];
+export type RegisterRequest = Schemas["RegisterRequest"];

@@ -14,9 +14,10 @@ const TITRES: Array<{ motif: RegExp; titre: string }> = [
   { motif: /^\/candidates/, titre: "Candidats" },
   { motif: /^\/interviews/, titre: "Entretiens" },
   { motif: /^\/analytics/, titre: "Indicateurs" },
-  { motif: /^\/settings/, titre: "Paramètres" },
-  { motif: /^\/companies/, titre: "Entreprises" },
-  { motif: /^\/users/, titre: "Utilisateurs" },
+  { motif: /^\/settings\/ai-config/, titre: "Règles de présélection" },
+  { motif: /^\/settings\/security/, titre: "Sécurité" },
+  { motif: /^\/settings\/integrations/, titre: "Connexions" },
+  { motif: /^\/settings/, titre: "Mon profil" },
 ];
 
 function titreDepuisChemin(chemin: string): string {

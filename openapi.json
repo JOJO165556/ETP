@@ -1,0 +1,6997 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Enterprise Talent Platform",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/metrics": {
+      "get": {
+        "summary": "Metrics",
+        "description": "Endpoint that serves Prometheus metrics.",
+        "operationId": "metrics_metrics_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/login": {
+      "post": {
+        "tags": [
+          "Authentification"
+        ],
+        "summary": "Se connecter",
+        "operationId": "login_for_access_token_api_v1_auth_login_post",
+        "requestBody": {
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_login_for_access_token_api_v1_auth_login_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Token"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/register": {
+      "post": {
+        "tags": [
+          "Authentification"
+        ],
+        "summary": "Créer un compte candidat",
+        "operationId": "register_api_v1_auth_register_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Token"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/register/recruiter": {
+      "post": {
+        "tags": [
+          "Authentification"
+        ],
+        "summary": "Créer un compte recruteur",
+        "operationId": "register_recruiter_api_v1_auth_register_recruiter_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Token"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/refresh": {
+      "post": {
+        "tags": [
+          "Authentification"
+        ],
+        "summary": "Rafraîchir les tokens",
+        "operationId": "refresh_token_api_v1_auth_refresh_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RefreshTokenRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Token"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/logout": {
+      "post": {
+        "tags": [
+          "Authentification"
+        ],
+        "summary": "Se déconnecter (révoque le refresh token)",
+        "description": "Inscrit le refresh token en blacklist Redis jusqu'à son expiration.",
+        "operationId": "logout_api_v1_auth_logout_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RefreshTokenRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/verify-email": {
+      "get": {
+        "tags": [
+          "Authentification"
+        ],
+        "summary": "Vérifier son adresse email",
+        "description": "Active le compte à partir du token signé envoyé par email (24h).",
+        "operationId": "verify_email_api_v1_auth_verify_email_get",
+        "parameters": [
+          {
+            "name": "token",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "Token de vérification reçu par email",
+              "title": "Token"
+            },
+            "description": "Token de vérification reçu par email"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/resend-verification": {
+      "post": {
+        "tags": [
+          "Authentification"
+        ],
+        "summary": "Renvoyer le lien de vérification d'email",
+        "description": "Réponse générique (anti-énumération) et envoi limité en fréquence.",
+        "operationId": "resend_verification_api_v1_auth_resend_verification_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResendVerificationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/change-password": {
+      "post": {
+        "tags": [
+          "Authentification"
+        ],
+        "summary": "Changer de mot de passe",
+        "operationId": "change_password_api_v1_auth_change_password_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChangePasswordRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/auth/firebase": {
+      "post": {
+        "tags": [
+          "Authentification"
+        ],
+        "summary": "Se connecter via un ID token Firebase",
+        "description": "Recoit un ID token Firebase (issu du SDK client : email/password, Google,\nFacebook ou Phone). Le verifie cote serveur avec firebase-admin, cree ou\nlie le compte local (firebase_uid) puis emet les JWT ETP.",
+        "operationId": "firebase_login_api_v1_auth_firebase_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FirebaseLoginRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Token"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/me": {
+      "get": {
+        "tags": [
+          "Authentification"
+        ],
+        "summary": "Profil de l'utilisateur connecté",
+        "operationId": "get_me_api_v1_auth_me_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/auth/forgot-password": {
+      "post": {
+        "tags": [
+          "Authentification"
+        ],
+        "summary": "Demander la réinitialisation du mot de passe",
+        "description": "Génère un token de réinitialisation pour l'email donné.\nRépond toujours 200 pour éviter l'énumération d'emails.\nEn production, ce token serait envoyé par email (ex: SendGrid).",
+        "operationId": "forgot_password_api_v1_auth_forgot_password_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ForgotPasswordRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/reset-password": {
+      "post": {
+        "tags": [
+          "Authentification"
+        ],
+        "summary": "Réinitialiser le mot de passe via un token",
+        "description": "Accepte un token de réinitialisation valide et met à jour le mot de passe.",
+        "operationId": "reset_password_api_v1_auth_reset_password_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResetPasswordRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/send-otp": {
+      "post": {
+        "tags": [
+          "Authentification"
+        ],
+        "summary": "Envoyer un code OTP par email",
+        "description": "Envoie un code OTP à 6 chiffres via Resend et le stocke dans Redis (10 minutes).",
+        "operationId": "send_otp_endpoint_api_v1_auth_send_otp_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OtpRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/verify-otp": {
+      "post": {
+        "tags": [
+          "Authentification"
+        ],
+        "summary": "Vérifier un code OTP",
+        "description": "Valide le code OTP saisi et marque le compte comme vérifié.",
+        "operationId": "verify_otp_endpoint_api_v1_auth_verify_otp_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OtpVerifyRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/users/register": {
+      "post": {
+        "tags": [
+          "Utilisateurs"
+        ],
+        "summary": "Inscription publique d'un candidat",
+        "description": "Inscription publique pour les candidats.\nLe rôle est forcé à CANDIDATE.",
+        "operationId": "register_candidate_api_v1_users_register_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/users/admin": {
+      "post": {
+        "tags": [
+          "Utilisateurs"
+        ],
+        "summary": "Création d'un utilisateur par un Superadmin",
+        "description": "Création d'un utilisateur (ex: recruteur, admin entreprise) par un superadmin.",
+        "operationId": "create_user_by_admin_api_v1_users_admin_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserAdminCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/users/me": {
+      "get": {
+        "tags": [
+          "Utilisateurs"
+        ],
+        "summary": "Obtenir son propre profil",
+        "description": "Récupère le profil de l'utilisateur connecté via son Token JWT.",
+        "operationId": "get_my_profile_api_v1_users_me_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      },
+      "patch": {
+        "tags": [
+          "Utilisateurs"
+        ],
+        "summary": "Modifier son propre profil",
+        "description": "Permet à l'utilisateur connecté de modifier ses informations et son profil.",
+        "operationId": "update_my_profile_api_v1_users_me_patch",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserMeUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/users/me/experiences": {
+      "get": {
+        "tags": [
+          "Utilisateurs"
+        ],
+        "summary": "Lister ses expériences professionnelles",
+        "operationId": "list_my_experiences_api_v1_users_me_experiences_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ExperienceResponse"
+                  },
+                  "type": "array",
+                  "title": "Response List My Experiences Api V1 Users Me Experiences Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "Utilisateurs"
+        ],
+        "summary": "Ajouter une expérience professionnelle",
+        "operationId": "create_my_experience_api_v1_users_me_experiences_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExperienceCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExperienceResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/users/me/experiences/{experience_id}": {
+      "patch": {
+        "tags": [
+          "Utilisateurs"
+        ],
+        "summary": "Modifier une expérience professionnelle",
+        "operationId": "update_my_experience_api_v1_users_me_experiences__experience_id__patch",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "experience_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Experience Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExperienceUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExperienceResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Utilisateurs"
+        ],
+        "summary": "Supprimer une expérience professionnelle",
+        "operationId": "delete_my_experience_api_v1_users_me_experiences__experience_id__delete",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "experience_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Experience Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/users/me/formations": {
+      "get": {
+        "tags": [
+          "Utilisateurs"
+        ],
+        "summary": "Lister ses formations / diplômes",
+        "operationId": "list_my_formations_api_v1_users_me_formations_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/FormationResponse"
+                  },
+                  "type": "array",
+                  "title": "Response List My Formations Api V1 Users Me Formations Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "Utilisateurs"
+        ],
+        "summary": "Ajouter une formation / un diplôme",
+        "operationId": "create_my_formation_api_v1_users_me_formations_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FormationCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FormationResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/users/me/formations/{formation_id}": {
+      "patch": {
+        "tags": [
+          "Utilisateurs"
+        ],
+        "summary": "Modifier une formation / un diplôme",
+        "operationId": "update_my_formation_api_v1_users_me_formations__formation_id__patch",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "formation_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Formation Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FormationUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FormationResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Utilisateurs"
+        ],
+        "summary": "Supprimer une formation / un diplôme",
+        "operationId": "delete_my_formation_api_v1_users_me_formations__formation_id__delete",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "formation_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Formation Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/users": {
+      "get": {
+        "tags": [
+          "Utilisateurs"
+        ],
+        "summary": "Lister le vivier de candidats",
+        "description": "Vivier de talents (recruteur/company_admin/superadmin). Ne renvoie que\nles candidats CANDIDATE actifs, respectant leur confidentialité\n(profil_public / recherchable) et l'isolation multi-tenant :\nun recruteur ne voit que les candidats ayant postulé à une offre de son\nentreprise.",
+        "operationId": "list_candidates_api_v1_users_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "skip",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 0,
+              "title": "Skip"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 50,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Search"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/UserBriefResponse"
+                  },
+                  "title": "Response List Candidates Api V1 Users Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/users/{user_id}": {
+      "get": {
+        "tags": [
+          "Utilisateurs"
+        ],
+        "summary": "Détail d'un candidat du vivier",
+        "description": "Fiche candidat complète pour un recruteur (respecte la confidentialité).\nSeuls les candidats ayant postulé à une offre de l'entreprise du demandeur\nsont visibles (isolation multi-tenant).",
+        "operationId": "get_candidate_api_v1_users__user_id__get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "User Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserBriefResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Utilisateurs"
+        ],
+        "summary": "Modifier un utilisateur (Superadmin)",
+        "description": "Permet à un Superadmin de modifier les données de base d'un utilisateur.",
+        "operationId": "update_user_by_admin_api_v1_users__user_id__patch",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "User Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Utilisateurs"
+        ],
+        "summary": "Désactiver un utilisateur (Soft Delete)",
+        "description": "Désactive un utilisateur. \nRestreint au propriétaire du compte ou à un Superadmin.",
+        "operationId": "delete_user_api_v1_users__user_id__delete",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "User Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/users/profile/upload-cv": {
+      "post": {
+        "tags": [
+          "Utilisateurs"
+        ],
+        "summary": "Téléverser un CV candidat (PDF, max 5 Mo)",
+        "description": "Téléverse le CV d'un candidat (PDF uniquement, max 5 Mo) vers MinIO\net associe la clé de stockage à son profil.\n\nAccès : CANDIDATE, SUPERADMIN uniquement.\nL'identité est extraite depuis le JWT — aucun paramètre utilisateur côté client.",
+        "operationId": "upload_candidate_cv_api_v1_users_profile_upload_cv_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_upload_candidate_cv_api_v1_users_profile_upload_cv_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfileResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/users/profile/cv/{user_id}": {
+      "get": {
+        "tags": [
+          "Utilisateurs"
+        ],
+        "summary": "Obtenir le lien signé du CV d'un candidat",
+        "description": "Génère une URL signée temporaire (1 heure) pour accéder au CV d'un candidat.\n\nRègles de possession :\n- CANDIDATE : uniquement son propre CV (current_user.id == user_id) ;\n- RECRUITER / COMPANY_ADMIN : uniquement les candidats rattachés à une\n  offre de son entreprise (isolation multi-tenant) ;\n- SUPERADMIN : accès global.\nToute autre combinaison renvoie 403.",
+        "operationId": "get_candidate_cv_link_api_v1_users_profile_cv__user_id__get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "User Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "title": "Response Get Candidate Cv Link Api V1 Users Profile Cv  User Id  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/companies": {
+      "post": {
+        "tags": [
+          "Entreprises"
+        ],
+        "summary": "Créer une entreprise",
+        "description": "Crée une nouvelle entreprise.\nSeul un SUPERADMIN peut créer des entreprises de base.",
+        "operationId": "create_company_api_v1_companies_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CompanyCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompanyResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Entreprises"
+        ],
+        "summary": "Lister les entreprises",
+        "description": "Récupère la liste de toutes les entreprises actives.",
+        "operationId": "list_companies_api_v1_companies_get",
+        "parameters": [
+          {
+            "name": "skip",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 0,
+              "title": "Skip"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 100,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CompanyResponse"
+                  },
+                  "title": "Response List Companies Api V1 Companies Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/companies/{company_id}": {
+      "get": {
+        "tags": [
+          "Entreprises"
+        ],
+        "summary": "Détails d'une entreprise",
+        "description": "Récupère les détails d'une entreprise par son ID.",
+        "operationId": "get_company_api_v1_companies__company_id__get",
+        "parameters": [
+          {
+            "name": "company_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Company Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompanyResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Entreprises"
+        ],
+        "summary": "Modifier une entreprise",
+        "description": "Met à jour les informations d'une entreprise.\nRestreint au SUPERADMIN ou à un membre (RECRUITER/COMPANY_ADMIN)\nde cette même entreprise.",
+        "operationId": "update_company_api_v1_companies__company_id__patch",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "company_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Company Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CompanyUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompanyResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/jobs": {
+      "post": {
+        "tags": [
+          "Offres d'emploi"
+        ],
+        "summary": "Créer une offre d'emploi",
+        "description": "Crée une nouvelle offre d'emploi.\nRestreint aux recruteurs, admins d'entreprise et superadmins.\nL'offre est automatiquement rattachée à l'entreprise du créateur.",
+        "operationId": "create_job_api_v1_jobs_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/JobCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Offres d'emploi"
+        ],
+        "summary": "Lister les offres d'emploi actives",
+        "description": "Récupère la liste des offres d'emploi actives.\n\nAvec le paramètre `company_id`, retourne la vue de gestion des offres de\ncette entreprise (tous statuts, ou filtrés via `status`). Réservé au tenant\nlui-même ou au superadmin afin de ne pas exposer les brouillons.",
+        "operationId": "list_jobs_api_v1_jobs_get",
+        "parameters": [
+          {
+            "name": "skip",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 0,
+              "title": "Skip"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 100,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "company_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Company Id"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/JobStatus"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/JobResponse"
+                  },
+                  "title": "Response List Jobs Api V1 Jobs Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/jobs/search/location": {
+      "get": {
+        "tags": [
+          "Offres d'emploi"
+        ],
+        "summary": "Recherche d'offres par géolocalisation (PostGIS)",
+        "description": "Recherche des offres d'emploi actives dans un rayon géographique donné.\nUtilise PostGIS (ST_DWithin) pour un filtrage haute performance.",
+        "operationId": "search_jobs_by_location_api_v1_jobs_search_location_get",
+        "parameters": [
+          {
+            "name": "lon",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "number",
+              "title": "Lon"
+            }
+          },
+          {
+            "name": "lat",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "number",
+              "title": "Lat"
+            }
+          },
+          {
+            "name": "radius_km",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "number",
+              "default": 50.0,
+              "title": "Radius Km"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/JobResponse"
+                  },
+                  "title": "Response Search Jobs By Location Api V1 Jobs Search Location Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/jobs/{job_id}": {
+      "get": {
+        "tags": [
+          "Offres d'emploi"
+        ],
+        "summary": "Détails d'une offre",
+        "description": "Récupère les détails d'une offre d'emploi.",
+        "operationId": "get_job_api_v1_jobs__job_id__get",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Job Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Offres d'emploi"
+        ],
+        "summary": "Modifier une offre",
+        "description": "Met à jour une offre d'emploi.\nLe recruteur ne peut modifier que les offres de son entreprise.",
+        "operationId": "update_job_api_v1_jobs__job_id__patch",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Job Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/JobUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/jobs/company/{company_id}": {
+      "get": {
+        "tags": [
+          "Offres d'emploi"
+        ],
+        "summary": "Lister les offres actives d'une entreprise",
+        "description": "Récupère toutes les offres actives d'une entreprise spécifique.",
+        "operationId": "list_company_jobs_api_v1_jobs_company__company_id__get",
+        "parameters": [
+          {
+            "name": "company_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Company Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/JobResponse"
+                  },
+                  "title": "Response List Company Jobs Api V1 Jobs Company  Company Id  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/jobs/{job_id}/match": {
+      "get": {
+        "tags": [
+          "Offres d'emploi"
+        ],
+        "summary": "Matching Engine : Trouver des candidats",
+        "description": "Retourne la liste des profils candidats correspondant à l'offre.\nLe score combine l'intersection des compétences et la distance géographique PostGIS.\nRestreint au recruteur de l'entreprise ou au Superadmin.",
+        "operationId": "match_candidates_for_job_api_v1_jobs__job_id__match_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Job Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CandidateMatchResponse"
+                  },
+                  "title": "Response Match Candidates For Job Api V1 Jobs  Job Id  Match Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/applications/jobs/{job_id}/apply": {
+      "post": {
+        "tags": [
+          "Candidatures"
+        ],
+        "summary": "Postuler à une offre",
+        "description": "Permet à un candidat de postuler à une offre d'emploi.\nSon profil (et son CV) est automatiquement lié à la candidature.",
+        "operationId": "apply_to_job_api_v1_applications_jobs__job_id__apply_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Job Id"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationSubmitResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Offre introuvable"
+          },
+          "409": {
+            "description": "Vous avez déjà postulé"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/applications/me": {
+      "get": {
+        "tags": [
+          "Candidatures"
+        ],
+        "summary": "Mes candidatures",
+        "description": "Permet à un candidat de lister toutes ses candidatures.",
+        "operationId": "get_my_applications_api_v1_applications_me_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ApplicationResponse"
+                  },
+                  "type": "array",
+                  "title": "Response Get My Applications Api V1 Applications Me Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/applications/tasks/{task_id}/status": {
+      "get": {
+        "tags": [
+          "Candidatures"
+        ],
+        "summary": "Vérifier le statut d'une tâche Celery",
+        "description": "Permet de vérifier le statut d'une tâche Celery.",
+        "operationId": "get_task_status_api_v1_applications_tasks__task_id__status_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "task_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Task Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskStatusResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Tâche introuvable"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/applications/jobs/{job_id}": {
+      "get": {
+        "tags": [
+          "Candidatures"
+        ],
+        "summary": "Candidatures d'une offre",
+        "description": "Permet à un recruteur de lister toutes les candidatures reçues pour une offre spécifique.\nVérifie que l'offre appartient bien à l'entreprise du recruteur.",
+        "operationId": "get_job_applications_api_v1_applications_jobs__job_id__get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Job Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ApplicationResponse"
+                  },
+                  "title": "Response Get Job Applications Api V1 Applications Jobs  Job Id  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/applications/{app_id}/stage": {
+      "patch": {
+        "tags": [
+          "Candidatures"
+        ],
+        "summary": "Modifier le statut d'une candidature",
+        "description": "Permet au recruteur de faire avancer une candidature dans le pipeline (ATS).\n(ex: APPLIED -> INTERVIEW)",
+        "operationId": "update_application_stage_api_v1_applications__app_id__stage_patch",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "app_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "App Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApplicationUpdateStage"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/applications/{app_id}/notes": {
+      "post": {
+        "tags": [
+          "Candidatures"
+        ],
+        "summary": "Ajouter une note d'évaluation",
+        "description": "Permet à un recruteur d'ajouter une note d'évaluation privée à une candidature.\nL'accès est réservé aux recruteurs et admins de l'entreprise de l'offre.",
+        "operationId": "create_application_note_api_v1_applications__app_id__notes_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "app_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "App Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": true,
+                "title": "Note Data"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Create Application Note Api V1 Applications  App Id  Notes Post"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Accès non autorisé (candidat ou hors tenant)"
+          },
+          "404": {
+            "description": "Candidature introuvable"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Candidatures"
+        ],
+        "summary": "Lister les notes d'une candidature",
+        "description": "Permet à un recruteur de lister toutes les notes d'évaluation d'une candidature.\nLes notes sont triées par date de création (plus récent en premier).",
+        "operationId": "get_application_notes_api_v1_applications__app_id__notes_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "app_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "App Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": true
+                  },
+                  "title": "Response Get Application Notes Api V1 Applications  App Id  Notes Get"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Accès non autorisé (candidat ou hors tenant)"
+          },
+          "404": {
+            "description": "Candidature introuvable"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/analytics/candidates/me": {
+      "get": {
+        "tags": [
+          "Analytics & Dashboard"
+        ],
+        "summary": "Résumé KPI du candidat",
+        "description": "Indicateurs candidat (Overview). Tout est calculé depuis les données\nréelles : candidatures actives, nouveaux matchs (offres partageant au\nmoins une compétence), taux d'entretien/offre. Les compteurs sans source\n(vues du profil) restent à 0 — aucune donnée inventée.",
+        "operationId": "get_candidate_resume_api_v1_analytics_candidates_me_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CandidateResume"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/analytics/dashboard": {
+      "get": {
+        "tags": [
+          "Analytics & Dashboard"
+        ],
+        "summary": "Tableau de bord complet",
+        "operationId": "get_dashboard_api_v1_analytics_dashboard_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnalyticsDashboard"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/gdpr/export/{user_id}": {
+      "get": {
+        "tags": [
+          "RGPD & Conformité"
+        ],
+        "summary": "Exporter les données d'un utilisateur (RGPD art. 20)",
+        "description": "Exporter les données USER_ID. Seul un SUPERADMIN ou un COMPANY_ADMIN\npeut exporter les données d'un utilisateur appartenant à son entreprise.",
+        "operationId": "export_user_data_api_v1_gdpr_export__user_id__get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "User Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataExportResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Utilisateur non trouvé"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/gdpr/delete/{user_id}": {
+      "delete": {
+        "tags": [
+          "RGPD & Conformité"
+        ],
+        "summary": "Supprimer les données d'un utilisateur (RGPD art. 17)",
+        "description": "Supprimer les données USER_ID. Seul un SUPERADMIN ou un COMPANY_ADMIN\npeut supprimer les données d'un utilisateur appartenant à son entreprise.",
+        "operationId": "delete_user_data_api_v1_gdpr_delete__user_id__delete",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "User Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/DataDeletionRequest"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Body"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataDeletionResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Confirmation requise"
+          },
+          "404": {
+            "description": "Utilisateur non trouvé"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/gdpr/anonymize/{user_id}": {
+      "post": {
+        "tags": [
+          "RGPD & Conformité"
+        ],
+        "summary": "Anonymiser les données d'un utilisateur",
+        "description": "Anonymiser les données USER_ID. Seul un SUPERADMIN ou un COMPANY_ADMIN\npeut anonymiser les données d'un utilisateur appartenant à son entreprise.",
+        "operationId": "anonymize_user_data_api_v1_gdpr_anonymize__user_id__post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "User Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnonymizationResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Utilisateur non trouvé"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/notifications/me": {
+      "get": {
+        "tags": [
+          "Notifications"
+        ],
+        "summary": "Lister ses notifications",
+        "description": "Retourne uniquement les notifications de l'utilisateur authentifie.",
+        "operationId": "get_my_notifications_api_v1_notifications_me_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "unread_only",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "Ne retourner que les non lues",
+              "default": false,
+              "title": "Unread Only"
+            },
+            "description": "Ne retourner que les non lues"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "description": "Taille de page",
+              "default": 20,
+              "title": "Limit"
+            },
+            "description": "Taille de page"
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Decalage de pagination",
+              "default": 0,
+              "title": "Offset"
+            },
+            "description": "Decalage de pagination"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotificationListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/notifications/{notification_id}/read": {
+      "patch": {
+        "tags": [
+          "Notifications"
+        ],
+        "summary": "Marquer une notification comme lue",
+        "description": "Verifie la propriete de la notification avant mise a jour (anti-IDOR).",
+        "operationId": "mark_as_read_api_v1_notifications__notification_id__read_patch",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "notification_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Notification Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotificationMarkedResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/notifications/read-all": {
+      "post": {
+        "tags": [
+          "Notifications"
+        ],
+        "summary": "Marquer toutes ses notifications comme lues",
+        "description": "Marque toutes les notifications non lues de l'utilisateur connecte.",
+        "operationId": "mark_all_as_read_api_v1_notifications_read_all_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotificationReadAllResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/search/jobs": {
+      "post": {
+        "tags": [
+          "Recherche Avancée"
+        ],
+        "summary": "Recherche d'offres avec filtres",
+        "description": "Recherche d'offres.\n\nUn utilisateur non superadmin ne peut rechercher que des offres ACTIVE :\nles brouillons et offres archivées d'autres entreprises ne doivent pas\nfuiter via le filtre ``status`` fourni par le client.",
+        "operationId": "search_jobs_api_v1_search_jobs_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/JobSearchFilters"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SearchResult"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/search/candidates": {
+      "post": {
+        "tags": [
+          "Recherche Avancée"
+        ],
+        "summary": "Recherche de candidats",
+        "description": "Recherche de candidats réservée aux recruteurs/admin.\n\nUn recruteur ou company_admin est strictement restreint aux candidats ayant\npostulé à une offre de son entreprise. Le superadmin a un accès global.",
+        "operationId": "search_candidates_api_v1_search_candidates_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CandidateSearchFilters"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SearchResult"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/ai/config": {
+      "get": {
+        "tags": [
+          "Intelligence Artificielle"
+        ],
+        "summary": "Lire la configuration ATS",
+        "description": "Configuration effective : entreprise, globale, puis valeurs par defaut.",
+        "operationId": "get_job_config_api_v1_ai_config_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "company_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Perimetre entreprise (SUPERADMIN uniquement)",
+              "title": "Company Id"
+            },
+            "description": "Perimetre entreprise (SUPERADMIN uniquement)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AIJobConfigResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Intelligence Artificielle"
+        ],
+        "summary": "Mettre a jour la configuration ATS",
+        "description": "Ponderation du matching et seuils ATS.\n\nLa somme des trois ponderations doit valoir 1.000 (validation 422 sinon) et\n``threshold_reject`` doit rester inferieur ou egal a ``threshold_screening``.",
+        "operationId": "upsert_job_config_api_v1_ai_config_put",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "company_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Perimetre entreprise (SUPERADMIN uniquement)",
+              "title": "Company Id"
+            },
+            "description": "Perimetre entreprise (SUPERADMIN uniquement)"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AIJobConfigUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AIJobConfigResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/interviews": {
+      "post": {
+        "tags": [
+          "Entretiens"
+        ],
+        "summary": "Créer un entretien",
+        "description": "Crée un nouvel entretien pour une candidature.\nTransfert automatiquement la candidature vers l'étape INTERVIEW.\nVérifie les chevauchements d'horaire via contrainte GIST.",
+        "operationId": "create_interview_api_v1_interviews_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InterviewCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InterviewRead"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Accès non autorisé"
+          },
+          "404": {
+            "description": "Candidature introuvable"
+          },
+          "409": {
+            "description": "Chevauchement d'horaire"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/interviews/application/{application_id}": {
+      "get": {
+        "tags": [
+          "Entretiens"
+        ],
+        "summary": "Lister les entretiens d'une candidature",
+        "description": "Récupère tous les entretiens associés à une candidature.",
+        "operationId": "get_application_interviews_api_v1_interviews_application__application_id__get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "application_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Application Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/InterviewRead"
+                  },
+                  "title": "Response Get Application Interviews Api V1 Interviews Application  Application Id  Get"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Accès non autorisé"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/interviews/me": {
+      "get": {
+        "tags": [
+          "Entretiens"
+        ],
+        "summary": "Mes entretiens",
+        "description": "Entretiens où l'utilisateur connecté est recruteur ou candidat.",
+        "operationId": "get_my_interviews_api_v1_interviews_me_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/InterviewRead"
+                  },
+                  "type": "array",
+                  "title": "Response Get My Interviews Api V1 Interviews Me Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/interviews/upcoming": {
+      "get": {
+        "tags": [
+          "Entretiens"
+        ],
+        "summary": "Entretiens à venir du recruteur",
+        "description": "Récupère les entretiens à venir du recruteur connecté.",
+        "operationId": "get_upcoming_interviews_api_v1_interviews_upcoming_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "days",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 7,
+              "title": "Days"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/InterviewRead"
+                  },
+                  "title": "Response Get Upcoming Interviews Api V1 Interviews Upcoming Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/interviews/{interview_id}": {
+      "patch": {
+        "tags": [
+          "Entretiens"
+        ],
+        "summary": "Modifier un entretien",
+        "description": "Met à jour les informations d'un entretien.",
+        "operationId": "update_interview_api_v1_interviews__interview_id__patch",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "interview_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Interview Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InterviewUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InterviewRead"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Accès non autorisé"
+          },
+          "404": {
+            "description": "Entretien introuvable"
+          },
+          "409": {
+            "description": "Chevauchement d'horaire"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/interviews/{interview_id}/cancel": {
+      "post": {
+        "tags": [
+          "Entretiens"
+        ],
+        "summary": "Annuler un entretien",
+        "description": "Annule un entretien.",
+        "operationId": "cancel_interview_api_v1_interviews__interview_id__cancel_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "interview_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Interview Id"
+            }
+          },
+          {
+            "name": "reason",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "title": "Reason"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InterviewRead"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Accès non autorisé"
+          },
+          "404": {
+            "description": "Entretien introuvable"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "tags": [
+          "Infrastructure"
+        ],
+        "summary": "Verification de l'etat de sante (deep)",
+        "description": "Health check profond vérifiant PostgreSQL, Redis, MinIO et Celery.",
+        "operationId": "health_check_endpoint_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health/ready": {
+      "get": {
+        "tags": [
+          "Infrastructure"
+        ],
+        "summary": "Probe de préparation (simple)",
+        "description": "Probe de préparation simple",
+        "operationId": "readiness_check_health_ready_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AIJobConfigResponse": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "company_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Company Id"
+          },
+          "provider_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provider Id"
+          },
+          "weight_skills": {
+            "type": "string",
+            "title": "Weight Skills"
+          },
+          "weight_experience": {
+            "type": "string",
+            "title": "Weight Experience"
+          },
+          "weight_education": {
+            "type": "string",
+            "title": "Weight Education"
+          },
+          "threshold_screening": {
+            "type": "string",
+            "title": "Threshold Screening"
+          },
+          "threshold_reject": {
+            "type": "string",
+            "title": "Threshold Reject"
+          },
+          "auto_stage_update": {
+            "type": "boolean",
+            "title": "Auto Stage Update"
+          },
+          "semantic_matching": {
+            "type": "boolean",
+            "title": "Semantic Matching"
+          },
+          "source": {
+            "type": "string",
+            "title": "Source",
+            "default": "defaults"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "weight_skills",
+          "weight_experience",
+          "weight_education",
+          "threshold_screening",
+          "threshold_reject",
+          "auto_stage_update",
+          "semantic_matching"
+        ],
+        "title": "AIJobConfigResponse"
+      },
+      "AIJobConfigUpdate": {
+        "properties": {
+          "provider_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provider Id"
+          },
+          "weight_skills": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 1.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Weight Skills",
+            "default": "0.600"
+          },
+          "weight_experience": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 1.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Weight Experience",
+            "default": "0.250"
+          },
+          "weight_education": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 1.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Weight Education",
+            "default": "0.150"
+          },
+          "threshold_screening": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 100.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Threshold Screening",
+            "default": "80.00"
+          },
+          "threshold_reject": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 100.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Threshold Reject",
+            "default": "25.00"
+          },
+          "auto_stage_update": {
+            "type": "boolean",
+            "title": "Auto Stage Update",
+            "default": true
+          },
+          "semantic_matching": {
+            "type": "boolean",
+            "title": "Semantic Matching",
+            "default": false
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "AIJobConfigUpdate",
+        "example": {
+          "auto_stage_update": true,
+          "semantic_matching": false,
+          "threshold_reject": 25.0,
+          "threshold_screening": 80.0,
+          "weight_education": 0.15,
+          "weight_experience": 0.25,
+          "weight_skills": 0.6
+        }
+      },
+      "AnalyticsDashboard": {
+        "properties": {
+          "pipeline": {
+            "$ref": "#/components/schemas/PipelineStats"
+          },
+          "jobs": {
+            "$ref": "#/components/schemas/JobStats"
+          },
+          "funnel": {
+            "$ref": "#/components/schemas/HiringFunnel"
+          },
+          "top_skills": {
+            "items": {
+              "$ref": "#/components/schemas/SkillDemand"
+            },
+            "type": "array",
+            "title": "Top Skills"
+          }
+        },
+        "type": "object",
+        "required": [
+          "pipeline",
+          "jobs",
+          "funnel",
+          "top_skills"
+        ],
+        "title": "AnalyticsDashboard"
+      },
+      "AnonymizationResponse": {
+        "properties": {
+          "user_id": {
+            "type": "string",
+            "title": "User Id"
+          },
+          "anonymized": {
+            "type": "boolean",
+            "title": "Anonymized"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "user_id",
+          "anonymized",
+          "message"
+        ],
+        "title": "AnonymizationResponse",
+        "example": {
+          "anonymized": true,
+          "message": "Anonymisé",
+          "user_id": "user-123"
+        }
+      },
+      "ApplicationResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "job_id": {
+            "type": "string",
+            "title": "Job Id"
+          },
+          "candidate_id": {
+            "type": "string",
+            "title": "Candidate Id"
+          },
+          "stage": {
+            "$ref": "#/components/schemas/ApplicationStage"
+          },
+          "resume_storage_path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resume Storage Path"
+          },
+          "matching_score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Matching Score"
+          },
+          "celery_task_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Celery Task Id"
+          },
+          "celery_task_status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Celery Task Status"
+          },
+          "celery_task_result": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Celery Task Result"
+          },
+          "job_title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Job Title"
+          },
+          "company_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Company Name"
+          },
+          "candidate_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Candidate Name"
+          },
+          "candidate_email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Candidate Email"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "job_id",
+          "candidate_id",
+          "stage"
+        ],
+        "title": "ApplicationResponse",
+        "example": {
+          "candidate_id": "user-789",
+          "id": "app-123",
+          "job_id": "job-456",
+          "matching_score": 82.5,
+          "stage": "applied"
+        }
+      },
+      "ApplicationStage": {
+        "type": "string",
+        "enum": [
+          "applied",
+          "screening",
+          "interview",
+          "offer",
+          "hired",
+          "rejected"
+        ],
+        "title": "ApplicationStage"
+      },
+      "ApplicationSubmitResponse": {
+        "properties": {
+          "application": {
+            "$ref": "#/components/schemas/ApplicationResponse"
+          },
+          "task_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Task Id"
+          },
+          "task_status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Task Status"
+          }
+        },
+        "type": "object",
+        "required": [
+          "application"
+        ],
+        "title": "ApplicationSubmitResponse",
+        "description": "Réponse retournée lors d'une candidature.",
+        "example": {
+          "application": {
+            "id": "app-123",
+            "job_id": "job-456",
+            "stage": "applied"
+          },
+          "task_id": "celery-task-789",
+          "task_status": "PENDING"
+        }
+      },
+      "ApplicationUpdateStage": {
+        "properties": {
+          "stage": {
+            "$ref": "#/components/schemas/ApplicationStage",
+            "description": "Le nouveau statut de la candidature"
+          }
+        },
+        "type": "object",
+        "required": [
+          "stage"
+        ],
+        "title": "ApplicationUpdateStage",
+        "examples": [
+          {
+            "stage": "screening"
+          }
+        ]
+      },
+      "Body_login_for_access_token_api_v1_auth_login_post": {
+        "properties": {
+          "grant_type": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^password$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Grant Type"
+          },
+          "username": {
+            "type": "string",
+            "title": "Username"
+          },
+          "password": {
+            "type": "string",
+            "format": "password",
+            "title": "Password"
+          },
+          "scope": {
+            "type": "string",
+            "title": "Scope",
+            "default": ""
+          },
+          "client_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Client Id"
+          },
+          "client_secret": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "format": "password",
+            "title": "Client Secret"
+          }
+        },
+        "type": "object",
+        "required": [
+          "username",
+          "password"
+        ],
+        "title": "Body_login_for_access_token_api_v1_auth_login_post"
+      },
+      "Body_upload_candidate_cv_api_v1_users_profile_upload_cv_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "File"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_upload_candidate_cv_api_v1_users_profile_upload_cv_post"
+      },
+      "CandidateMatchResponse": {
+        "properties": {
+          "profile_id": {
+            "type": "string",
+            "title": "Profile Id"
+          },
+          "user_id": {
+            "type": "string",
+            "title": "User Id"
+          },
+          "first_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "First Name"
+          },
+          "last_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Name"
+          },
+          "email": {
+            "type": "string",
+            "title": "Email"
+          },
+          "matching_score": {
+            "type": "number",
+            "title": "Matching Score"
+          },
+          "distance_km": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Distance Km"
+          },
+          "matched_skills": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Matched Skills"
+          },
+          "missing_skills": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Missing Skills"
+          }
+        },
+        "type": "object",
+        "required": [
+          "profile_id",
+          "user_id",
+          "first_name",
+          "last_name",
+          "email",
+          "matching_score",
+          "distance_km",
+          "matched_skills",
+          "missing_skills"
+        ],
+        "title": "CandidateMatchResponse",
+        "example": {
+          "distance_km": 3.2,
+          "email": "jean@example.com",
+          "first_name": "Jean",
+          "last_name": "Dupont",
+          "matched_skills": [
+            "python",
+            "fastapi"
+          ],
+          "matching_score": 85.5,
+          "missing_skills": [
+            "docker"
+          ],
+          "profile_id": "prof-789",
+          "user_id": "user-012"
+        }
+      },
+      "CandidateResume": {
+        "properties": {
+          "vues_profil": {
+            "type": "integer",
+            "title": "Vues Profil",
+            "default": 0
+          },
+          "evolution_vues": {
+            "type": "integer",
+            "title": "Evolution Vues",
+            "default": 0
+          },
+          "nouveaux_matchs": {
+            "type": "integer",
+            "title": "Nouveaux Matchs",
+            "default": 0
+          },
+          "candidatures_actives": {
+            "type": "integer",
+            "title": "Candidatures Actives",
+            "default": 0
+          },
+          "taux_entretien": {
+            "type": "number",
+            "title": "Taux Entretien",
+            "default": 0.0
+          },
+          "taux_offre": {
+            "type": "number",
+            "title": "Taux Offre",
+            "default": 0.0
+          }
+        },
+        "type": "object",
+        "title": "CandidateResume",
+        "description": "KPI du candidat (page Overview) — dérivés uniquement de données réelles."
+      },
+      "CandidateSearchFilters": {
+        "properties": {
+          "query": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Query"
+          },
+          "skills": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Skills"
+          },
+          "role": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Role"
+          },
+          "latitude": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latitude"
+          },
+          "longitude": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Longitude"
+          },
+          "radius_km": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Radius Km"
+          },
+          "page": {
+            "type": "integer",
+            "title": "Page",
+            "default": 1
+          },
+          "page_size": {
+            "type": "integer",
+            "title": "Page Size",
+            "default": 20
+          }
+        },
+        "type": "object",
+        "title": "CandidateSearchFilters",
+        "example": {
+          "page": 1,
+          "page_size": 10,
+          "query": "Jean",
+          "skills": [
+            "python",
+            "react"
+          ]
+        }
+      },
+      "ChangePasswordRequest": {
+        "properties": {
+          "current_password": {
+            "type": "string",
+            "title": "Current Password"
+          },
+          "new_password": {
+            "type": "string",
+            "title": "New Password"
+          }
+        },
+        "type": "object",
+        "required": [
+          "current_password",
+          "new_password"
+        ],
+        "title": "ChangePasswordRequest",
+        "example": {
+          "current_password": "AncienMot2Passe!",
+          "new_password": "NouveauMot2Passe!"
+        }
+      },
+      "CompanyCreate": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name",
+            "description": "Le nom officiel de l'entreprise"
+          },
+          "siret": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 14,
+                "minLength": 14
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Siret",
+            "description": "Le SIRET à 14 chiffres"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name"
+        ],
+        "title": "CompanyCreate",
+        "example": {
+          "name": "TechCorp France",
+          "siret": "12345678901234"
+        }
+      },
+      "CompanyResponse": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name",
+            "description": "Le nom officiel de l'entreprise"
+          },
+          "siret": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 14,
+                "minLength": 14
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Siret",
+            "description": "Le SIRET à 14 chiffres"
+          },
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "slug": {
+            "type": "string",
+            "title": "Slug"
+          },
+          "is_active": {
+            "type": "boolean",
+            "title": "Is Active"
+          },
+          "settings": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Settings"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "id",
+          "slug",
+          "is_active"
+        ],
+        "title": "CompanyResponse",
+        "example": {
+          "id": "comp-123",
+          "is_active": true,
+          "name": "TechCorp France",
+          "settings": {},
+          "siret": "12345678901234",
+          "slug": "techcorp-france"
+        }
+      },
+      "CompanyUpdate": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "siret": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Siret"
+          },
+          "is_active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Active"
+          },
+          "settings": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Settings"
+          }
+        },
+        "type": "object",
+        "title": "CompanyUpdate",
+        "example": {
+          "is_active": true,
+          "name": "TechCorp SAS"
+        }
+      },
+      "DataDeletionRequest": {
+        "properties": {
+          "user_id": {
+            "type": "string",
+            "title": "User Id"
+          },
+          "confirm": {
+            "type": "boolean",
+            "title": "Confirm",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "user_id"
+        ],
+        "title": "DataDeletionRequest",
+        "example": {
+          "confirm": true,
+          "user_id": "user-123"
+        }
+      },
+      "DataDeletionResponse": {
+        "properties": {
+          "user_id": {
+            "type": "string",
+            "title": "User Id"
+          },
+          "deleted": {
+            "type": "boolean",
+            "title": "Deleted"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "user_id",
+          "deleted",
+          "message"
+        ],
+        "title": "DataDeletionResponse",
+        "example": {
+          "deleted": true,
+          "message": "Supprimé",
+          "user_id": "user-123"
+        }
+      },
+      "DataExportResponse": {
+        "properties": {
+          "user_id": {
+            "type": "string",
+            "title": "User Id"
+          },
+          "email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email"
+          },
+          "profile": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile"
+          },
+          "applications": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Applications",
+            "default": []
+          },
+          "consent_records": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Consent Records",
+            "default": []
+          }
+        },
+        "type": "object",
+        "required": [
+          "user_id"
+        ],
+        "title": "DataExportResponse",
+        "example": {
+          "applications": [
+            {
+              "id": "app-456",
+              "job_title": "Dev Python",
+              "stage": "interview"
+            }
+          ],
+          "consent_records": [],
+          "email": "jean@example.com",
+          "profile": {
+            "first_name": "Jean",
+            "last_name": "Dupont"
+          },
+          "user_id": "user-123"
+        }
+      },
+      "ExperienceCreate": {
+        "properties": {
+          "entreprise": {
+            "type": "string",
+            "title": "Entreprise"
+          },
+          "poste": {
+            "type": "string",
+            "title": "Poste"
+          },
+          "type_contrat": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Type Contrat"
+          },
+          "date_debut": {
+            "type": "string",
+            "format": "date",
+            "title": "Date Debut"
+          },
+          "date_fin": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date Fin"
+          },
+          "en_cours": {
+            "type": "boolean",
+            "title": "En Cours",
+            "default": false
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "entreprise",
+          "poste",
+          "date_debut"
+        ],
+        "title": "ExperienceCreate",
+        "example": {
+          "date_debut": "2022-03-01",
+          "description": "Développement backend FastAPI.",
+          "en_cours": true,
+          "entreprise": "TechCorp",
+          "poste": "Développeur Python",
+          "type_contrat": "CDI"
+        }
+      },
+      "ExperienceResponse": {
+        "properties": {
+          "entreprise": {
+            "type": "string",
+            "title": "Entreprise"
+          },
+          "poste": {
+            "type": "string",
+            "title": "Poste"
+          },
+          "type_contrat": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Type Contrat"
+          },
+          "date_debut": {
+            "type": "string",
+            "format": "date",
+            "title": "Date Debut"
+          },
+          "date_fin": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date Fin"
+          },
+          "en_cours": {
+            "type": "boolean",
+            "title": "En Cours",
+            "default": false
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "profile_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Profile Id"
+          },
+          "ordre": {
+            "type": "integer",
+            "title": "Ordre",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "required": [
+          "entreprise",
+          "poste",
+          "date_debut",
+          "id",
+          "profile_id"
+        ],
+        "title": "ExperienceResponse"
+      },
+      "ExperienceResume": {
+        "properties": {
+          "poste": {
+            "type": "string",
+            "title": "Poste"
+          },
+          "entreprise": {
+            "type": "string",
+            "title": "Entreprise"
+          },
+          "type_contrat": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Type Contrat"
+          },
+          "date_debut": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date Debut"
+          },
+          "date_fin": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date Fin"
+          },
+          "en_cours": {
+            "type": "boolean",
+            "title": "En Cours",
+            "default": false
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "poste",
+          "entreprise"
+        ],
+        "title": "ExperienceResume",
+        "description": "Version compacte d'une expérience pour le vivier (vue recruteur)."
+      },
+      "ExperienceUpdate": {
+        "properties": {
+          "entreprise": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Entreprise"
+          },
+          "poste": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Poste"
+          },
+          "type_contrat": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Type Contrat"
+          },
+          "date_debut": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date Debut"
+          },
+          "date_fin": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date Fin"
+          },
+          "en_cours": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "En Cours"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "ordre": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ordre"
+          }
+        },
+        "type": "object",
+        "title": "ExperienceUpdate",
+        "example": {
+          "en_cours": false,
+          "poste": "Développeur Python Senior"
+        }
+      },
+      "FirebaseLoginRequest": {
+        "properties": {
+          "id_token": {
+            "type": "string",
+            "title": "Id Token"
+          },
+          "first_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "First Name"
+          },
+          "last_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Name"
+          },
+          "role": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/UserRole"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "id_token"
+        ],
+        "title": "FirebaseLoginRequest",
+        "description": "Echange un ID token Firebase contre une session ETP (JWT).\n\nLes champs de profil (first_name, last_name, role) sont optionnels et\nuniquement appliques lors d'une inscription 100% Firebase (escape\nclient-side Firebase / auth/firebase), pas lors d'une connexion simple.",
+        "example": {
+          "id_token": "eyJhbGciOiJSUzI1NiIs..."
+        }
+      },
+      "ForgotPasswordRequest": {
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "title": "Email"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "email"
+        ],
+        "title": "ForgotPasswordRequest",
+        "example": {
+          "email": "jean.dupont@example.com"
+        }
+      },
+      "FormationCreate": {
+        "properties": {
+          "etablissement": {
+            "type": "string",
+            "title": "Etablissement"
+          },
+          "diplome": {
+            "type": "string",
+            "title": "Diplome"
+          },
+          "domaine": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Domaine"
+          },
+          "annee": {
+            "type": "integer",
+            "title": "Annee"
+          }
+        },
+        "type": "object",
+        "required": [
+          "etablissement",
+          "diplome",
+          "annee"
+        ],
+        "title": "FormationCreate",
+        "example": {
+          "annee": 2022,
+          "diplome": "Master Informatique",
+          "domaine": "Développement logiciel",
+          "etablissement": "Université Paris-Saclay"
+        }
+      },
+      "FormationResponse": {
+        "properties": {
+          "etablissement": {
+            "type": "string",
+            "title": "Etablissement"
+          },
+          "diplome": {
+            "type": "string",
+            "title": "Diplome"
+          },
+          "domaine": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Domaine"
+          },
+          "annee": {
+            "type": "integer",
+            "title": "Annee"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "profile_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Profile Id"
+          },
+          "ordre": {
+            "type": "integer",
+            "title": "Ordre",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "required": [
+          "etablissement",
+          "diplome",
+          "annee",
+          "id",
+          "profile_id"
+        ],
+        "title": "FormationResponse"
+      },
+      "FormationResume": {
+        "properties": {
+          "diplome": {
+            "type": "string",
+            "title": "Diplome"
+          },
+          "etablissement": {
+            "type": "string",
+            "title": "Etablissement"
+          },
+          "domaine": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Domaine"
+          },
+          "annee": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Annee"
+          }
+        },
+        "type": "object",
+        "required": [
+          "diplome",
+          "etablissement"
+        ],
+        "title": "FormationResume",
+        "description": "Version compacte d'une formation pour le vivier (vue recruteur)."
+      },
+      "FormationUpdate": {
+        "properties": {
+          "etablissement": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Etablissement"
+          },
+          "diplome": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Diplome"
+          },
+          "domaine": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Domaine"
+          },
+          "annee": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Annee"
+          },
+          "ordre": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ordre"
+          }
+        },
+        "type": "object",
+        "title": "FormationUpdate",
+        "example": {
+          "domaine": "Ingénierie logicielle"
+        }
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "HiringFunnel": {
+        "properties": {
+          "applied": {
+            "type": "integer",
+            "title": "Applied"
+          },
+          "screening": {
+            "type": "integer",
+            "title": "Screening"
+          },
+          "interview": {
+            "type": "integer",
+            "title": "Interview"
+          },
+          "offer": {
+            "type": "integer",
+            "title": "Offer"
+          },
+          "hired": {
+            "type": "integer",
+            "title": "Hired"
+          },
+          "rejected": {
+            "type": "integer",
+            "title": "Rejected"
+          }
+        },
+        "type": "object",
+        "required": [
+          "applied",
+          "screening",
+          "interview",
+          "offer",
+          "hired",
+          "rejected"
+        ],
+        "title": "HiringFunnel"
+      },
+      "InterviewCreate": {
+        "properties": {
+          "application_id": {
+            "type": "string",
+            "title": "Application Id",
+            "description": "ID de la candidature"
+          },
+          "interviewer_id": {
+            "type": "string",
+            "title": "Interviewer Id",
+            "description": "ID du recruteur"
+          },
+          "scheduled_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Scheduled At",
+            "description": "Date et heure de l'entretien"
+          },
+          "duration_minutes": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Duration Minutes",
+            "description": "Durée en minutes",
+            "default": 45
+          },
+          "meeting_link": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 512
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Meeting Link",
+            "description": "Lien de réunion"
+          },
+          "location": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Location",
+            "description": "Lieu de l'entretien"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes",
+            "description": "Notes de l'entretien"
+          },
+          "status": {
+            "$ref": "#/components/schemas/InterviewStatus",
+            "default": "scheduled"
+          }
+        },
+        "type": "object",
+        "required": [
+          "application_id",
+          "interviewer_id",
+          "scheduled_at"
+        ],
+        "title": "InterviewCreate"
+      },
+      "InterviewRead": {
+        "properties": {
+          "application_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Application Id"
+          },
+          "interviewer_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Interviewer Id"
+          },
+          "scheduled_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Scheduled At",
+            "description": "Date et heure de l'entretien"
+          },
+          "duration_minutes": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Duration Minutes",
+            "description": "Durée en minutes",
+            "default": 45
+          },
+          "meeting_link": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 512
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Meeting Link",
+            "description": "Lien de réunion"
+          },
+          "location": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Location",
+            "description": "Lieu de l'entretien"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes",
+            "description": "Notes de l'entretien"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "status": {
+            "$ref": "#/components/schemas/InterviewStatus"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          },
+          "job_title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Job Title"
+          },
+          "company_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Company Name"
+          },
+          "candidate_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Candidate Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "application_id",
+          "interviewer_id",
+          "scheduled_at",
+          "id",
+          "status",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "InterviewRead"
+      },
+      "InterviewStatus": {
+        "type": "string",
+        "enum": [
+          "scheduled",
+          "completed",
+          "cancelled",
+          "no_show"
+        ],
+        "title": "InterviewStatus"
+      },
+      "InterviewUpdate": {
+        "properties": {
+          "scheduled_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scheduled At"
+          },
+          "duration_minutes": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duration Minutes"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/InterviewStatus"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "meeting_link": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 512
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Meeting Link"
+          },
+          "location": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Location"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          }
+        },
+        "type": "object",
+        "title": "InterviewUpdate"
+      },
+      "JobCreate": {
+        "properties": {
+          "title": {
+            "type": "string",
+            "title": "Title",
+            "description": "Le titre du poste"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description",
+            "description": "La description détaillée de l'offre"
+          },
+          "is_remote": {
+            "type": "boolean",
+            "title": "Is Remote",
+            "description": "Télétravail autorisé",
+            "default": false
+          },
+          "formatted_address": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Formatted Address",
+            "description": "Adresse physique du poste"
+          },
+          "required_skills": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Required Skills",
+            "description": "Liste des compétences requises"
+          },
+          "status": {
+            "$ref": "#/components/schemas/JobStatus",
+            "description": "Le statut initial de l'offre",
+            "default": "draft"
+          },
+          "longitude": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Longitude",
+            "description": "Longitude pour le SIG (ex: 2.3522)"
+          },
+          "latitude": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latitude",
+            "description": "Latitude pour le SIG (ex: 48.8566)"
+          }
+        },
+        "type": "object",
+        "required": [
+          "title",
+          "description"
+        ],
+        "title": "JobCreate",
+        "example": {
+          "description": "Nous recherchons un développeur Python expérimenté pour rejoindre notre équipe backend.",
+          "formatted_address": "15 Rue de Rivoli, 75001 Paris",
+          "is_remote": true,
+          "latitude": 48.8566,
+          "longitude": 2.3522,
+          "required_skills": [
+            "python",
+            "fastapi",
+            "postgresql",
+            "docker"
+          ],
+          "status": "draft",
+          "title": "Développeur Python Senior"
+        }
+      },
+      "JobResponse": {
+        "properties": {
+          "title": {
+            "type": "string",
+            "title": "Title",
+            "description": "Le titre du poste"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description",
+            "description": "La description détaillée de l'offre"
+          },
+          "is_remote": {
+            "type": "boolean",
+            "title": "Is Remote",
+            "description": "Télétravail autorisé",
+            "default": false
+          },
+          "formatted_address": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Formatted Address",
+            "description": "Adresse physique du poste"
+          },
+          "required_skills": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Required Skills",
+            "description": "Liste des compétences requises"
+          },
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "company_id": {
+            "type": "string",
+            "title": "Company Id"
+          },
+          "status": {
+            "$ref": "#/components/schemas/JobStatus"
+          },
+          "company_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Company Name"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "title",
+          "description",
+          "id",
+          "company_id",
+          "status"
+        ],
+        "title": "JobResponse",
+        "example": {
+          "company_id": "comp-456",
+          "description": "Nous recherchons un développeur Python expérimenté...",
+          "formatted_address": "15 Rue de Rivoli, 75001 Paris",
+          "id": "job-123",
+          "is_remote": true,
+          "required_skills": [
+            "python",
+            "fastapi",
+            "postgresql"
+          ],
+          "status": "active",
+          "title": "Développeur Python Senior"
+        }
+      },
+      "JobSearchFilters": {
+        "properties": {
+          "query": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Query"
+          },
+          "skills": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Skills"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status"
+          },
+          "is_remote": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Remote"
+          },
+          "company_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Company Id"
+          },
+          "latitude": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latitude"
+          },
+          "longitude": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Longitude"
+          },
+          "radius_km": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Radius Km"
+          },
+          "page": {
+            "type": "integer",
+            "title": "Page",
+            "default": 1
+          },
+          "page_size": {
+            "type": "integer",
+            "title": "Page Size",
+            "default": 20
+          }
+        },
+        "type": "object",
+        "title": "JobSearchFilters",
+        "example": {
+          "is_remote": true,
+          "page": 1,
+          "page_size": 20,
+          "query": "développeur python",
+          "skills": [
+            "python",
+            "fastapi",
+            "postgresql"
+          ],
+          "status": "active"
+        }
+      },
+      "JobStats": {
+        "properties": {
+          "total_jobs": {
+            "type": "integer",
+            "title": "Total Jobs"
+          },
+          "active_jobs": {
+            "type": "integer",
+            "title": "Active Jobs"
+          },
+          "closed_jobs": {
+            "type": "integer",
+            "title": "Closed Jobs"
+          },
+          "avg_applications_per_job": {
+            "type": "number",
+            "title": "Avg Applications Per Job"
+          }
+        },
+        "type": "object",
+        "required": [
+          "total_jobs",
+          "active_jobs",
+          "closed_jobs",
+          "avg_applications_per_job"
+        ],
+        "title": "JobStats"
+      },
+      "JobStatus": {
+        "type": "string",
+        "enum": [
+          "draft",
+          "active",
+          "closed",
+          "archived"
+        ],
+        "title": "JobStatus"
+      },
+      "JobUpdate": {
+        "properties": {
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/JobStatus"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "is_remote": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Remote"
+          },
+          "formatted_address": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Formatted Address"
+          },
+          "required_skills": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Required Skills"
+          },
+          "longitude": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Longitude"
+          },
+          "latitude": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latitude"
+          }
+        },
+        "type": "object",
+        "title": "JobUpdate",
+        "example": {
+          "is_remote": true,
+          "status": "active",
+          "title": "Dev Python Senior (confirmé)"
+        }
+      },
+      "NotificationListResponse": {
+        "properties": {
+          "notifications": {
+            "items": {
+              "$ref": "#/components/schemas/NotificationResponse"
+            },
+            "type": "array",
+            "title": "Notifications"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "unread_count": {
+            "type": "integer",
+            "title": "Unread Count"
+          },
+          "limit": {
+            "type": "integer",
+            "title": "Limit"
+          },
+          "offset": {
+            "type": "integer",
+            "title": "Offset"
+          }
+        },
+        "type": "object",
+        "required": [
+          "notifications",
+          "total",
+          "unread_count",
+          "limit",
+          "offset"
+        ],
+        "title": "NotificationListResponse",
+        "description": "Liste paginee des notifications de l'utilisateur connecte."
+      },
+      "NotificationMarkedResponse": {
+        "properties": {
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "is_read": {
+            "type": "boolean",
+            "title": "Is Read",
+            "default": true
+          }
+        },
+        "type": "object",
+        "required": [
+          "message",
+          "id"
+        ],
+        "title": "NotificationMarkedResponse"
+      },
+      "NotificationReadAllResponse": {
+        "properties": {
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "updated": {
+            "type": "integer",
+            "title": "Updated"
+          }
+        },
+        "type": "object",
+        "required": [
+          "message",
+          "updated"
+        ],
+        "title": "NotificationReadAllResponse"
+      },
+      "NotificationResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "user_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "User Id"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "$ref": "#/components/schemas/NotificationType"
+          },
+          "is_read": {
+            "type": "boolean",
+            "title": "Is Read"
+          },
+          "link": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Link"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "user_id",
+          "title",
+          "message",
+          "type",
+          "is_read",
+          "created_at"
+        ],
+        "title": "NotificationResponse",
+        "example": {
+          "created_at": "2026-10-28T10:00:00Z",
+          "id": "3f2b8c1e-6a4d-4b5e-9c7f-1a2b3c4d5e6f",
+          "is_read": false,
+          "link": "/applications/123",
+          "message": "Votre candidature a été enregistrée.",
+          "title": "Candidature reçue",
+          "type": "application_status",
+          "user_id": "1a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d"
+        }
+      },
+      "NotificationType": {
+        "type": "string",
+        "enum": [
+          "application_status",
+          "new_application",
+          "interview",
+          "system"
+        ],
+        "title": "NotificationType"
+      },
+      "OtpRequest": {
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "title": "Email"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "email"
+        ],
+        "title": "OtpRequest",
+        "description": "Demande d'envoi d'un code OTP par email.",
+        "example": {
+          "email": "jean.dupont@example.com"
+        }
+      },
+      "OtpVerifyRequest": {
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "title": "Email"
+          },
+          "code": {
+            "type": "string",
+            "maxLength": 6,
+            "minLength": 6,
+            "title": "Code",
+            "description": "Code OTP à 6 chiffres"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "email",
+          "code"
+        ],
+        "title": "OtpVerifyRequest",
+        "description": "Vérification d'un code OTP.",
+        "example": {
+          "code": "123456",
+          "email": "jean.dupont@example.com"
+        }
+      },
+      "PipelineStats": {
+        "properties": {
+          "total_applications": {
+            "type": "integer",
+            "title": "Total Applications"
+          },
+          "by_stage": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "By Stage"
+          },
+          "avg_matching_score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avg Matching Score"
+          }
+        },
+        "type": "object",
+        "required": [
+          "total_applications",
+          "by_stage",
+          "avg_matching_score"
+        ],
+        "title": "PipelineStats"
+      },
+      "ProfileResponse": {
+        "properties": {
+          "first_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "First Name"
+          },
+          "last_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Name"
+          },
+          "phone": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Phone"
+          },
+          "raw_address": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Raw Address"
+          },
+          "is_profile_public": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Profile Public",
+            "default": true
+          },
+          "is_searchable": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Searchable",
+            "default": true
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "user_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "User Id"
+          },
+          "cv_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cv Key"
+          },
+          "skills": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Skills"
+          },
+          "experiences": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/ExperienceResponse"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Experiences"
+          },
+          "formations": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/FormationResponse"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Formations"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "user_id"
+        ],
+        "title": "ProfileResponse",
+        "example": {
+          "cv_key": "cvs/user-456.pdf",
+          "first_name": "Jean",
+          "id": "prof-123",
+          "last_name": "Dupont",
+          "phone": "+33612345678",
+          "skills": [
+            "python",
+            "fastapi",
+            "postgresql"
+          ],
+          "user_id": "user-456"
+        }
+      },
+      "ProfileUpdate": {
+        "properties": {
+          "first_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "First Name"
+          },
+          "last_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Name"
+          },
+          "phone": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Phone"
+          },
+          "raw_address": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Raw Address"
+          },
+          "skills": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Skills"
+          },
+          "is_profile_public": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Profile Public"
+          },
+          "is_searchable": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Searchable"
+          }
+        },
+        "type": "object",
+        "title": "ProfileUpdate",
+        "example": {
+          "first_name": "Jean",
+          "last_name": "Dupont",
+          "phone": "+33612345678"
+        }
+      },
+      "RefreshTokenRequest": {
+        "properties": {
+          "refresh_token": {
+            "type": "string",
+            "title": "Refresh Token"
+          }
+        },
+        "type": "object",
+        "required": [
+          "refresh_token"
+        ],
+        "title": "RefreshTokenRequest",
+        "example": {
+          "refresh_token": "eyJhbGciOiJIUzI1NiIs..."
+        }
+      },
+      "RegisterRequest": {
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "title": "Email"
+          },
+          "password": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 8,
+            "title": "Password",
+            "description": "Mot de passe d'au moins 8 caractères"
+          },
+          "first_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "First Name"
+          },
+          "last_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Name"
+          },
+          "company_name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Company Name",
+            "description": "Nom de l'entreprise (requis pour une inscription recruteur)"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "email",
+          "password"
+        ],
+        "title": "RegisterRequest",
+        "description": "Inscription publique directe.\nLe role est toujours CANDIDATE (aucun champ role accepte).",
+        "example": {
+          "email": "jean.dupont@example.com",
+          "first_name": "Jean",
+          "last_name": "Dupont",
+          "password": "MonSecret123!"
+        }
+      },
+      "ResendVerificationRequest": {
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "title": "Email"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "email"
+        ],
+        "title": "ResendVerificationRequest",
+        "description": "Demande de renvoi du lien de verification d'email.",
+        "example": {
+          "email": "jean.dupont@example.com"
+        }
+      },
+      "ResetPasswordRequest": {
+        "properties": {
+          "token": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Token"
+          },
+          "new_password": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 8,
+            "title": "New Password"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "token",
+          "new_password"
+        ],
+        "title": "ResetPasswordRequest",
+        "example": {
+          "new_password": "NouveauMot2Passe!",
+          "token": "eyJhbGciOiJIUzI1NiIs..."
+        }
+      },
+      "SearchResult": {
+        "properties": {
+          "items": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "page": {
+            "type": "integer",
+            "title": "Page"
+          },
+          "page_size": {
+            "type": "integer",
+            "title": "Page Size"
+          },
+          "total_pages": {
+            "type": "integer",
+            "title": "Total Pages"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "page",
+          "page_size",
+          "total_pages"
+        ],
+        "title": "SearchResult",
+        "example": {
+          "items": [
+            {
+              "id": "job-123",
+              "title": "Dev Python"
+            }
+          ],
+          "page": 1,
+          "page_size": 20,
+          "total": 42,
+          "total_pages": 3
+        }
+      },
+      "SkillDemand": {
+        "properties": {
+          "skill": {
+            "type": "string",
+            "title": "Skill"
+          },
+          "count": {
+            "type": "integer",
+            "title": "Count"
+          },
+          "percentage": {
+            "type": "number",
+            "title": "Percentage"
+          }
+        },
+        "type": "object",
+        "required": [
+          "skill",
+          "count",
+          "percentage"
+        ],
+        "title": "SkillDemand"
+      },
+      "TaskStatusResponse": {
+        "properties": {
+          "task_id": {
+            "type": "string",
+            "title": "Task Id"
+          },
+          "application_id": {
+            "type": "string",
+            "title": "Application Id"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "result": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Result"
+          },
+          "matching_score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Matching Score"
+          },
+          "stage": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stage"
+          }
+        },
+        "type": "object",
+        "required": [
+          "task_id",
+          "application_id",
+          "status"
+        ],
+        "title": "TaskStatusResponse",
+        "description": "Statut d'une tâche Celery.",
+        "example": {
+          "application_id": "app-123",
+          "matching_score": 85.5,
+          "result": {
+            "matching_score": 85.5
+          },
+          "stage": "screening",
+          "status": "SUCCESS",
+          "task_id": "celery-task-789"
+        }
+      },
+      "Token": {
+        "properties": {
+          "access_token": {
+            "type": "string",
+            "title": "Access Token"
+          },
+          "refresh_token": {
+            "type": "string",
+            "title": "Refresh Token"
+          },
+          "token_type": {
+            "type": "string",
+            "title": "Token Type",
+            "default": "bearer"
+          }
+        },
+        "type": "object",
+        "required": [
+          "access_token",
+          "refresh_token"
+        ],
+        "title": "Token",
+        "example": {
+          "access_token": "eyJhbGciOiJIUzI1NiIs...",
+          "refresh_token": "eyJhbGciOiJIUzI1NiIs...",
+          "token_type": "bearer"
+        }
+      },
+      "UserAdminCreate": {
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "title": "Email"
+          },
+          "role": {
+            "$ref": "#/components/schemas/UserRole",
+            "default": "candidate"
+          },
+          "password": {
+            "type": "string",
+            "title": "Password"
+          },
+          "company_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Company Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "email",
+          "password"
+        ],
+        "title": "UserAdminCreate",
+        "example": {
+          "company_id": "comp-789",
+          "email": "marie@techcorp.com",
+          "password": "Secret123!",
+          "role": "recruiter"
+        }
+      },
+      "UserBriefResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "title": "Email"
+          },
+          "nom_complet": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nom Complet"
+          },
+          "titre": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Titre"
+          },
+          "localisation": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Localisation"
+          },
+          "skills": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Skills",
+            "default": []
+          },
+          "has_cv": {
+            "type": "boolean",
+            "title": "Has Cv",
+            "default": false
+          },
+          "profil_public": {
+            "type": "boolean",
+            "title": "Profil Public",
+            "default": true
+          },
+          "recherchable": {
+            "type": "boolean",
+            "title": "Recherchable",
+            "default": true
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
+          "experiences": {
+            "items": {
+              "$ref": "#/components/schemas/ExperienceResume"
+            },
+            "type": "array",
+            "title": "Experiences",
+            "default": []
+          },
+          "formations": {
+            "items": {
+              "$ref": "#/components/schemas/FormationResume"
+            },
+            "type": "array",
+            "title": "Formations",
+            "default": []
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "email"
+        ],
+        "title": "UserBriefResponse",
+        "description": "Fiche candidat du vivier (vue recruteur) — uniquement des données réelles.",
+        "example": {
+          "created_at": "2025-01-15T10:30:00Z",
+          "email": "jean@example.com",
+          "has_cv": true,
+          "id": "user-123",
+          "localisation": "Paris",
+          "nom_complet": "Jean Dupont",
+          "profil_public": true,
+          "recherchable": true,
+          "skills": [
+            "python",
+            "fastapi"
+          ]
+        }
+      },
+      "UserCreate": {
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "title": "Email"
+          },
+          "role": {
+            "$ref": "#/components/schemas/UserRole",
+            "default": "candidate"
+          },
+          "password": {
+            "type": "string",
+            "title": "Password"
+          }
+        },
+        "type": "object",
+        "required": [
+          "email",
+          "password"
+        ],
+        "title": "UserCreate",
+        "example": {
+          "email": "jean@example.com",
+          "password": "Secret123!",
+          "role": "candidate"
+        }
+      },
+      "UserMeUpdate": {
+        "properties": {
+          "email": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "email"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email"
+          },
+          "password": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Password"
+          },
+          "profile": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ProfileUpdate"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "UserMeUpdate",
+        "example": {
+          "email": "newemail@example.com",
+          "profile": {
+            "first_name": "Jean"
+          }
+        }
+      },
+      "UserResponse": {
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "title": "Email"
+          },
+          "role": {
+            "$ref": "#/components/schemas/UserRole",
+            "default": "candidate"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "is_active": {
+            "type": "boolean",
+            "title": "Is Active"
+          },
+          "company_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Company Id"
+          },
+          "profile": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ProfileResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "email",
+          "id",
+          "is_active"
+        ],
+        "title": "UserResponse",
+        "example": {
+          "email": "jean@example.com",
+          "id": "user-123",
+          "is_active": true,
+          "profile": {
+            "first_name": "Jean",
+            "last_name": "Dupont",
+            "skills": [
+              "python"
+            ]
+          },
+          "role": "candidate"
+        }
+      },
+      "UserRole": {
+        "type": "string",
+        "enum": [
+          "superadmin",
+          "company_admin",
+          "recruiter",
+          "candidate"
+        ],
+        "title": "UserRole"
+      },
+      "UserUpdate": {
+        "properties": {
+          "email": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "email"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email"
+          },
+          "is_active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Active"
+          },
+          "role": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/UserRole"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "company_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Company Id"
+          }
+        },
+        "type": "object",
+        "title": "UserUpdate",
+        "example": {
+          "email": "newemail@example.com",
+          "is_active": true,
+          "role": "recruiter"
+        }
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      }
+    },
+    "securitySchemes": {
+      "OAuth2PasswordBearer": {
+        "type": "oauth2",
+        "flows": {
+          "password": {
+            "scopes": {},
+            "tokenUrl": "/api/v1/auth/login"
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,70 +1,69 @@
 import { api } from "@/lib/api";
 import type {
-  CandidatVivier,
-  ExperiencePayload,
-  ExperiencePro,
-  FormationPayload,
-  FormationPro,
-  MiseAJourProfilPayload,
-  UserProfil,
+  ExperienceCreate,
+  ExperienceResponse,
+  ExperienceUpdate,
+  FormationCreate,
+  FormationResponse,
+  FormationUpdate,
+  UserBriefResponse,
+  UserMeUpdate,
+  UserResponse,
 } from "@/types/domain";
 
 /* Service pour le profil utilisateur, le parcours candidat et le vivier de talents (recruteurs) */
 export const usersService = {
-  getMonProfil: (): Promise<UserProfil> => api.get<UserProfil>("/users/me"),
+  getMonProfil: (): Promise<UserResponse> => api.get<UserResponse>("/users/me"),
 
-  mettreAJourProfil: (payload: MiseAJourProfilPayload): Promise<UserProfil> =>
-    api.patch<UserProfil>("/users/me", payload),
+  mettreAJourProfil: (payload: UserMeUpdate): Promise<UserResponse> =>
+    api.patch<UserResponse>("/users/me", payload),
 
   getLienCV: (userId: string): Promise<{ download_url: string }> =>
     api.get<{ download_url: string }>(`/users/profile/cv/${userId}`),
 
-  /* --- Parcours candidat : expériences professionnelles --- */
-  getMesExperiences: (): Promise<ExperiencePro[]> =>
-    api.get<ExperiencePro[]>("/users/me/experiences"),
+  getMesExperiences: (): Promise<ExperienceResponse[]> =>
+    api.get<ExperienceResponse[]>("/users/me/experiences"),
 
-  ajouterExperience: (payload: ExperiencePayload): Promise<ExperiencePro> =>
-    api.post<ExperiencePro>("/users/me/experiences", payload),
+  ajouterExperience: (payload: ExperienceCreate): Promise<ExperienceResponse> =>
+    api.post<ExperienceResponse>("/users/me/experiences", payload),
 
   mettreAJourExperience: (
     id: string,
-    payload: Partial<ExperiencePayload>
-  ): Promise<ExperiencePro> =>
-    api.patch<ExperiencePro>(`/users/me/experiences/${id}`, payload),
+    payload: ExperienceUpdate
+  ): Promise<ExperienceResponse> =>
+    api.patch<ExperienceResponse>(`/users/me/experiences/${id}`, payload),
 
   supprimerExperience: (id: string): Promise<void> =>
     api.delete<void>(`/users/me/experiences/${id}`),
 
-  /* --- Parcours candidat : formations / diplômes --- */
-  getMesFormations: (): Promise<FormationPro[]> =>
-    api.get<FormationPro[]>("/users/me/formations"),
+  getMesFormations: (): Promise<FormationResponse[]> =>
+    api.get<FormationResponse[]>("/users/me/formations"),
 
-  ajouterFormation: (payload: FormationPayload): Promise<FormationPro> =>
-    api.post<FormationPro>("/users/me/formations", payload),
+  ajouterFormation: (payload: FormationCreate): Promise<FormationResponse> =>
+    api.post<FormationResponse>("/users/me/formations", payload),
 
   mettreAJourFormation: (
     id: string,
-    payload: Partial<FormationPayload>
-  ): Promise<FormationPro> =>
-    api.patch<FormationPro>(`/users/me/formations/${id}`, payload),
+    payload: FormationUpdate
+  ): Promise<FormationResponse> =>
+    api.patch<FormationResponse>(`/users/me/formations/${id}`, payload),
 
   supprimerFormation: (id: string): Promise<void> =>
     api.delete<void>(`/users/me/formations/${id}`),
 
-  /* --- Vivier recruteur --- */
   getCandidats: (params?: {
     skip?: number;
     limit?: number;
     search?: string;
-  }): Promise<CandidatVivier[]> => {
+  }): Promise<UserBriefResponse[]> => {
     const query = new URLSearchParams();
     if (params?.search) query.set("search", params.search);
     if (params?.skip != null) query.set("skip", String(params.skip));
     if (params?.limit != null) query.set("limit", String(params.limit));
     const qs = query.toString();
-    return api.get<CandidatVivier[]>(`/users${qs ? `?${qs}` : ""}`);
+    return api.get<UserBriefResponse[]>(`/users${qs ? `?${qs}` : ""}`);
   },
 
-  getCandidatParId: (id: string): Promise<CandidatVivier> =>
-    api.get<CandidatVivier>(`/users/${id}`),
+  getCandidatParId: (id: string): Promise<UserBriefResponse> =>
+    api.get<UserBriefResponse>(`/users/${id}`),
 };

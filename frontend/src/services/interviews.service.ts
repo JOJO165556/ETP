@@ -1,25 +1,20 @@
 import { api } from "@/lib/api";
+import type { Interview, InterviewCreate, InterviewUpdate } from "@/types/domain";
 
-export type StatutEntretien = "scheduled" | "completed" | "cancelled" | "no_show";
-
-export interface EntretienAPI {
-  id: string;
-  application_id: string;
-  interviewer_id: string;
-  scheduled_at: string;
-  duration_minutes: number;
-  meeting_link: string | null;
-  location: string | null;
-  notes: string | null;
-  status: StatutEntretien;
-  created_at: string;
-  updated_at: string;
-}
+export type { InterviewStatus } from "@/types/domain";
+export type EntretienAPI = Interview;
+export type StatutEntretien = import("@/types/domain").InterviewStatus;
 
 /* Entretiens du recruteur connecté, sur une fenêtre de jours donnée. */
 export const interviewsService = {
-  getAVenir: (jours = 180): Promise<EntretienAPI[]> =>
-    api.get<EntretienAPI[]>(`/interviews/upcoming?days=${jours}`),
+  getMesEntretiens: (): Promise<EntretienAPI[]> =>
+    api.get<EntretienAPI[]>("/interviews/me"),
+
+  creer: (payload: InterviewCreate): Promise<EntretienAPI> =>
+    api.post<EntretienAPI>("/interviews", payload),
+
+  mettreAJour: (id: string, payload: InterviewUpdate): Promise<EntretienAPI> =>
+    api.patch<EntretienAPI>(`/interviews/${id}`, payload),
 
   annuler: (id: string, motif?: string): Promise<EntretienAPI> => {
     const query = motif ? `?reason=${encodeURIComponent(motif)}` : "";

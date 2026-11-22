@@ -1,18 +1,20 @@
 import { api } from "@/lib/api";
+import type {
+  NotificationListResponse,
+  NotificationMarkedResponse,
+  NotificationReadAllResponse,
+  NotificationResponse,
+} from "@/types/domain";
 
-export interface Notification {
-  id: string;
-  type: string;
-  title: string;
-  message: string;
-  read: boolean;
-  created_at: string;
-}
+export type Notification = NotificationResponse;
 
 export const notificationsService = {
-  getMesNotifications: (): Promise<Notification[]> =>
-    api.get<Notification[]>("/notifications/me"),
+  getMesNotifications: (): Promise<NotificationListResponse> =>
+    api.get<NotificationListResponse>("/notifications/me"),
 
-  markAsRead: (notificationId: string): Promise<Notification> =>
-    api.patch<Notification>(`/notifications/${notificationId}/read`),
+  markAsRead: (notificationId: string): Promise<NotificationMarkedResponse> =>
+    api.patch<NotificationMarkedResponse>(`/notifications/${notificationId}/read`),
+
+  markAllAsRead: (): Promise<NotificationReadAllResponse> =>
+    api.post<NotificationReadAllResponse>("/notifications/read-all"),
 };

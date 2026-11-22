@@ -192,7 +192,7 @@ function ResetPasswordForm() {
 
 export default function ResetPasswordPage() {
   return (
-    <Suspense fallback={<div className="w-full max-w-[400px] animate-pulse" />}>
+    <Suspense fallback={<div className="h-72 w-full max-w-[400px] rounded-xl bg-muted" aria-hidden="true" />}>
       <ResetPasswordForm />
     </Suspense>
   );

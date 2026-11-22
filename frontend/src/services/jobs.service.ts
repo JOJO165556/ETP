@@ -1,44 +1,46 @@
 import { api } from "@/lib/api";
-import type { Offre } from "@/types/domain";
+import type { ApplicationSubmit, Job, JobCreate, JobStatus, JobUpdate } from "@/types/domain";
 
 export interface FiltresOffresAPI {
   skip?: number;
   limit?: number;
+  /** Vue gestion recruteur : toutes les offres de l'entreprise (tous statuts). */
+  company_id?: string;
+  status?: JobStatus;
 }
 
 function construireRequete(filtres: FiltresOffresAPI = {}): string {
   const params = new URLSearchParams();
   if (filtres.skip != null) params.set("skip", String(filtres.skip));
   if (filtres.limit != null) params.set("limit", String(filtres.limit));
+  if (filtres.company_id) params.set("company_id", filtres.company_id);
+  if (filtres.status) params.set("status", filtres.status);
   const qs = params.toString();
   return qs ? `?${qs}` : "";
 }
 
-export interface ReponseCandidature {
-  application: { id: string; job_id: string; stage: string };
-  task_id: string | null;
-  task_status: string | null;
-}
-
 /* Service pour la gestion des offres d'emploi */
 export const jobsService = {
-  getOffres: (filtres: FiltresOffresAPI = {}): Promise<Offre[]> =>
-    api.get<Offre[]>(`/jobs${construireRequete(filtres)}`),
+  getOffres: (filtres: FiltresOffresAPI = {}): Promise<Job[]> =>
+    api.get<Job[]>(`/jobs${construireRequete(filtres)}`),
 
-  getOffreParId: (id: string): Promise<Offre> => api.get<Offre>(`/jobs/${id}`),
+  getOffreParId: (id: string): Promise<Job> => api.get<Job>(`/jobs/${id}`),
 
-  getOffresSimilaires: (id: string): Promise<Offre[]> =>
-    api.get<Offre[]>(`/jobs/${id}/similar`),
+  creerOffre: (payload: JobCreate): Promise<Job> =>
+    api.post<Job>("/jobs", payload),
+
+  mettreAJourOffre: (id: string, payload: JobUpdate): Promise<Job> =>
+    api.patch<Job>(`/jobs/${id}`, payload),
 
   getOffresLocales: (
     latitude: number,
     longitude: number,
     radiusKm = 50
-  ): Promise<Offre[]> =>
-    api.get<Offre[]>(
+  ): Promise<Job[]> =>
+    api.get<Job[]>(
       `/jobs/search/location?lon=${longitude}&lat=${latitude}&radius_km=${radiusKm}`
     ),
 
-  postuler: (jobId: string): Promise<ReponseCandidature> =>
-    api.post<ReponseCandidature>(`/applications/jobs/${jobId}/apply`),
+  postuler: (jobId: string): Promise<ApplicationSubmit> =>
+    api.post<ApplicationSubmit>(`/applications/jobs/${jobId}/apply`),
 };

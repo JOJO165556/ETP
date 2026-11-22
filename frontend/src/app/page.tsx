@@ -1,295 +1,296 @@
-"use client";
-
-import Link from "next/link";
 import Image from "next/image";
-import { motion } from "framer-motion";
+import Link from "next/link";
 import {
-  Target,
   ArrowRight,
-  ShieldCheck,
-  MapPin,
-  User,
+  Briefcase,
   Building2,
-  CheckCircle2,
-  Lock,
+  CalendarCheck,
+  FileText,
+  Send,
+  ShieldCheck,
+  User,
+  Users,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
 
+const PARCOURS_CANDIDAT = [
+  {
+    Icone: FileText,
+    titre: "Déposez votre CV",
+    texte: "Votre parcours est repris automatiquement. Vous corrigez ce qui doit l'être.",
+  },
+  {
+    Icone: Briefcase,
+    titre: "Recevez des offres ciblées",
+    texte: "Les postes affichés correspondent à vos compétences et à votre zone de déplacement.",
+  },
+  {
+    Icone: CalendarCheck,
+    titre: "Suivez chaque étape",
+    texte: "Vous savez à tout moment où en est votre candidature, sans relancer personne.",
+  },
+];
+
+const PARCOURS_RECRUTEUR = [
+  {
+    Icone: Send,
+    titre: "Publiez une offre",
+    texte: "Le poste est visible immédiatement par les candidats concernés.",
+  },
+  {
+    Icone: Users,
+    titre: "Évaluez les candidatures",
+    texte: "Les profils sont classés par pertinence, avec les notes de votre équipe.",
+  },
+  {
+    Icone: CalendarCheck,
+    titre: "Planifiez les entretiens",
+    texte: "Les rendez-vous sont posés sans double réservation et confirmés par email.",
+  },
+];
+
 export default function LandingPage() {
   return (
-    <div className="flex min-h-dvh flex-col bg-background text-foreground selection:bg-primary/20 selection:text-primary">
-      {/* 1. Navigation Header */}
-      <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/80 backdrop-blur-md">
-        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-          <Link href="/" className="flex items-center gap-3 group">
-            <div className="relative h-9 w-9 overflow-hidden rounded-xl ring-1 ring-border shadow-sm transition-transform group-hover:scale-105">
-              <Image
-                src="/etp_logo.webp"
-                alt="ETP Logo"
-                fill
-                priority
-                className="object-cover"
-              />
-            </div>
-            <span className="text-base font-bold tracking-tight" style={{ fontFamily: "var(--font-heading)" }}>
-              ETP
-            </span>
+    <div className="flex min-h-dvh flex-col bg-background text-foreground">
+      <header className="sticky top-0 z-50 border-b border-border bg-background/90 backdrop-blur">
+        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6 lg:px-8">
+          <Link href="/" className="flex items-center gap-2.5">
+            <Image
+              src="/etp_logo.webp"
+              alt="ETP"
+              width={32}
+              height={32}
+              priority
+              className="h-8 w-8 rounded-lg object-cover"
+            />
+            <span className="text-base font-semibold tracking-tight">ETP</span>
           </Link>
 
-          <nav className="hidden items-center gap-8 md:flex">
-            <a href="#candidats" className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">
-              Pour les Talents
+          <nav className="hidden items-center gap-7 md:flex">
+            <a
+              href="#talents"
+              className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+            >
+              Pour les candidats
             </a>
-            <a href="#recruteurs" className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">
-              Pour les Entreprises
+            <a
+              href="#entreprises"
+              className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+            >
+              Pour les entreprises
             </a>
-            <a href="#comment-ca-marche" className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">
-              Comment ça marche
+            <a
+              href="#fonctionnement"
+              className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+            >
+              Fonctionnement
             </a>
           </nav>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             <ThemeToggle />
-            <Link href="/login">
-              <Button variant="ghost" size="sm" className="font-semibold text-xs sm:text-sm">
-                Se connecter
-              </Button>
-            </Link>
+            <Button variant="ghost" size="sm" render={<Link href="/login" />}>
+              Se connecter
+            </Button>
           </div>
         </div>
       </header>
 
-      {/* 2. Hero Section */}
       <main className="flex-1">
-        <section className="relative overflow-hidden py-20 sm:py-28 lg:py-32">
-          {/* Subtle background glow */}
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute inset-0 -z-10 flex items-center justify-center opacity-40 dark:opacity-20"
-          >
-            <div className="h-[500px] w-[900px] rounded-full bg-gradient-to-tr from-primary/30 to-blue-400/20 blur-3xl" />
-          </div>
+        <section className="mx-auto max-w-6xl px-4 py-20 sm:px-6 lg:px-8 lg:py-28">
+          <div className="max-w-3xl">
+            <p className="text-sm font-medium text-primary">
+              Recrutement candidats et entreprises
+            </p>
+            <h1 className="mt-3 text-4xl leading-tight font-semibold tracking-tight sm:text-5xl">
+              Recruter sans perdre de temps, postuler sans se perdre.
+            </h1>
+            <p className="mt-5 max-w-2xl text-base leading-relaxed text-muted-foreground sm:text-lg">
+              ETP réunit dans un seul espace les offres, les candidatures et les entretiens.
+              Les candidats suivent l&apos;avancement de leur dossier. Les équipes recrutement
+              gardent une vue claire sur chaque décision.
+            </p>
 
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-center">
-            {/* Pill badge */}
-            <motion.div
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
-              className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-4 py-1.5 text-xs font-semibold text-primary mb-8"
-            >
-              <Target size={14} />
-              <span>La plateforme qui connecte les bons profils aux bonnes équipes</span>
-            </motion.div>
+            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+              <Button size="lg" className="gap-2" render={<Link href="/register?role=candidate" />}>
+                <User size={17} aria-hidden="true" />
+                Créer un compte candidat
+              </Button>
+              <Button
+                size="lg"
+                variant="outline"
+                className="gap-2"
+                render={<Link href="/register?role=recruiter" />}
+              >
+                <Building2 size={17} aria-hidden="true" />
+                Créer un espace entreprise
+              </Button>
+            </div>
 
-            {/* Main title */}
-            <motion.h1
-              initial={{ opacity: 0, y: 15 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.1 }}
-              className="mx-auto max-w-4xl text-4xl font-extrabold tracking-tight sm:text-6xl lg:text-7xl leading-tight"
-              style={{ fontFamily: "var(--font-heading)" }}
-            >
-              La rencontre des <span className="text-primary">meilleurs talents</span> et des équipes exigeantes.
-            </motion.h1>
-
-            {/* Subtitle */}
-            <motion.p
-              initial={{ opacity: 0, y: 15 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.2 }}
-              className="mx-auto mt-6 max-w-2xl text-base sm:text-lg text-muted-foreground leading-relaxed"
-            >
-              Fini les tris manuels interminables. ETP combine géolocalisation haute précision, analyse automatique de CV par IA et pipeline collaboratif sécurisé aux normes européennes.
-            </motion.p>
-
-            {/* Dual CTAs */}
-            <motion.div
-              initial={{ opacity: 0, y: 15 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.3 }}
-              className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4"
-            >
-              <Link href="/register?role=candidate" className="w-full sm:w-auto">
-                <Button size="lg" className="w-full sm:w-auto gap-2 text-sm font-semibold h-12 px-6 shadow-md shadow-primary/20">
-                  <User size={18} />
-                  Je suis Candidat &middot; Matcher mon CV
-                </Button>
-              </Link>
-              <Link href="/register?role=recruiter" className="w-full sm:w-auto">
-                <Button size="lg" variant="outline" className="w-full sm:w-auto gap-2 text-sm font-semibold h-12 px-6 border-border hover:bg-muted/60">
-                  <Building2 size={18} />
-                  Je suis Recruteur &middot; Découvrir la plateforme
-                </Button>
-              </Link>
-            </motion.div>
-
-            {/* Micro trust indicators */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.6, delay: 0.4 }}
-              className="mt-12 flex flex-wrap items-center justify-center gap-6 text-xs text-muted-foreground"
-            >
-              <div className="flex items-center gap-2">
-                <ShieldCheck size={16} className="text-emerald-500" />
-                <span>100% Conforme RGPD</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <CheckCircle2 size={16} className="text-emerald-500" />
-                <span>Analyse de CV instantanée</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <MapPin size={16} className="text-emerald-500" />
-                <span>Calcul des temps de trajet réels</span>
-              </div>
-            </motion.div>
+            <ul className="mt-10 flex flex-wrap items-center gap-x-6 gap-y-3 text-sm text-muted-foreground">
+              <li className="inline-flex items-center gap-2">
+                <ShieldCheck size={16} className="text-success" aria-hidden="true" />
+                Données cloisonnées par entreprise
+              </li>
+              <li className="inline-flex items-center gap-2">
+                <ShieldCheck size={16} className="text-success" aria-hidden="true" />
+                CV consultés par lien temporaire
+              </li>
+              <li className="inline-flex items-center gap-2">
+                <ShieldCheck size={16} className="text-success" aria-hidden="true" />
+                Accès et suppression de vos données
+              </li>
+            </ul>
           </div>
         </section>
 
-        {/* 3. Interactive Matching Preview Card */}
-        <section id="comment-ca-marche" className="scroll-mt-20 py-12 border-y border-border/40 bg-muted/20">
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <div className="mx-auto max-w-3xl text-center mb-10">
-              <h2 className="text-2xl sm:text-3xl font-bold tracking-tight" style={{ fontFamily: "var(--font-heading)" }}>
-                Un scoring d'adéquation en temps réel
+        <section
+          id="fonctionnement"
+          className="scroll-mt-20 border-y border-border bg-muted/30 py-16 lg:py-20"
+        >
+          <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+            <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">
+              Comment ça se passe
+            </h2>
+            <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground">
+              Le même parcours, vu des deux côtés.
+            </p>
+
+            <div className="mt-10 grid gap-10 lg:grid-cols-2">
+              <div>
+                <h3 className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                  <User size={16} className="text-primary" aria-hidden="true" />
+                  Côté candidat
+                </h3>
+                <ol className="mt-5 space-y-5">
+                  {PARCOURS_CANDIDAT.map(({ Icone, titre, texte }, index) => (
+                    <li key={titre} className="flex gap-4">
+                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-border bg-background text-sm font-semibold text-foreground">
+                        {index + 1}
+                      </span>
+                      <div>
+                        <p className="flex items-center gap-2 text-sm font-medium text-foreground">
+                          <Icone size={14} className="text-muted-foreground" aria-hidden="true" />
+                          {titre}
+                        </p>
+                        <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+                          {texte}
+                        </p>
+                      </div>
+                    </li>
+                  ))}
+                </ol>
+              </div>
+
+              <div>
+                <h3 className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                  <Building2 size={16} className="text-primary" aria-hidden="true" />
+                  Côté entreprise
+                </h3>
+                <ol className="mt-5 space-y-5">
+                  {PARCOURS_RECRUTEUR.map(({ Icone, titre, texte }, index) => (
+                    <li key={titre} className="flex gap-4">
+                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-border bg-background text-sm font-semibold text-foreground">
+                        {index + 1}
+                      </span>
+                      <div>
+                        <p className="flex items-center gap-2 text-sm font-medium text-foreground">
+                          <Icone size={14} className="text-muted-foreground" aria-hidden="true" />
+                          {titre}
+                        </p>
+                        <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+                          {texte}
+                        </p>
+                      </div>
+                    </li>
+                  ))}
+                </ol>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="py-16 lg:py-24">
+          <div className="mx-auto grid max-w-6xl gap-6 px-4 sm:px-6 lg:grid-cols-2 lg:px-8">
+            <article
+              id="talents"
+              className="scroll-mt-24 flex flex-col rounded-xl border border-border bg-card p-7 sm:p-8"
+            >
+              <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                <User size={19} aria-hidden="true" />
+              </span>
+              <h2 className="mt-4 text-xl font-semibold tracking-tight text-foreground">
+                Pour les candidats
               </h2>
-              <p className="mt-2 text-sm text-muted-foreground">
-                Chaque candidature est évaluée selon les compétences, l'expérience et la proximité géographique, de façon objective et reproductible.
-              </p>
-            </div>
+              <ul className="mt-5 flex-1 space-y-3 text-sm leading-relaxed text-muted-foreground">
+                <li>
+                  Un profil construit à partir de votre CV, que vous pouvez corriger à tout
+                  moment.
+                </li>
+                <li>
+                  Des offres filtrées par compétences et par distance réelle depuis chez vous.
+                </li>
+                <li>
+                  Un suivi transparent : chaque candidature indique son étape et la prochaine
+                  action attendue.
+                </li>
+              </ul>
+              <Button
+                className="mt-7 w-full gap-2"
+                render={<Link href="/register?role=candidate" />}
+              >
+                Créer mon compte
+                <ArrowRight size={15} aria-hidden="true" />
+              </Button>
+            </article>
 
-            <div className="mx-auto max-w-4xl rounded-2xl border border-border bg-card p-6 sm:p-8 shadow-xl">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-border/60 pb-6">
-                <div className="flex items-center gap-3">
-                  <div className="h-12 w-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-bold text-lg">
-                    94%
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-foreground text-base">Adéquation Idéale &middot; Développeur Full Stack</h3>
-                    <p className="text-xs text-muted-foreground flex items-center gap-2 mt-0.5">
-                      <MapPin size={12} /> À 15 min de transport &middot; Disponible immédiatement
-                    </p>
-                  </div>
-                </div>
-                <span className="rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 px-3 py-1 text-xs font-semibold">
-                  Match IA confirmé
-                </span>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-6 text-left">
-                <div className="rounded-xl border border-border/60 bg-muted/40 p-4">
-                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Compétences</p>
-                  <p className="mt-1 text-sm font-semibold text-foreground">React, Next.js, FastAPI, PostgreSQL</p>
-                  <p className="mt-1 text-xs text-emerald-500">100% de concordance</p>
-                </div>
-                <div className="rounded-xl border border-border/60 bg-muted/40 p-4">
-                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Rayon géographique</p>
-                  <p className="mt-1 text-sm font-semibold text-foreground">Rayon de 12 km respecté</p>
-                  <p className="mt-1 text-xs text-emerald-500">Zone de trajet respectée</p>
-                </div>
-                <div className="rounded-xl border border-border/60 bg-muted/40 p-4">
-                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Traitement CV</p>
-                  <p className="mt-1 text-sm font-semibold text-foreground">Extraction structurée</p>
-                  <p className="mt-1 text-xs text-emerald-500">Analysé en quelques secondes</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* 4. Dual Pathways : Candidats vs Recruteurs */}
-        <section className="py-20 lg:py-28">
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-stretch">
-              {/* Carte Candidat */}
-              <div id="candidats" className="scroll-mt-24 flex flex-col justify-between rounded-3xl border border-border bg-card p-8 sm:p-10 shadow-sm relative overflow-visible group hover:border-primary/50 transition-colors">
-                <div className="space-y-6">
-                  <div className="relative z-10 h-12 w-12 shrink-0 rounded-2xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center">
-                    <User size={24} />
-                  </div>
-                  <div>
-                    <span className="text-xs font-bold uppercase tracking-widest text-emerald-500">Pour les Talents</span>
-                    <h3 className="text-2xl font-bold tracking-tight text-foreground mt-1" style={{ fontFamily: "var(--font-heading)" }}>
-                      Votre carrière, sans perte de temps
-                    </h3>
-                  </div>
-                  <ul className="space-y-4 text-sm text-muted-foreground">
-                    <li className="flex items-start gap-3">
-                      <CheckCircle2 size={18} className="text-emerald-500 shrink-0 mt-0.5" />
-                      <span><strong>Dépôt de CV simplifié :</strong> Importez votre document (PDF/Word), vos expériences et compétences sont automatiquement valorisées.</span>
-                    </li>
-                    <li className="flex items-start gap-3">
-                      <CheckCircle2 size={18} className="text-emerald-500 shrink-0 mt-0.5" />
-                      <span><strong>Offres géolocalisées :</strong> Ne postulez qu'aux opportunités dans votre périmètre de transport idéal.</span>
-                    </li>
-                    <li className="flex items-start gap-3">
-                      <CheckCircle2 size={18} className="text-emerald-500 shrink-0 mt-0.5" />
-                      <span><strong>Contrôle souverain :</strong> Vos données restent strictement confidentielles, modifiables ou supprimables à tout moment.</span>
-                    </li>
-                  </ul>
-                </div>
-                <div className="pt-8">
-                  <Link href="/register?role=candidate" className="w-full">
-                    <Button className="w-full gap-2 h-11 text-sm font-semibold">
-                      Créer mon profil candidat
-                      <ArrowRight size={16} />
-                    </Button>
-                  </Link>
-                </div>
-              </div>
-
-              {/* Carte Recruteur */}
-              <div id="recruteurs" className="scroll-mt-24 flex flex-col justify-between rounded-3xl border border-border bg-card p-8 sm:p-10 shadow-sm relative overflow-visible group hover:border-primary/50 transition-colors">
-                <div className="space-y-6">
-                  <div className="relative z-10 h-12 w-12 shrink-0 rounded-2xl bg-primary/10 text-primary flex items-center justify-center">
-                    <Building2 size={24} />
-                  </div>
-                  <div>
-                    <span className="text-xs font-bold uppercase tracking-widest text-primary">Pour les Recruteurs</span>
-                    <h3 className="text-2xl font-bold tracking-tight text-foreground mt-1" style={{ fontFamily: "var(--font-heading)" }}>
-                      Accélérez vos recrutements avec précision
-                    </h3>
-                  </div>
-                  <ul className="space-y-4 text-sm text-muted-foreground">
-                    <li className="flex items-start gap-3">
-                      <CheckCircle2 size={18} className="text-primary shrink-0 mt-0.5" />
-                      <span><strong>Classement intelligent :</strong> Vos candidatures sont ordonnées par pertinence technique et adéquation réelle.</span>
-                    </li>
-                    <li className="flex items-start gap-3">
-                      <CheckCircle2 size={18} className="text-primary shrink-0 mt-0.5" />
-                      <span><strong>Pipeline collaboratif Kanban :</strong> Suivez chaque étape (Reçue, Entretien, Offre, Recruté) avec toute l'équipe.</span>
-                    </li>
-                    <li className="flex items-start gap-3">
-                      <CheckCircle2 size={18} className="text-primary shrink-0 mt-0.5" />
-                      <span><strong>Tableau de bord KPIs :</strong> Mesurez les délais de recrutement, taux de conversion et sources de candidats.</span>
-                    </li>
-                  </ul>
-                </div>
-                <div className="pt-8">
-                  <Link href="/register?role=recruiter" className="w-full">
-                    <Button variant="outline" className="w-full gap-2 h-11 text-sm font-semibold border-border hover:bg-muted/60">
-                      Ouvrir un espace entreprise
-                      <ArrowRight size={16} />
-                    </Button>
-                  </Link>
-                </div>
-              </div>
-            </div>
+            <article
+              id="entreprises"
+              className="scroll-mt-24 flex flex-col rounded-xl border border-border bg-card p-7 sm:p-8"
+            >
+              <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                <Building2 size={19} aria-hidden="true" />
+              </span>
+              <h2 className="mt-4 text-xl font-semibold tracking-tight text-foreground">
+                Pour les entreprises
+              </h2>
+              <ul className="mt-5 flex-1 space-y-3 text-sm leading-relaxed text-muted-foreground">
+                <li>Publication et mise à jour des offres depuis un seul écran.</li>
+                <li>
+                  Candidatures classées par pertinence, avec notes et historique d&apos;étapes
+                  partagés par l&apos;équipe.
+                </li>
+                <li>
+                  Entretiens planifiés avec détection des conflits d&apos;agenda et confirmation
+                  automatique.
+                </li>
+              </ul>
+              <Button
+                variant="outline"
+                className="mt-7 w-full gap-2"
+                render={<Link href="/register?role=recruiter" />}
+              >
+                Ouvrir un espace entreprise
+                <ArrowRight size={15} aria-hidden="true" />
+              </Button>
+            </article>
           </div>
         </section>
       </main>
 
-      {/* 5. Footer */}
-      <footer className="border-t border-border/40 bg-background py-8">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+      <footer className="border-t border-border py-8">
+        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 px-4 sm:flex-row sm:px-6 lg:px-8">
           <div className="flex items-center gap-2.5">
-            <div className="relative h-6 w-6 overflow-hidden rounded-md">
-              <Image src="/etp_logo.webp" alt="ETP" fill className="object-cover" />
-            </div>
-            <span className="text-sm font-semibold tracking-tight">ETP</span>
+            <Image
+              src="/etp_logo.webp"
+              alt="ETP"
+              width={24}
+              height={24}
+              className="h-6 w-6 rounded-md object-cover"
+            />
+            <span className="text-sm font-medium tracking-tight">ETP</span>
           </div>
           <p className="text-xs text-muted-foreground">
             &copy; {new Date().getFullYear()} ETP. Tous droits réservés.

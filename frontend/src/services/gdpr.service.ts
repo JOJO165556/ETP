@@ -1,22 +1,9 @@
 import { api } from "@/lib/api";
-
-export interface DataExportResponse {
-  user_id: string;
-  generated_at: string;
-  data: Record<string, unknown>;
-}
-
-export interface DataDeletionResponse {
-  user_id: string;
-  deleted: boolean;
-  message: string;
-}
-
-export interface AnonymizationResponse {
-  user_id: string;
-  anonymized: boolean;
-  message: string;
-}
+import type {
+  AnonymizationResponse,
+  DataDeletionResponse,
+  DataExportResponse,
+} from "@/types/domain";
 
 export const gdprService = {
   exportUserData: (userId: string): Promise<DataExportResponse> =>

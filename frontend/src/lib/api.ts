@@ -1,5 +1,16 @@
 import type { ApiError } from "@/types";
 
+/* Erreur HTTP portant le code de statut, pour distinguer par ex. un 409. */
+export class ApiRequestError extends Error {
+  constructor(
+    message: string,
+    public readonly status: number
+  ) {
+    super(message);
+    this.name = "ApiRequestError";
+  }
+}
+
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 // Côté client, on appelle le proxy local Next.js pour que les cookies HttpOnly soient envoyés.
 const API_V1 = typeof window !== "undefined" ? "/api/v1" : `${API_BASE}/api/v1`;
@@ -34,7 +45,7 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
     const error: ApiError = await res.json().catch(() => ({
       detail: "Une erreur inattendue s'est produite",
     }));
-    throw new Error(error.detail);
+    throw new ApiRequestError(error.detail, res.status);
   }
 
   // 204 No Content : aucun corps à parser
