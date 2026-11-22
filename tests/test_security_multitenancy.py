@@ -17,9 +17,6 @@ from src.modules.auth.schemas import RegisterRequest
 from src.modules.users.models import User, UserRole
 
 import src.modules.analytics.router as analytics_router_mod
-import src.modules.applications.router as applications_router_mod
-from src.modules.analytics.router import router as analytics_router
-from src.modules.applications.router import router as applications_router
 from src.modules.auth.router import router as auth_router
 from src.modules.search.router import router as search_router
 from src.modules.users.router import router as users_router
@@ -127,36 +124,7 @@ def test_recruiter_cannot_download_cv_outside_tenant():
     assert resp.status_code == 403, resp.text
 
 
-# Anti-IDOR CV (candidatures)
-def test_candidate_cannot_download_another_application_cv():
-    """Candidat A -> CV d'une candidature du candidat B : 403."""
-    current_user = _user(UserRole.CANDIDATE, user_id="candidate-A")
-    application = MagicMock()
-    application.candidate_id = "candidate-B"
-    application.job = MagicMock()
-    application.resume_storage_path = "cvs/b.pdf"
-
-    client = TestClient(_make_app(applications_router, current_user=current_user))
-    with patch.object(applications_router_mod, "ApplicationRepository") as repo_cls:
-        repo_cls.return_value.get_with_details = AsyncMock(return_value=application)
-        resp = client.get(f"{API}/applications/app-B/cv")
-
-    assert resp.status_code == 403, resp.text
-
-
 # Isolation multi-tenant analytics et recherche
-def test_recruiter_cannot_read_other_company_stats():
-    """Recruteur company-A -> /analytics/companies/company-B : 403."""
-    current_user = _user(
-        UserRole.RECRUITER, user_id="recruiter-A", company_id="company-A"
-    )
-    client = TestClient(_make_app(analytics_router, current_user=current_user))
-
-    resp = client.get(f"{API}/analytics/companies/company-B")
-
-    assert resp.status_code == 403, resp.text
-
-
 @pytest.mark.asyncio
 async def test_analytics_dashboard_is_scoped_to_tenant():
     """Les agrégats sont calculés avec le company_id de l'utilisateur connecté."""

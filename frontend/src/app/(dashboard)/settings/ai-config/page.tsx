@@ -13,7 +13,7 @@ import { aiService, type ReglesPreselection } from "@/services/ai.service";
 
 const DEFAUT = { competences: 60, experience: 25, formation: 15 };
 
-function versPourcent(valeur: number): number {
+function versPourcent(valeur: number | string): number {
   return Math.round(Number(valeur) * 100);
 }
 

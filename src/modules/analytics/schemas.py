@@ -14,14 +14,6 @@ class JobStats(BaseModel):
     avg_applications_per_job: float
 
 
-class CompanyStats(BaseModel):
-    company_id: str
-    total_jobs: int
-    total_applications: int
-    hired_count: int
-    conversion_rate: float
-
-
 class HiringFunnel(BaseModel):
     applied: int
     screening: int

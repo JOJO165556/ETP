@@ -330,20 +330,3 @@ async def test_application_note_repository_crud(
     notes = await repo.get_notes_by_application(str(test_application.id))
     assert len(notes) >= 1
     assert notes[0].content == "Candidat prometteur"
-
-
-@pytest.mark.asyncio
-async def test_analytics_repository_get_company_stats(
-    db: AsyncSession, test_company
-):
-    """Test que AnalyticsRepository.get_company_stats retourne les stats d'entreprise."""
-    from src.modules.analytics.repository import AnalyticsRepository
-
-    repo = AnalyticsRepository(db)
-    stats = await repo.get_company_stats(str(test_company.id))
-
-    assert stats["company_id"] == str(test_company.id)
-    assert "total_jobs" in stats
-    assert "total_applications" in stats
-    assert "hired_count" in stats
-    assert "conversion_rate" in stats

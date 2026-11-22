@@ -4,21 +4,16 @@ from __future__ import annotations
 from typing import Sequence
 from uuid import UUID
 
-from sqlalchemy import select, update
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.core.repository import BaseAsyncRepository
-from src.modules.ai.models import AIAuditLog, AIJobConfig, AIProviderConfig
+from src.modules.ai.models import AIJobConfig, AIProviderConfig
 
 
 class AIProviderConfigRepository(BaseAsyncRepository[AIProviderConfig]):
     def __init__(self, session: AsyncSession):
         super().__init__(AIProviderConfig, session)
-
-    async def get_by_name(self, name: str) -> AIProviderConfig | None:
-        query = select(self.model).where(self.model.name == name)
-        result = await self.session.execute(query)
-        return result.scalar_one_or_none()
 
     async def list_active(
         self,
@@ -40,27 +35,6 @@ class AIProviderConfigRepository(BaseAsyncRepository[AIProviderConfig]):
         query = query.order_by(self.model.is_default.desc(), self.model.name)
         result = await self.session.execute(query)
         return result.scalars().all()
-
-    async def get_default(self) -> AIProviderConfig | None:
-        query = (
-            select(self.model)
-            .where(
-                self.model.is_active.is_(True),
-                self.model.is_default.is_(True),
-            )
-            .limit(1)
-        )
-        result = await self.session.execute(query)
-        return result.scalar_one_or_none()
-
-    async def clear_default(self, *, except_id: UUID | str | None = None) -> None:
-        """Retire le statut par defaut des autres fournisseurs (unicite)."""
-        query = update(self.model).where(self.model.is_default.is_(True))
-        if except_id is not None:
-            query = query.where(self.model.id != except_id)
-        await self.session.execute(
-            query.values(is_default=False).execution_options(synchronize_session="fetch")
-        )
 
 
 class AIJobConfigRepository(BaseAsyncRepository[AIJobConfig]):
@@ -94,21 +68,3 @@ class AIJobConfigRepository(BaseAsyncRepository[AIJobConfig]):
             if scoped is not None:
                 return scoped
         return await self.get_global()
-
-
-class AIAuditLogRepository(BaseAsyncRepository[AIAuditLog]):
-    def __init__(self, session: AsyncSession):
-        super().__init__(AIAuditLog, session)
-
-    async def list_recent(
-        self,
-        *,
-        company_id: UUID | str | None = None,
-        limit: int = 100,
-    ) -> Sequence[AIAuditLog]:
-        query = select(self.model).order_by(self.model.created_at.desc())
-        if company_id is not None:
-            query = query.where(self.model.company_id == company_id)
-        query = query.limit(max(1, min(limit, 500)))
-        result = await self.session.execute(query)
-        return result.scalars().all()

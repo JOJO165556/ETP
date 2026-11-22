@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Briefcase, Eye, Search, TrendingUp, UserCheck } from "lucide-react";
+import { Briefcase, ClipboardList, Eye, Search, Target, TrendingUp, UserCheck } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { PageHeader } from "@/components/shared/page-header";
@@ -9,7 +9,9 @@ import { StatePanel } from "@/components/shared/state-panel";
 import { Skeleton } from "@/components/ui/skeleton";
 import { analyticsService } from "@/services/analytics.service";
 import { applicationsService } from "@/services/applications.service";
-import type { CandidatureAPI, ResumeAnalytiques } from "@/types/domain";
+import { usersService } from "@/services/users.service";
+import { normaliserRole, type Role } from "@/components/layout/sidebar";
+import type { AnalyticsDashboard, Application, CandidateResume } from "@/types/domain";
 
 const ETAPES = [
   { cle: "applied", libelle: "Envoyée" },
@@ -39,8 +41,10 @@ function dateRelative(iso: string | null): string {
 }
 
 export default function IndicateursPage() {
-  const [resume, setResume] = useState<ResumeAnalytiques | null>(null);
-  const [candidatures, setCandidatures] = useState<CandidatureAPI[]>([]);
+  const [role, setRole] = useState<Role | null>(null);
+  const [resume, setResume] = useState<CandidateResume | null>(null);
+  const [dashboard, setDashboard] = useState<AnalyticsDashboard | null>(null);
+  const [candidatures, setCandidatures] = useState<Application[]>([]);
   const [chargement, setChargement] = useState(true);
   const [erreur, setErreur] = useState(false);
 
@@ -48,12 +52,20 @@ export default function IndicateursPage() {
     setChargement(true);
     setErreur(false);
     try {
-      const [r, apps] = await Promise.all([
-        analyticsService.getMonResume(),
-        applicationsService.getMesCandidatures(),
-      ]);
-      setResume(r);
-      setCandidatures(apps);
+      const profil = await usersService.getMonProfil();
+      const roleConnecte = normaliserRole(profil.role);
+      setRole(roleConnecte);
+
+      if (roleConnecte === "CANDIDAT") {
+        const [r, apps] = await Promise.all([
+          analyticsService.getMonResume(),
+          applicationsService.getMesCandidatures(),
+        ]);
+        setResume(r);
+        setCandidatures(apps);
+      } else {
+        setDashboard(await analyticsService.getDashboard());
+      }
     } catch {
       setErreur(true);
     } finally {
@@ -100,7 +112,7 @@ export default function IndicateursPage() {
     );
   }
 
-  if (erreur || !resume) {
+  if (erreur || (role === "CANDIDAT" ? !resume : !dashboard)) {
     return (
       <div className="mx-auto w-full max-w-6xl p-6 lg:p-10">
         <StatePanel
@@ -113,6 +125,11 @@ export default function IndicateursPage() {
       </div>
     );
   }
+
+  if (role !== "CANDIDAT") {
+    return dashboard ? <VueRecruteur dashboard={dashboard} /> : null;
+  }
+  if (!resume) return null;
 
   const cartes = [
     {
@@ -229,13 +246,162 @@ export default function IndicateursPage() {
                   </p>
                   <p className="truncate text-xs text-muted-foreground">
                     {candidature.company_name ?? "Entreprise non renseignée"} · mise à jour{" "}
-                    {dateRelative(candidature.updated_at ?? candidature.created_at)}
+                    {dateRelative(candidature.updated_at ?? candidature.created_at ?? null)}
                   </p>
                 </div>
                 <Badge variant={VARIANTE[candidature.stage] ?? "secondary"}>
                   {ETAPES.find((etape) => etape.cle === candidature.stage)?.libelle ??
                     candidature.stage}
                 </Badge>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+    </div>
+  );
+}
+
+function VueRecruteur({ dashboard }: { dashboard: AnalyticsDashboard }) {
+  const { pipeline, jobs, funnel, top_skills } = dashboard;
+
+  const cartes = [
+    {
+      titre: "Candidatures",
+      valeur: pipeline.total_applications,
+      note: "Toutes les candidatures de votre entreprise.",
+      Icone: ClipboardList,
+      teinte: "bg-primary/10 text-primary",
+    },
+    {
+      titre: "Offres actives",
+      valeur: jobs.active_jobs,
+      note: `${jobs.total_jobs} offre(s) au total, ${jobs.closed_jobs} clôturée(s).`,
+      Icone: Briefcase,
+      teinte: "bg-info/10 text-info",
+    },
+    {
+      titre: "Candidatures / offre",
+      valeur: jobs.avg_applications_per_job,
+      note: "Moyenne par offre publiée.",
+      Icone: UserCheck,
+      teinte: "bg-warning/10 text-warning",
+    },
+    {
+      titre: "Score moyen",
+      valeur: pipeline.avg_matching_score != null ? `${pipeline.avg_matching_score} %` : "—",
+      note: "Moyenne des scores de matching.",
+      Icone: Target,
+      teinte: "bg-success/10 text-success",
+    },
+  ];
+
+  const totalFunnel = Math.max(
+    funnel.applied + funnel.screening + funnel.interview + funnel.offer + funnel.hired + funnel.rejected,
+    1
+  );
+  const maxFunnel = Math.max(...ETAPES.map((etape) => funnel[etape.cle as keyof typeof funnel]), 1);
+
+  return (
+    <div className="mx-auto w-full max-w-6xl space-y-8 p-6 lg:p-10">
+      <PageHeader
+        title="Indicateurs"
+        description="L'activité de recrutement de votre entreprise, calculée sur les données réelles."
+        actions={
+          <Badge variant="secondary" className="gap-1.5">
+            <TrendingUp size={12} aria-hidden="true" />
+            À jour
+          </Badge>
+        }
+      />
+
+      <section aria-label="Chiffres clés" className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {cartes.map(({ titre, valeur, note, Icone, teinte }) => (
+          <div key={titre} className="rounded-xl border border-border bg-card p-5">
+            <span className={`flex h-9 w-9 items-center justify-center rounded-lg ${teinte}`}>
+              <Icone size={17} aria-hidden="true" />
+            </span>
+            <p className="mt-4 text-2xl font-semibold tracking-tight text-foreground">{valeur}</p>
+            <p className="text-sm font-medium text-foreground">{titre}</p>
+            <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{note}</p>
+          </div>
+        ))}
+      </section>
+
+      <section className="space-y-4" aria-label="Entonnoir de recrutement">
+        <div>
+          <h2 className="text-lg font-semibold text-foreground">Entonnoir de recrutement</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Chaque candidature est comptée une seule fois, à son étape actuelle.
+          </p>
+        </div>
+
+        {totalFunnel === 1 && funnel.applied + funnel.screening + funnel.interview + funnel.offer + funnel.hired + funnel.rejected === 0 ? (
+          <StatePanel
+            title="Aucune candidature pour l'instant"
+            description="Les statistiques apparaîtront dès la première candidature reçue."
+          />
+        ) : (
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {ETAPES.map((etape) => {
+              const nombre = funnel[etape.cle as keyof typeof funnel];
+              return (
+                <div key={etape.cle} className="rounded-xl border border-border bg-card p-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium text-foreground">{etape.libelle}</span>
+                    <span className="text-lg font-semibold text-foreground">{nombre}</span>
+                  </div>
+                  <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-muted">
+                    <div
+                      className="h-full rounded-full bg-primary"
+                      style={{ width: `${nombre === 0 ? 0 : Math.max(6, (nombre / maxFunnel) * 100)}%` }}
+                    />
+                  </div>
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    {Math.round((nombre / totalFunnel) * 100)} % du total
+                  </p>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </section>
+
+      <section className="space-y-4" aria-label="Compétences les plus demandées">
+        <div>
+          <h2 className="text-lg font-semibold text-foreground">Compétences les plus demandées</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Fréquence dans les compétences requises de vos offres.
+          </p>
+        </div>
+
+        {top_skills.length === 0 ? (
+          <StatePanel
+            title="Aucune compétence renseignée"
+            description="Ajoutez des compétences requises à vos offres pour voir cette analyse."
+          />
+        ) : (
+          <ul className="overflow-hidden rounded-xl border border-border bg-card">
+            {top_skills.map((competence) => (
+              <li
+                key={competence.skill}
+                className="flex items-center justify-between gap-4 border-b border-border px-4 py-3 last:border-b-0"
+              >
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-medium text-foreground capitalize">
+                    {competence.skill}
+                  </p>
+                  <div className="mt-1.5 h-1.5 w-full max-w-xs overflow-hidden rounded-full bg-muted">
+                    <div
+                      className="h-full rounded-full bg-primary"
+                      style={{ width: `${competence.percentage}%` }}
+                    />
+                  </div>
+                </div>
+                <div className="shrink-0 text-right">
+                  <p className="text-sm font-semibold text-foreground">{competence.count}</p>
+                  <p className="text-xs text-muted-foreground">{competence.percentage} %</p>
+                </div>
               </li>
             ))}
           </ul>

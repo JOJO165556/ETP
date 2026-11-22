@@ -420,8 +420,11 @@ async def test_audit_logs_are_persisted_without_pii(http_mock):
         assert "test-key" not in serialised
 
 
-def test_api_key_reference_rejects_raw_secret():
-    assert resolve_api_key("GEMINI_API_KEY") in (None, "")
+def test_api_key_reference_rejects_raw_secret(monkeypatch):
+    # La reference resout une variable d'environnement, sans exposer de secret.
+    monkeypatch.setenv("ETP_TEST_FAKE_KEY", "valeur-de-test")
+    assert resolve_api_key("ETP_TEST_FAKE_KEY") == "valeur-de-test"
+    assert resolve_api_key("ETP_TEST_VARIABLE_ABSENTE") is None
     # Une cle brute (minuscules, tirets) n'est jamais acceptee comme reference.
     assert resolve_api_key("sk-live-abc123-secret") is None
     assert resolve_api_key("hf_abcdefghijklmnop") is None
@@ -461,24 +464,9 @@ def test_api_rejects_inconsistent_thresholds():
     assert response.status_code == 422
 
 
-def test_api_rejects_raw_api_key_in_provider_config():
-    client = TestClient(_make_app(user=_superadmin()))
-    response = client.post(
-        f"{API}/ai/providers",
-        json={
-            "name": "hf_mistral",
-            "provider": "huggingface",
-            "api_key_ref": "hf-secret-key-in-clear",
-            "model_id": "mistralai/Mistral-7B-Instruct-v0.3",
-        },
-    )
-
-    assert response.status_code == 422
-
-
 def test_api_requires_authentication():
     client = TestClient(_make_app())
-    response = client.get(f"{API}/ai/providers")
+    response = client.get(f"{API}/ai/config")
     assert response.status_code in (401, 403)
 
 

@@ -1,7 +1,7 @@
 """Contrats Pydantic de la couche IA, valides avant persistance."""
 from datetime import datetime
 from decimal import Decimal
-from typing import Annotated, Any
+from typing import Any
 from uuid import UUID
 
 from pydantic import (
@@ -13,9 +13,6 @@ from pydantic import (
 )
 
 from src.modules.ai.models import (
-    AIAuditStatus,
-    AIProviderName,
-    AITaskType,
     DEFAULT_THRESHOLD_REJECT,
     DEFAULT_THRESHOLD_SCREENING,
     DEFAULT_WEIGHT_EDUCATION,
@@ -241,62 +238,6 @@ class ResolvedJobConfig(BaseModel):
     source: str = "defaults"
 
 
-class AIProviderConfigCreate(BaseModel):
-    model_config = ConfigDict(extra="forbid", json_schema_extra={
-        "example": {
-            "name": "hf_mistral",
-            "provider": "huggingface",
-            "api_key_ref": "HF_API_KEY",
-            "model_id": "mistralai/Mistral-7B-Instruct-v0.3",
-            "is_default": True,
-            "model_params": {"temperature": 0.1, "max_tokens": 1024},
-        }
-    })
-
-    name: str = Field(min_length=2, max_length=64, pattern=r"^[a-z0-9_]+$")
-    provider: AIProviderName
-    api_key_ref: str = Field(min_length=2, max_length=128, pattern=r"^[A-Z][A-Z0-9_]*$")
-    model_id: str | None = Field(default=None, max_length=256)
-    is_active: bool = True
-    is_default: bool = False
-    model_params: dict[str, Any] = Field(default_factory=dict)
-    supports_extraction: bool = True
-    supports_matching: bool = True
-    supports_embeddings: bool = False
-
-
-class AIProviderConfigUpdate(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
-    provider: AIProviderName | None = None
-    api_key_ref: str | None = Field(default=None, min_length=2, max_length=128, pattern=r"^[A-Z][A-Z0-9_]*$")
-    model_id: str | None = Field(default=None, max_length=256)
-    is_active: bool | None = None
-    is_default: bool | None = None
-    model_params: dict[str, Any] | None = None
-    supports_extraction: bool | None = None
-    supports_matching: bool | None = None
-    supports_embeddings: bool | None = None
-
-
-class AIProviderConfigResponse(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-
-    id: UUID
-    name: str
-    provider: str
-    is_active: bool
-    is_default: bool
-    api_key_ref: str
-    model_id: str | None = None
-    model_params: dict[str, Any] = Field(default_factory=dict)
-    supports_extraction: bool
-    supports_matching: bool
-    supports_embeddings: bool
-    created_at: datetime
-    updated_at: datetime
-
-
 class AIJobConfigUpdate(BaseModel):
     model_config = ConfigDict(extra="forbid", json_schema_extra={
         "example": {
@@ -348,49 +289,3 @@ class AIJobConfigResponse(BaseModel):
     semantic_matching: bool
     source: str = "defaults"
     updated_at: datetime | None = None
-
-
-class AIAuditLogResponse(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-
-    id: UUID
-    company_id: UUID | None = None
-    provider: str
-    model_id: str | None = None
-    task_type: AITaskType
-    latency_ms: int
-    status: AIAuditStatus
-    error_message: str | None = None
-    created_at: datetime
-
-
-class ProviderTestRequest(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
-    sample_text: str = Field(
-        min_length=1,
-        max_length=12000,
-        json_schema_extra={"example": "Developpeur Python senior, FastAPI, PostgreSQL, Docker."},
-    )
-
-
-class ProviderTestResponse(BaseModel):
-    provider: str
-    model_id: str | None = None
-    latency_ms: int
-    success: bool
-    extraction: CVExtractionResult | None = None
-    error: str | None = None
-
-
-class ExtractionPreviewRequest(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
-    cv_text: Annotated[str, Field(min_length=1, max_length=12000)]
-    company_id: UUID | None = None
-
-
-class ExtractionPreviewResponse(BaseModel):
-    extraction: CVExtractionResult
-    provider_used: str
-    fallback_used: bool

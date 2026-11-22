@@ -166,19 +166,6 @@ async def test_analytics_repository_get_top_skills_filters_by_company():
     assert mock_db.execute.called
 
 
-@pytest.mark.asyncio
-async def test_analytics_repository_get_company_stats_uses_company_id():
-    mock_db = AsyncMock()
-    repo = AnalyticsRepository(mock_db)
-    mock_result = MagicMock()
-    mock_result.scalar.return_value = 42
-    mock_db.execute = AsyncMock(return_value=mock_result)
-
-    stats = await repo.get_company_stats(company_id="comp-E")
-    assert stats["total_jobs"] == 42
-    assert mock_db.execute.called
-
-
 # Tests GDPR : isolation multi-tenant sur export / suppression / anonymisation
 @pytest.mark.asyncio
 async def test_gdpr_require_target_in_tenant_scope_same_company():
