@@ -1,0 +1,226 @@
+{
+  "description": "Jeu de benchmark annoté à la main pour le matching CV/offre. expected_score est le score idéal (0-100) attribué manuellement à chaque paire.",
+  "weights": {"skills": 0.6, "experience": 0.25, "education": 0.15},
+  "examples": [
+    {
+      "id": "py-backend-senior-01",
+      "category": "backend-python",
+      "cv_text": "Jean Dupont\nDéveloppeur Backend Senior\n\nExpérience : 8 ans en développement backend.\n- Lead developer chez TechCorp (2020-2024) : conception d'APIs FastAPI, microservices Python.\n- Développeur chez StartupXYZ (2017-2020) : Django, Python, PostgreSQL.\n\nCompétences : Python, FastAPI, Django, PostgreSQL, Docker, Kubernetes, Git, CI/CD, Redis, RabbitMQ.\n\nFormation : Master Informatique, Université Paris-Saclay (2016).\nLangues : Français courant, Anglais professionnel.",
+      "job": {
+        "title": "Développeur Backend Python Senior",
+        "description": "Nous recherchons un développeur backend senior pour concevoir et maintenir nos APIs. Vous interviendrez sur une architecture de microservices en Python. Minimum 5 ans d'expérience. Environnement Agile/Scrum.",
+        "required_skills": ["python", "fastapi", "postgresql", "docker", "git"]
+      },
+      "expected_score": 92
+    },
+    {
+      "id": "py-backend-junior-01",
+      "category": "backend-python",
+      "cv_text": "Marie Martin\nDéveloppeuse Backend Junior\n\nExpérience : 1 an en développement web.\n- Développeuse junior chez AgenceWeb (2024-2025) : maintenance d'applications Django, Python.\n- Projet personnel : API REST en Flask.\n\nCompétences : Python, Django, Flask, HTML, CSS, Git, bases de données SQL.\n\nFormation : Licence Informatique, IUT de Lyon (2024).\nLangues : Français courant.",
+      "job": {
+        "title": "Développeur Backend Python Senior",
+        "description": "Nous recherchons un développeur backend senior pour concevoir et maintenir nos APIs. Vous interviendrez sur une architecture de microservices en Python. Minimum 5 ans d'expérience. Environnement Agile/Scrum.",
+        "required_skills": ["python", "fastapi", "postgresql", "docker", "git"]
+      },
+      "expected_score": 52
+    },
+    {
+      "id": "react-frontend-01",
+      "category": "frontend-react",
+      "cv_text": "Thomas Bernard\nDéveloppeur Frontend\n\nExpérience : 5 ans en développement frontend.\n- Développeur frontend chez MediaGroup (2021-2025) : applications React/TypeScript, Tailwind CSS.\n- Freelance (2019-2021) : sites vitrines et applications Vue.js.\n\nCompétences : React, TypeScript, JavaScript, Tailwind CSS, HTML, CSS, Git, Jest, Storybook.\n\nFormation : Licence Pro Informatique, Université de Lille (2018).\nLangues : Français courant, Anglais professionnel.",
+      "job": {
+        "title": "Développeur Frontend React",
+        "description": "Rejoignez notre équipe produit pour développer des interfaces riches avec React et TypeScript. Vous serez impliqué de la conception au déploiement. 3 ans d'expérience minimum.",
+        "required_skills": ["react", "typescript", "javascript", "tailwind", "git"]
+      },
+      "expected_score": 88
+    },
+    {
+      "id": "angular-frontend-01",
+      "category": "frontend-react",
+      "cv_text": "Sophie Petit\nDéveloppeuse Frontend\n\nExpérience : 6 ans en développement web.\n- Développeuse chez BanquePop (2020-2025) : applications Angular, RxJS, TypeScript.\n- Stage puis CDI chez WebAgency (2018-2020) : JavaScript, jQuery, HTML/CSS.\n\nCompétences : Angular, TypeScript, JavaScript, RxJS, HTML, CSS, Sass, Git, REST APIs.\n\nFormation : Master Développement Web, Epitech (2018).\nLangues : Français courant, Anglais courant.",
+      "job": {
+        "title": "Développeur Frontend React",
+        "description": "Rejoignez notre équipe produit pour développer des interfaces riches avec React et TypeScript. Vous serez impliqué de la conception au déploiement. 3 ans d'expérience minimum.",
+        "required_skills": ["react", "typescript", "javascript", "tailwind", "git"]
+      },
+      "expected_score": 46
+    },
+    {
+      "id": "data-scientist-01",
+      "category": "data-ml",
+      "cv_text": "Lucas Moreau\nData Scientist\n\nExpérience : 4 ans en science des données.\n- Data Scientist chez RetailCo (2022-2025) : modèles de recommandation, deep learning, Pandas, scikit-learn.\n- Assistant data analyst chez ConseilData (2021-2022) : SQL, tableaux de bord.\n\nCompétences : Python, Machine Learning, Deep Learning, SQL, Pandas, scikit-learn, TensorFlow, Docker, Git, NLP.\n\nFormation : Master Data Science, ENS Paris (2021).\nLangues : Français courant, Anglais courant.",
+      "job": {
+        "title": "Data Scientist",
+        "description": "Nous cherchons un data scientist pour concevoir et déployer des modèles de machine learning en production. Vous travaillerez sur des problématiques de recommandation et de NLP. Maîtrise de Python et du deep learning requise.",
+        "required_skills": ["python", "machine learning", "sql", "pandas", "docker"]
+      },
+      "expected_score": 85
+    },
+    {
+      "id": "data-analyst-weak-01",
+      "category": "data-ml",
+      "cv_text": "Emma Roux\nAssistante administrative et comptable\n\nExpérience : 7 ans en gestion administrative.\n- Gestionnaire administrative chez PME Locale (2018-2025) : facturation, comptabilité, accueil.\n\nCompétences : Excel, Word, PowerPoint, gestion de stocks, relation clients, organisation.\n\nFormation : BTS Gestion, Lycée Jules Ferry (2017).\nLangues : Français courant.",
+      "job": {
+        "title": "Data Scientist",
+        "description": "Nous cherchons un data scientist pour concevoir et déployer des modèles de machine learning en production. Vous travaillerez sur des problématiques de recommandation et de NLP. Maîtrise de Python et du deep learning requise.",
+        "required_skills": ["python", "machine learning", "sql", "pandas", "docker"]
+      },
+      "expected_score": 12
+    },
+    {
+      "id": "devops-01",
+      "category": "devops",
+      "cv_text": "Nicolas Laurent\nIngénieur DevOps / SRE\n\nExpérience : 6 ans en infrastructure et DevOps.\n- Ingénieur DevOps chez CloudFirst (2021-2025) : Kubernetes, Terraform, pipelines CI/CD GitLab.\n- Administrateur système chez HostingPro (2019-2021) : Linux, Ansible, monitoring.\n\nCompétences : Kubernetes, Docker, AWS, Terraform, Ansible, Linux, Bash, CI/CD, Git, Prometheus, Grafana.\n\nFormation : Master Réseaux et Systèmes, Télécom Paris (2019).\nLangues : Français courant, Anglais professionnel.",
+      "job": {
+        "title": "Ingénieur DevOps Senior",
+        "description": "Nous recherchons un ingénieur DevOps pour automatiser notre infrastructure cloud. Vous serez responsable des clusters Kubernetes, de l'Infrastructure as Code et de la fiabilité des services. Expérience AWS et Terraform exigée.",
+        "required_skills": ["kubernetes", "docker", "aws", "terraform", "ci/cd", "linux"]
+      },
+      "expected_score": 90
+    },
+    {
+      "id": "backend-to-devops-01",
+      "category": "devops",
+      "cv_text": "Paul Girard\nDéveloppeur Backend\n\nExpérience : 4 ans en développement backend.\n- Développeur chez FinTech App (2022-2025) : APIs Node.js, microservices, Docker.\n- Développeur junior chez WebStudio (2021-2022) : JavaScript, Express, MongoDB.\n\nCompétences : JavaScript, Node.js, Express, MongoDB, Redis, Docker, Git, REST APIs, TypeScript.\n\nFormation : Licence Informatique, Université de Bordeaux (2021).\nLangues : Français courant, Anglais professionnel.",
+      "job": {
+        "title": "Ingénieur DevOps Senior",
+        "description": "Nous recherchons un ingénieur DevOps pour automatiser notre infrastructure cloud. Vous serez responsable des clusters Kubernetes, de l'Infrastructure as Code et de la fiabilité des services. Expérience AWS et Terraform exigée.",
+        "required_skills": ["kubernetes", "docker", "aws", "terraform", "ci/cd", "linux"]
+      },
+      "expected_score": 38
+    },
+    {
+      "id": "react-native-01",
+      "category": "mobile",
+      "cv_text": "Chloé Fournier\nDéveloppeuse Mobile\n\nExpérience : 4 ans en développement mobile.\n- Développeuse mobile chez TravelApp (2022-2025) : applications React Native pour iOS et Android.\n- Développeuse web junior chez Agence Digitale (2020-2022) : JavaScript, React.\n\nCompétences : React Native, JavaScript, TypeScript, React, Git, REST APIs, Firebase.\n\nFormation : Licence Informatique, Université de Nantes (2020).\nLangues : Français courant, Anglais courant.",
+      "job": {
+        "title": "Développeur Mobile React Native",
+        "description": "Nous recherchons un développeur mobile pour faire évoluer nos applications iOS et Android en React Native. Vous participerez aux choix d'architecture et à la publication sur les stores.",
+        "required_skills": ["react native", "javascript", "typescript", "git"]
+      },
+      "expected_score": 87
+    },
+    {
+      "id": "flutter-mobile-01",
+      "category": "mobile",
+      "cv_text": "Antoine Mercier\nDéveloppeur Mobile Flutter\n\nExpérience : 3 ans en développement mobile.\n- Développeur Flutter chez HealthTech (2023-2025) : applications iOS/Android, intégration d'APIs REST.\n- Développeur web freelance (2022-2023) : HTML, CSS, JavaScript.\n\nCompétences : Flutter, Dart, JavaScript, HTML, CSS, Git, Firebase, REST APIs.\n\nFormation : BTS Informatique, IUT de Cergy (2022).\nLangues : Français courant.",
+      "job": {
+        "title": "Développeur Mobile React Native",
+        "description": "Nous recherchons un développeur mobile pour faire évoluer nos applications iOS et Android en React Native. Vous participerez aux choix d'architecture et à la publication sur les stores.",
+        "required_skills": ["react native", "javascript", "typescript", "git"]
+      },
+      "expected_score": 42
+    },
+    {
+      "id": "fullstack-junior-01",
+      "category": "fullstack",
+      "cv_text": "Léa Dubois\nDéveloppeuse Fullstack Junior\n\nExpérience : 1 an en développement fullstack.\n- Développeuse fullstack chez StartupLocal (2024-2025) : React, Node.js, Express, MongoDB.\n- Projet de fin d'études : application de gestion avec stack JavaScript complète.\n\nCompétences : JavaScript, React, Node.js, Express, MongoDB, Git, HTML, CSS, REST APIs.\n\nFormation : Licence Informatique, Université de Strasbourg (2024).\nLangues : Français courant.",
+      "job": {
+        "title": "Développeur Fullstack Junior",
+        "description": "Poste junior en CDI pour rejoindre une petite équipe produit. Vous travaillerez sur l'ensemble de la stack JavaScript (React côté front, Node.js côté back). Profil curieux et motivé, 0 à 2 ans d'expérience.",
+        "required_skills": ["javascript", "react", "node.js", "git"]
+      },
+      "expected_score": 86
+    },
+    {
+      "id": "senior-to-junior-01",
+      "category": "fullstack",
+      "cv_text": "Hugo Leroy\nDéveloppeur Fullstack Senior\n\nExpérience : 10 ans en développement web.\n- Architecte logiciel chez GrandGroupe (2020-2025) : React, Node.js, microservices, Kubernetes.\n- Développeur senior chez WebCorp (2015-2020) : JavaScript, React, Node.js, MongoDB.\n\nCompétences : JavaScript, TypeScript, React, Node.js, MongoDB, Kubernetes, Docker, AWS, GraphQL, Git.\n\nFormation : Master Informatique, CentraleSupélec (2015).\nLangues : Français courant, Anglais courant.",
+      "job": {
+        "title": "Développeur Fullstack Junior",
+        "description": "Poste junior en CDI pour rejoindre une petite équipe produit. Vous travaillerez sur l'ensemble de la stack JavaScript (React côté front, Node.js côté back). Profil curieux et motivé, 0 à 2 ans d'expérience.",
+        "required_skills": ["javascript", "react", "node.js", "git"]
+      },
+      "expected_score": 68
+    },
+    {
+      "id": "java-spring-01",
+      "category": "backend-java",
+      "cv_text": "Inès Cohen\nDéveloppeuse Backend Java\n\nExpérience : 5 ans en développement Java.\n- Développeuse chez BanqueAssur (2021-2025) : APIs Spring Boot, microservices, JPA/Hibernate.\n- Développeuse junior chez ESN Tech (2019-2021) : Java, Spring, PostgreSQL.\n\nCompétences : Java, Spring Boot, Spring, Hibernate, PostgreSQL, Kubernetes, Docker, Git, Maven, REST APIs.\n\nFormation : Master Informatique, Université Paris-Dauphine (2019).\nLangues : Français courant, Anglais professionnel.",
+      "job": {
+        "title": "Développeur Backend Java / Spring",
+        "description": "Nous recherchons un développeur Java pour concevoir des services backend sur Spring Boot. Expérience avec les microservices et les bases relationnelles exigée. Environnement bancaire, rigueur attendue.",
+        "required_skills": ["java", "spring", "kubernetes", "postgresql"]
+      },
+      "expected_score": 90
+    },
+    {
+      "id": "dotnet-backend-01",
+      "category": "backend-java",
+      "cv_text": "Karim Benali\nDéveloppeur Backend .NET\n\nExpérience : 5 ans en développement C#/.NET.\n- Développeur chez EntrepriseIndustrie (2021-2025) : applications ASP.NET Core, Entity Framework, Azure.\n- Développeur junior chez CabinetConseil (2019-2021) : C#, SQL Server, WinForms.\n\nCompétences : C#, .NET, ASP.NET Core, Entity Framework, SQL Server, Azure, Git, REST APIs.\n\nFormation : Licence Informatique, Université de Lille (2019).\nLangues : Français courant, Anglais professionnel.",
+      "job": {
+        "title": "Développeur Backend Java / Spring",
+        "description": "Nous recherchons un développeur Java pour concevoir des services backend sur Spring Boot. Expérience avec les microservices et les bases relationnelles exigée. Environnement bancaire, rigueur attendue.",
+        "required_skills": ["java", "spring", "kubernetes", "postgresql"]
+      },
+      "expected_score": 28
+    },
+    {
+      "id": "node-backend-01",
+      "category": "backend-node",
+      "cv_text": "Julie Fontaine\nDéveloppeuse Backend Node.js\n\nExpérience : 4 ans en développement backend JavaScript.\n- Développeuse chez E-commercePlus (2022-2025) : APIs Node.js/Express, microservices, MongoDB.\n- Développeuse junior chez WebAgency (2021-2022) : Node.js, Redis, REST APIs.\n\nCompétences : Node.js, Express, JavaScript, TypeScript, MongoDB, Redis, Docker, Git, JWT, REST APIs.\n\nFormation : Licence Informatique, Université de Rennes (2021).\nLangues : Français courant, Anglais professionnel.",
+      "job": {
+        "title": "Développeur Backend Node.js",
+        "description": "Rejoignez notre équipe backend pour développer des APIs haute performance en Node.js. Vous travaillerez sur une architecture orientée microservices avec MongoDB et Redis.",
+        "required_skills": ["node.js", "express", "mongodb", "redis"]
+      },
+      "expected_score": 88
+    },
+    {
+      "id": "php-laravel-backend-01",
+      "category": "backend-node",
+      "cv_text": "Marc Lefebvre\nDéveloppeur PHP / Laravel\n\nExpérience : 6 ans en développement PHP.\n- Développeur senior chez AgenceWebPro (2020-2025) : applications Laravel, MySQL, Vue.js.\n- Développeur chez PME Digital (2018-2020) : PHP, Symfony, HTML/CSS.\n\nCompétences : PHP, Laravel, Symfony, MySQL, JavaScript, Vue.js, Git, Docker, Composer.\n\nFormation : Licence Pro Informatique, IUT de Tours (2018).\nLangues : Français courant.",
+      "job": {
+        "title": "Développeur Backend Node.js",
+        "description": "Rejoignez notre équipe backend pour développer des APIs haute performance en Node.js. Vous travaillerez sur une architecture orientée microservices avec MongoDB et Redis.",
+        "required_skills": ["node.js", "express", "mongodb", "redis"]
+      },
+      "expected_score": 32
+    },
+    {
+      "id": "bi-analyst-01",
+      "category": "data-bi",
+      "cv_text": "Claire Simon\nAnalyste BI Senior\n\nExpérience : 7 ans en analyse de données et BI.\n- Lead analyste BI chez RetailGroup (2020-2025) : dashboards Tableau, Power BI, SQL, modélisation de données.\n- Analyste données chez ConseilAnalytics (2018-2020) : Excel avancé, SQL, reporting.\n\nCompétences : SQL, Python, Tableau, Power BI, Excel, PowerPoint, ETL, Git.\n\nFormation : Master Statistiques, Université Claude Bernard Lyon 1 (2018).\nLangues : Français courant, Anglais professionnel.",
+      "job": {
+        "title": "Analyste BI",
+        "description": "Nous recherchons un analyste BI pour concevoir des dashboards et des pipelines de données. Vous maîtriserez SQL, un outil de visualisation (Tableau ou Power BI) et les fondamentaux de Python.",
+        "required_skills": ["sql", "python", "tableau", "excel"]
+      },
+      "expected_score": 86
+    },
+    {
+      "id": "backend-to-bi-01",
+      "category": "data-bi",
+      "cv_text": "David Petit\nDéveloppeur Backend Python\n\nExpérience : 5 ans en développement backend.\n- Développeur chez SaaS Metrics (2021-2025) : APIs FastAPI, ingestion de données, PostgreSQL.\n- Développeur junior chez WebAgency (2019-2021) : Django, Python, SQL.\n\nCompétences : Python, FastAPI, Django, PostgreSQL, Docker, Git, SQL, Redis.\n\nFormation : Licence Informatique, Université de Caen (2019).\nLangues : Français courant, Anglais professionnel.",
+      "job": {
+        "title": "Analyste BI",
+        "description": "Nous recherchons un analyste BI pour concevoir des dashboards et des pipelines de données. Vous maîtriserez SQL, un outil de visualisation (Tableau ou Power BI) et les fondamentaux de Python.",
+        "required_skills": ["sql", "python", "tableau", "excel"]
+      },
+      "expected_score": 48
+    },
+    {
+      "id": "community-manager-01",
+      "category": "non-tech",
+      "cv_text": "Sarah Blanc\nCommunity Manager\n\nExpérience : 4 ans en community management et rédaction web.\n- Community Manager chez BrandAgency (2022-2025) : gestion de communautés, calendrier éditorial, SEO.\n- Rédactrice web chez MediaWeb (2021-2022) : articles, newsletters, réseaux sociaux.\n\nCompétences : Rédaction, SEO, Community Management, Réseaux sociaux, Marketing digital, Canva, Google Analytics.\n\nFormation : Licence Communication, Université Sorbonne (2021).\nLangues : Français courant, Anglais courant.",
+      "job": {
+        "title": "Community Manager",
+        "description": "Nous recherchons un community manager pour animer nos réseaux sociaux, créer du contenu et gérer la relation avec notre communauté. Vous avez le sens de la rédaction et une appétence pour l'analyse de données.",
+        "required_skills": ["rédaction", "seo", "community management", "réseaux sociaux"]
+      },
+      "expected_score": 90
+    },
+    {
+      "id": "backend-to-community-01",
+      "category": "non-tech",
+      "cv_text": "Pierre Durand\nDéveloppeur Backend Senior\n\nExpérience : 9 ans en développement backend.\n- Lead developer chez TechGiant (2020-2025) : APIs Python, architecture microservices, Kubernetes.\n- Développeur senior chez StartupCo (2016-2020) : Python, Django, PostgreSQL.\n\nCompétences : Python, FastAPI, PostgreSQL, Docker, Kubernetes, Git, CI/CD, Redis.\n\nFormation : Master Informatique, École Polytechnique (2016).\nLangues : Français courant, Anglais courant.",
+      "job": {
+        "title": "Community Manager",
+        "description": "Nous recherchons un community manager pour animer nos réseaux sociaux, créer du contenu et gérer la relation avec notre communauté. Vous avez le sens de la rédaction et une appétence pour l'analyse de données.",
+        "required_skills": ["rédaction", "seo", "community management", "réseaux sociaux"]
+      },
+      "expected_score": 15
+    }
+  ]
+}

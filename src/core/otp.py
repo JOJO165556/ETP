@@ -66,7 +66,7 @@ async def send_otp(email: str) -> bool:
             attempts_key = f"{OTP_ATTEMPTS_PREFIX}{normalized_email}"
             key = f"{OTP_KEY_PREFIX}{normalized_email}"
 
-            # 1. Vérification du cooldown (60s)
+            # Vérification du cooldown (60s)
             in_cooldown = await redis.exists(cooldown_key)
             if in_cooldown:
                 ttl = await redis.ttl(cooldown_key)
@@ -77,7 +77,7 @@ async def send_otp(email: str) -> bool:
                     detail=f"Veuillez patienter {ttl} secondes avant de demander un nouveau code.",
                 )
 
-            # 2. Vérification du quota horaire (max 5 demandes / heure)
+            # Vérification du quota horaire (max 5 demandes / heure)
             attempts = await redis.incr(attempts_key)
             if attempts == 1:
                 await redis.expire(attempts_key, OTP_RATE_LIMIT_WINDOW)
@@ -184,7 +184,7 @@ async def verify_otp(email: str, code: str) -> bool:
     clean_code = code.strip()
     now = time.time()
 
-    # 1. Vérification Redis si disponible
+    # Vérification Redis si disponible
     redis = await _get_redis()
     if redis is not None:
         try:
@@ -199,7 +199,7 @@ async def verify_otp(email: str, code: str) -> bool:
         except Exception as exc:
             logger.warning("Erreur lecture Redis OTP : %s", exc)
 
-    # 2. Vérification mémoire locale
+    # Vérification mémoire locale
     if normalized_email in _MEMORY_OTP:
         stored_code, expiry = _MEMORY_OTP[normalized_email]
         if now <= expiry and stored_code == clean_code:
@@ -207,8 +207,12 @@ async def verify_otp(email: str, code: str) -> bool:
             _MEMORY_COOLDOWN.pop(normalized_email, None)
             return True
 
-    # 3. Code universel de secours si Resend n'est pas configuré (test / dev)
-    if not settings.RESEND_API_KEY and clean_code == "123456":
+    # Code universel de secours si Resend n'est pas configuré (test / dev)
+    if (
+        not settings.RESEND_API_KEY
+        and settings.ENVIRONMENT != "production"
+        and clean_code == "123456"
+    ):
         return True
 
     return False

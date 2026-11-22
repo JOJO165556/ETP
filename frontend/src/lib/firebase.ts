@@ -30,8 +30,6 @@ import {
 import { initializeAppCheck, getToken, ReCaptchaV3Provider, type AppCheck } from "firebase/app-check";
 import type { FirebaseSessionUser } from "@/types";
 
-/* --- Configuration (placeholders : https://firebase.google.com/docs/web/setup) --- */
-
 interface FirebaseWebConfig {
   apiKey?: string;
   authDomain?: string;
@@ -76,8 +74,6 @@ function getFirebaseConfig(): FirebaseWebConfig {
     appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
   };
 }
-
-/* --- Initialisation lazy, uniquement cote navigateur --- */
 
 let _app: FirebaseApp | null = null;
 let _appCheck: AppCheck | null = null;
@@ -178,8 +174,6 @@ export async function createAccountWithEmail(
   const credential = await createUserWithEmailAndPassword(auth, email, password);
   return toSessionUser(credential.user);
 }
-
-/* --- Connexion par numero de telephone (SMS) --- */
 
 export interface PhoneVerificationHandle {
   confirmation: ConfirmationResult;

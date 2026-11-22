@@ -1,0 +1,1226 @@
+{
+  "dataset": "/mnt/data/JoJo/CODES/etp_platform/benchmarks/matching/dataset.json",
+  "weights": {
+    "skills": 0.6,
+    "experience": 0.25,
+    "education": 0.15
+  },
+  "generated_at": "2026-11-22T21:30:14.260523+00:00",
+  "providers": {
+    "deterministic": {
+      "model_id": "heuristics",
+      "metrics": {
+        "n_examples": 20,
+        "n_scored": 20,
+        "n_errors": 0,
+        "mae": 14.86,
+        "rmse": 22.32,
+        "spearman": 0.644,
+        "mean_predicted": 54.79,
+        "mean_expected": 63.15,
+        "mean_latency_ms": 1
+      },
+      "examples": [
+        {
+          "example_id": "angular-frontend-01",
+          "expected_score": 46.0,
+          "overall_score": 56.0,
+          "skill_score": 60.0,
+          "experience_score": 50.0,
+          "education_score": 50.0,
+          "matched_skills": [
+            "typescript",
+            "javascript",
+            "git"
+          ],
+          "missing_skills": [
+            "react",
+            "tailwind"
+          ],
+          "extracted_skills": [
+            "angular",
+            "css",
+            "git",
+            "html",
+            "javascript",
+            "rest",
+            "sass",
+            "typescript"
+          ],
+          "extraction_method": "regex_fallback",
+          "latency_ms": 1,
+          "error": null
+        },
+        {
+          "example_id": "backend-to-bi-01",
+          "expected_score": 48.0,
+          "overall_score": 35.0,
+          "skill_score": 25.0,
+          "experience_score": 50.0,
+          "education_score": 50.0,
+          "matched_skills": [
+            "python"
+          ],
+          "missing_skills": [
+            "sql",
+            "tableau",
+            "excel"
+          ],
+          "extracted_skills": [
+            "django",
+            "docker",
+            "fastapi",
+            "git",
+            "postgresql",
+            "python",
+            "redis"
+          ],
+          "extraction_method": "regex_fallback",
+          "latency_ms": 0,
+          "error": null
+        },
+        {
+          "example_id": "backend-to-community-01",
+          "expected_score": 15.0,
+          "overall_score": 20.0,
+          "skill_score": 0.0,
+          "experience_score": 50.0,
+          "education_score": 50.0,
+          "matched_skills": [],
+          "missing_skills": [
+            "rédaction",
+            "seo",
+            "community management",
+            "réseaux sociaux"
+          ],
+          "extracted_skills": [
+            "ci/cd",
+            "django",
+            "docker",
+            "fastapi",
+            "git",
+            "kubernetes",
+            "postgresql",
+            "python",
+            "redis"
+          ],
+          "extraction_method": "regex_fallback",
+          "latency_ms": 1,
+          "error": null
+        },
+        {
+          "example_id": "backend-to-devops-01",
+          "expected_score": 38.0,
+          "overall_score": 40.0,
+          "skill_score": 16.67,
+          "experience_score": 60.0,
+          "education_score": 100.0,
+          "matched_skills": [
+            "docker"
+          ],
+          "missing_skills": [
+            "kubernetes",
+            "aws",
+            "terraform",
+            "ci/cd",
+            "linux"
+          ],
+          "extracted_skills": [
+            "docker",
+            "git",
+            "javascript",
+            "mongodb",
+            "node.js",
+            "redis",
+            "rest",
+            "typescript"
+          ],
+          "extraction_method": "regex_fallback",
+          "latency_ms": 0,
+          "error": null
+        },
+        {
+          "example_id": "bi-analyst-01",
+          "expected_score": 86.0,
+          "overall_score": 35.0,
+          "skill_score": 25.0,
+          "experience_score": 50.0,
+          "education_score": 50.0,
+          "matched_skills": [
+            "python"
+          ],
+          "missing_skills": [
+            "sql",
+            "tableau",
+            "excel"
+          ],
+          "extracted_skills": [
+            "git",
+            "python"
+          ],
+          "extraction_method": "regex_fallback",
+          "latency_ms": 1,
+          "error": null
+        },
+        {
+          "example_id": "community-manager-01",
+          "expected_score": 90.0,
+          "overall_score": 20.0,
+          "skill_score": 0.0,
+          "experience_score": 50.0,
+          "education_score": 50.0,
+          "matched_skills": [],
+          "missing_skills": [
+            "rédaction",
+            "seo",
+            "community management",
+            "réseaux sociaux"
+          ],
+          "extracted_skills": [],
+          "extraction_method": "regex_fallback",
+          "latency_ms": 1,
+          "error": null
+        },
+        {
+          "example_id": "data-analyst-weak-01",
+          "expected_score": 12.0,
+          "overall_score": 23.0,
+          "skill_score": 0.0,
+          "experience_score": 50.0,
+          "education_score": 70.0,
+          "matched_skills": [],
+          "missing_skills": [
+            "python",
+            "machine learning",
+            "sql",
+            "pandas",
+            "docker"
+          ],
+          "extracted_skills": [],
+          "extraction_method": "regex_fallback",
+          "latency_ms": 0,
+          "error": null
+        },
+        {
+          "example_id": "data-scientist-01",
+          "expected_score": 85.0,
+          "overall_score": 63.5,
+          "skill_score": 60.0,
+          "experience_score": 50.0,
+          "education_score": 100.0,
+          "matched_skills": [
+            "python",
+            "machine learning",
+            "docker"
+          ],
+          "missing_skills": [
+            "sql",
+            "pandas"
+          ],
+          "extracted_skills": [
+            "data science",
+            "deep learning",
+            "docker",
+            "git",
+            "machine learning",
+            "nlp",
+            "python"
+          ],
+          "extraction_method": "regex_fallback",
+          "latency_ms": 1,
+          "error": null
+        },
+        {
+          "example_id": "devops-01",
+          "expected_score": 90.0,
+          "overall_score": 86.75,
+          "skill_score": 100.0,
+          "experience_score": 50.0,
+          "education_score": 95.0,
+          "matched_skills": [
+            "kubernetes",
+            "docker",
+            "aws",
+            "terraform",
+            "ci/cd",
+            "linux"
+          ],
+          "missing_skills": [],
+          "extracted_skills": [
+            "ansible",
+            "aws",
+            "bash",
+            "ci/cd",
+            "docker",
+            "git",
+            "kubernetes",
+            "linux",
+            "terraform"
+          ],
+          "extraction_method": "regex_fallback",
+          "latency_ms": 1,
+          "error": null
+        },
+        {
+          "example_id": "dotnet-backend-01",
+          "expected_score": 28.0,
+          "overall_score": 20.0,
+          "skill_score": 0.0,
+          "experience_score": 50.0,
+          "education_score": 50.0,
+          "matched_skills": [],
+          "missing_skills": [
+            "java",
+            "spring",
+            "kubernetes",
+            "postgresql"
+          ],
+          "extracted_skills": [
+            "azure",
+            "git",
+            "rest"
+          ],
+          "extraction_method": "regex_fallback",
+          "latency_ms": 1,
+          "error": null
+        },
+        {
+          "example_id": "flutter-mobile-01",
+          "expected_score": 42.0,
+          "overall_score": 50.0,
+          "skill_score": 50.0,
+          "experience_score": 50.0,
+          "education_score": 50.0,
+          "matched_skills": [
+            "javascript",
+            "git"
+          ],
+          "missing_skills": [
+            "react native",
+            "typescript"
+          ],
+          "extracted_skills": [
+            "css",
+            "git",
+            "html",
+            "javascript",
+            "rest"
+          ],
+          "extraction_method": "regex_fallback",
+          "latency_ms": 1,
+          "error": null
+        },
+        {
+          "example_id": "fullstack-junior-01",
+          "expected_score": 86.0,
+          "overall_score": 92.5,
+          "skill_score": 100.0,
+          "experience_score": 100.0,
+          "education_score": 50.0,
+          "matched_skills": [
+            "javascript",
+            "react",
+            "node.js",
+            "git"
+          ],
+          "missing_skills": [],
+          "extracted_skills": [
+            "css",
+            "git",
+            "html",
+            "javascript",
+            "mongodb",
+            "node.js",
+            "react",
+            "rest"
+          ],
+          "extraction_method": "regex_fallback",
+          "latency_ms": 1,
+          "error": null
+        },
+        {
+          "example_id": "java-spring-01",
+          "expected_score": 90.0,
+          "overall_score": 80.0,
+          "skill_score": 100.0,
+          "experience_score": 50.0,
+          "education_score": 50.0,
+          "matched_skills": [
+            "java",
+            "spring",
+            "kubernetes",
+            "postgresql"
+          ],
+          "missing_skills": [],
+          "extracted_skills": [
+            "docker",
+            "git",
+            "java",
+            "kubernetes",
+            "postgresql",
+            "rest",
+            "spring"
+          ],
+          "extraction_method": "regex_fallback",
+          "latency_ms": 1,
+          "error": null
+        },
+        {
+          "example_id": "node-backend-01",
+          "expected_score": 88.0,
+          "overall_score": 65.0,
+          "skill_score": 75.0,
+          "experience_score": 50.0,
+          "education_score": 50.0,
+          "matched_skills": [
+            "node.js",
+            "mongodb",
+            "redis"
+          ],
+          "missing_skills": [
+            "express"
+          ],
+          "extracted_skills": [
+            "docker",
+            "git",
+            "javascript",
+            "mongodb",
+            "node.js",
+            "redis",
+            "rest",
+            "typescript"
+          ],
+          "extraction_method": "regex_fallback",
+          "latency_ms": 1,
+          "error": null
+        },
+        {
+          "example_id": "php-laravel-backend-01",
+          "expected_score": 32.0,
+          "overall_score": 20.0,
+          "skill_score": 0.0,
+          "experience_score": 50.0,
+          "education_score": 50.0,
+          "matched_skills": [],
+          "missing_skills": [
+            "node.js",
+            "express",
+            "mongodb",
+            "redis"
+          ],
+          "extracted_skills": [
+            "css",
+            "docker",
+            "git",
+            "html",
+            "javascript",
+            "mysql",
+            "php",
+            "vue"
+          ],
+          "extraction_method": "regex_fallback",
+          "latency_ms": 0,
+          "error": null
+        },
+        {
+          "example_id": "py-backend-junior-01",
+          "expected_score": 52.0,
+          "overall_score": 46.5,
+          "skill_score": 40.0,
+          "experience_score": 60.0,
+          "education_score": 50.0,
+          "matched_skills": [
+            "python",
+            "git"
+          ],
+          "missing_skills": [
+            "fastapi",
+            "postgresql",
+            "docker"
+          ],
+          "extracted_skills": [
+            "css",
+            "django",
+            "flask",
+            "git",
+            "html",
+            "python",
+            "rest"
+          ],
+          "extraction_method": "regex_fallback",
+          "latency_ms": 2,
+          "error": null
+        },
+        {
+          "example_id": "py-backend-senior-01",
+          "expected_score": 92.0,
+          "overall_score": 92.5,
+          "skill_score": 100.0,
+          "experience_score": 100.0,
+          "education_score": 50.0,
+          "matched_skills": [
+            "python",
+            "fastapi",
+            "postgresql",
+            "docker",
+            "git"
+          ],
+          "missing_skills": [],
+          "extracted_skills": [
+            "ci/cd",
+            "django",
+            "docker",
+            "fastapi",
+            "git",
+            "kubernetes",
+            "postgresql",
+            "python",
+            "redis"
+          ],
+          "extraction_method": "regex_fallback",
+          "latency_ms": 3,
+          "error": null
+        },
+        {
+          "example_id": "react-frontend-01",
+          "expected_score": 88.0,
+          "overall_score": 80.0,
+          "skill_score": 100.0,
+          "experience_score": 50.0,
+          "education_score": 50.0,
+          "matched_skills": [
+            "react",
+            "typescript",
+            "javascript",
+            "tailwind",
+            "git"
+          ],
+          "missing_skills": [],
+          "extracted_skills": [
+            "css",
+            "git",
+            "html",
+            "javascript",
+            "react",
+            "tailwind",
+            "typescript",
+            "vue"
+          ],
+          "extraction_method": "regex_fallback",
+          "latency_ms": 2,
+          "error": null
+        },
+        {
+          "example_id": "react-native-01",
+          "expected_score": 87.0,
+          "overall_score": 80.0,
+          "skill_score": 100.0,
+          "experience_score": 50.0,
+          "education_score": 50.0,
+          "matched_skills": [
+            "react native",
+            "javascript",
+            "typescript",
+            "git"
+          ],
+          "missing_skills": [],
+          "extracted_skills": [
+            "git",
+            "javascript",
+            "react",
+            "react native",
+            "rest",
+            "typescript"
+          ],
+          "extraction_method": "regex_fallback",
+          "latency_ms": 1,
+          "error": null
+        },
+        {
+          "example_id": "senior-to-junior-01",
+          "expected_score": 68.0,
+          "overall_score": 90.0,
+          "skill_score": 100.0,
+          "experience_score": 90.0,
+          "education_score": 50.0,
+          "matched_skills": [
+            "javascript",
+            "react",
+            "node.js",
+            "git"
+          ],
+          "missing_skills": [],
+          "extracted_skills": [
+            "aws",
+            "docker",
+            "git",
+            "graphql",
+            "javascript",
+            "kubernetes",
+            "mongodb",
+            "node.js",
+            "react",
+            "typescript"
+          ],
+          "extraction_method": "regex_fallback",
+          "latency_ms": 1,
+          "error": null
+        }
+      ]
+    },
+    "gemini": {
+      "model_id": "gemini-flash-lite-latest",
+      "metrics": {
+        "n_examples": 20,
+        "n_scored": 4,
+        "n_errors": 16,
+        "mae": 14.25,
+        "rmse": 16.95,
+        "spearman": 0.8,
+        "mean_predicted": 59.25,
+        "mean_expected": 50.5,
+        "mean_latency_ms": 4146.0
+      },
+      "examples": [
+        {
+          "example_id": "angular-frontend-01",
+          "expected_score": 46.0,
+          "overall_score": 76.0,
+          "skill_score": 60.0,
+          "experience_score": 100.0,
+          "education_score": 100.0,
+          "matched_skills": [
+            "javascript",
+            "typescript",
+            "git"
+          ],
+          "missing_skills": [
+            "react",
+            "tailwind"
+          ],
+          "extracted_skills": [
+            "angular",
+            "css",
+            "git",
+            "html",
+            "javascript",
+            "rest api",
+            "rxjs",
+            "sass",
+            "typescript"
+          ],
+          "extraction_method": "gemini",
+          "latency_ms": 4976,
+          "error": null
+        },
+        {
+          "example_id": "backend-to-bi-01",
+          "expected_score": 48.0,
+          "overall_score": null,
+          "skill_score": null,
+          "experience_score": null,
+          "education_score": null,
+          "matched_skills": [],
+          "missing_skills": [],
+          "extracted_skills": [],
+          "extraction_method": "",
+          "latency_ms": 8054,
+          "error": "AIProviderRateLimited: Quota depasse chez 'benchmark_gemini' : HTTP 429 (Too Many Requests)."
+        },
+        {
+          "example_id": "backend-to-community-01",
+          "expected_score": 15.0,
+          "overall_score": null,
+          "skill_score": null,
+          "experience_score": null,
+          "education_score": null,
+          "matched_skills": [],
+          "missing_skills": [],
+          "extracted_skills": [],
+          "extraction_method": "",
+          "latency_ms": 7585,
+          "error": "AIProviderRateLimited: Quota depasse chez 'benchmark_gemini' : HTTP 429 (Too Many Requests)."
+        },
+        {
+          "example_id": "backend-to-devops-01",
+          "expected_score": 38.0,
+          "overall_score": null,
+          "skill_score": null,
+          "experience_score": null,
+          "education_score": null,
+          "matched_skills": [],
+          "missing_skills": [],
+          "extracted_skills": [],
+          "extraction_method": "",
+          "latency_ms": 12391,
+          "error": "AIProviderRateLimited: Quota depasse chez 'benchmark_gemini' : HTTP 429 (Too Many Requests)."
+        },
+        {
+          "example_id": "bi-analyst-01",
+          "expected_score": 86.0,
+          "overall_score": null,
+          "skill_score": null,
+          "experience_score": null,
+          "education_score": null,
+          "matched_skills": [],
+          "missing_skills": [],
+          "extracted_skills": [],
+          "extraction_method": "",
+          "latency_ms": 8046,
+          "error": "AIProviderRateLimited: Quota depasse chez 'benchmark_gemini' : HTTP 429 (Too Many Requests)."
+        },
+        {
+          "example_id": "community-manager-01",
+          "expected_score": 90.0,
+          "overall_score": null,
+          "skill_score": null,
+          "experience_score": null,
+          "education_score": null,
+          "matched_skills": [],
+          "missing_skills": [],
+          "extracted_skills": [],
+          "extraction_method": "",
+          "latency_ms": 8031,
+          "error": "AIProviderRateLimited: Quota depasse chez 'benchmark_gemini' : HTTP 429 (Too Many Requests)."
+        },
+        {
+          "example_id": "data-analyst-weak-01",
+          "expected_score": 12.0,
+          "overall_score": 20.0,
+          "skill_score": 0.0,
+          "experience_score": 50.0,
+          "education_score": 50.0,
+          "matched_skills": [],
+          "missing_skills": [
+            "python",
+            "machine learning",
+            "sql",
+            "pandas",
+            "docker"
+          ],
+          "extracted_skills": [
+            "comptabilité",
+            "excel",
+            "facturation",
+            "gestion de stocks",
+            "powerpoint",
+            "word"
+          ],
+          "extraction_method": "gemini",
+          "latency_ms": 2386,
+          "error": null
+        },
+        {
+          "example_id": "data-scientist-01",
+          "expected_score": 85.0,
+          "overall_score": null,
+          "skill_score": null,
+          "experience_score": null,
+          "education_score": null,
+          "matched_skills": [],
+          "missing_skills": [],
+          "extracted_skills": [],
+          "extraction_method": "",
+          "latency_ms": 11390,
+          "error": "AIProviderUnavailable: Erreur serveur chez 'benchmark_gemini' : HTTP 503 (Service Unavailable)."
+        },
+        {
+          "example_id": "devops-01",
+          "expected_score": 90.0,
+          "overall_score": null,
+          "skill_score": null,
+          "experience_score": null,
+          "education_score": null,
+          "matched_skills": [],
+          "missing_skills": [],
+          "extracted_skills": [],
+          "extraction_method": "",
+          "latency_ms": 8282,
+          "error": "AIProviderRateLimited: Quota depasse chez 'benchmark_gemini' : HTTP 429 (Too Many Requests)."
+        },
+        {
+          "example_id": "dotnet-backend-01",
+          "expected_score": 28.0,
+          "overall_score": null,
+          "skill_score": null,
+          "experience_score": null,
+          "education_score": null,
+          "matched_skills": [],
+          "missing_skills": [],
+          "extracted_skills": [],
+          "extraction_method": "",
+          "latency_ms": 7492,
+          "error": "AIProviderRateLimited: Quota depasse chez 'benchmark_gemini' : HTTP 429 (Too Many Requests)."
+        },
+        {
+          "example_id": "flutter-mobile-01",
+          "expected_score": 42.0,
+          "overall_score": null,
+          "skill_score": null,
+          "experience_score": null,
+          "education_score": null,
+          "matched_skills": [],
+          "missing_skills": [],
+          "extracted_skills": [],
+          "extraction_method": "",
+          "latency_ms": 8189,
+          "error": "AIProviderRateLimited: Quota depasse chez 'benchmark_gemini' : HTTP 429 (Too Many Requests)."
+        },
+        {
+          "example_id": "fullstack-junior-01",
+          "expected_score": 86.0,
+          "overall_score": null,
+          "skill_score": null,
+          "experience_score": null,
+          "education_score": null,
+          "matched_skills": [],
+          "missing_skills": [],
+          "extracted_skills": [],
+          "extraction_method": "",
+          "latency_ms": 9109,
+          "error": "AIProviderRateLimited: Quota depasse chez 'benchmark_gemini' : HTTP 429 (Too Many Requests)."
+        },
+        {
+          "example_id": "java-spring-01",
+          "expected_score": 90.0,
+          "overall_score": null,
+          "skill_score": null,
+          "experience_score": null,
+          "education_score": null,
+          "matched_skills": [],
+          "missing_skills": [],
+          "extracted_skills": [],
+          "extraction_method": "",
+          "latency_ms": 7789,
+          "error": "AIProviderRateLimited: Quota depasse chez 'benchmark_gemini' : HTTP 429 (Too Many Requests)."
+        },
+        {
+          "example_id": "node-backend-01",
+          "expected_score": 88.0,
+          "overall_score": null,
+          "skill_score": null,
+          "experience_score": null,
+          "education_score": null,
+          "matched_skills": [],
+          "missing_skills": [],
+          "extracted_skills": [],
+          "extraction_method": "",
+          "latency_ms": 7531,
+          "error": "AIProviderRateLimited: Quota depasse chez 'benchmark_gemini' : HTTP 429 (Too Many Requests)."
+        },
+        {
+          "example_id": "php-laravel-backend-01",
+          "expected_score": 32.0,
+          "overall_score": null,
+          "skill_score": null,
+          "experience_score": null,
+          "education_score": null,
+          "matched_skills": [],
+          "missing_skills": [],
+          "extracted_skills": [],
+          "extraction_method": "",
+          "latency_ms": 7553,
+          "error": "AIProviderRateLimited: Quota depasse chez 'benchmark_gemini' : HTTP 429 (Too Many Requests)."
+        },
+        {
+          "example_id": "py-backend-junior-01",
+          "expected_score": 52.0,
+          "overall_score": 41.0,
+          "skill_score": 40.0,
+          "experience_score": 20.0,
+          "education_score": 80.0,
+          "matched_skills": [
+            "python",
+            "git"
+          ],
+          "missing_skills": [
+            "fastapi",
+            "postgresql",
+            "docker"
+          ],
+          "extracted_skills": [
+            "css",
+            "django",
+            "flask",
+            "git",
+            "html",
+            "python",
+            "sql"
+          ],
+          "extraction_method": "gemini",
+          "latency_ms": 2763,
+          "error": null
+        },
+        {
+          "example_id": "py-backend-senior-01",
+          "expected_score": 92.0,
+          "overall_score": 100.0,
+          "skill_score": 100.0,
+          "experience_score": 100.0,
+          "education_score": 100.0,
+          "matched_skills": [
+            "python",
+            "fastapi",
+            "postgresql",
+            "docker",
+            "git"
+          ],
+          "missing_skills": [],
+          "extracted_skills": [
+            "ci/cd",
+            "django",
+            "docker",
+            "fastapi",
+            "git",
+            "kubernetes",
+            "postgresql",
+            "python",
+            "rabbitmq",
+            "redis"
+          ],
+          "extraction_method": "gemini",
+          "latency_ms": 6461,
+          "error": null
+        },
+        {
+          "example_id": "react-frontend-01",
+          "expected_score": 88.0,
+          "overall_score": null,
+          "skill_score": null,
+          "experience_score": null,
+          "education_score": null,
+          "matched_skills": [],
+          "missing_skills": [],
+          "extracted_skills": [],
+          "extraction_method": "",
+          "latency_ms": 9631,
+          "error": "AIProviderRateLimited: Quota depasse chez 'benchmark_gemini' : HTTP 429 (Too Many Requests)."
+        },
+        {
+          "example_id": "react-native-01",
+          "expected_score": 87.0,
+          "overall_score": null,
+          "skill_score": null,
+          "experience_score": null,
+          "education_score": null,
+          "matched_skills": [],
+          "missing_skills": [],
+          "extracted_skills": [],
+          "extraction_method": "",
+          "latency_ms": 13503,
+          "error": "AIProviderRateLimited: Quota depasse chez 'benchmark_gemini' : HTTP 429 (Too Many Requests)."
+        },
+        {
+          "example_id": "senior-to-junior-01",
+          "expected_score": 68.0,
+          "overall_score": null,
+          "skill_score": null,
+          "experience_score": null,
+          "education_score": null,
+          "matched_skills": [],
+          "missing_skills": [],
+          "extracted_skills": [],
+          "extraction_method": "",
+          "latency_ms": 7673,
+          "error": "AIProviderRateLimited: Quota depasse chez 'benchmark_gemini' : HTTP 429 (Too Many Requests)."
+        }
+      ]
+    },
+    "huggingface": {
+      "model_id": "mistralai/Mistral-7B-Instruct-v0.3",
+      "metrics": {
+        "n_examples": 20,
+        "n_scored": 0,
+        "n_errors": 20,
+        "mae": null,
+        "rmse": null,
+        "spearman": null,
+        "mean_predicted": null,
+        "mean_expected": null,
+        "mean_latency_ms": null
+      },
+      "examples": [
+        {
+          "example_id": "angular-frontend-01",
+          "expected_score": 46.0,
+          "overall_score": null,
+          "skill_score": null,
+          "experience_score": null,
+          "education_score": null,
+          "matched_skills": [],
+          "missing_skills": [],
+          "extracted_skills": [],
+          "extraction_method": "",
+          "latency_ms": 672,
+          "error": "AIProviderResponseError: Requete refusee par 'benchmark_hf' : HTTP 400 (Bad Request)."
+        },
+        {
+          "example_id": "backend-to-bi-01",
+          "expected_score": 48.0,
+          "overall_score": null,
+          "skill_score": null,
+          "experience_score": null,
+          "education_score": null,
+          "matched_skills": [],
+          "missing_skills": [],
+          "extracted_skills": [],
+          "extraction_method": "",
+          "latency_ms": 453,
+          "error": "AIProviderResponseError: Requete refusee par 'benchmark_hf' : HTTP 400 (Bad Request)."
+        },
+        {
+          "example_id": "backend-to-community-01",
+          "expected_score": 15.0,
+          "overall_score": null,
+          "skill_score": null,
+          "experience_score": null,
+          "education_score": null,
+          "matched_skills": [],
+          "missing_skills": [],
+          "extracted_skills": [],
+          "extraction_method": "",
+          "latency_ms": 442,
+          "error": "AIProviderResponseError: Requete refusee par 'benchmark_hf' : HTTP 400 (Bad Request)."
+        },
+        {
+          "example_id": "backend-to-devops-01",
+          "expected_score": 38.0,
+          "overall_score": null,
+          "skill_score": null,
+          "experience_score": null,
+          "education_score": null,
+          "matched_skills": [],
+          "missing_skills": [],
+          "extracted_skills": [],
+          "extraction_method": "",
+          "latency_ms": 496,
+          "error": "AIProviderResponseError: Requete refusee par 'benchmark_hf' : HTTP 400 (Bad Request)."
+        },
+        {
+          "example_id": "bi-analyst-01",
+          "expected_score": 86.0,
+          "overall_score": null,
+          "skill_score": null,
+          "experience_score": null,
+          "education_score": null,
+          "matched_skills": [],
+          "missing_skills": [],
+          "extracted_skills": [],
+          "extraction_method": "",
+          "latency_ms": 441,
+          "error": "AIProviderResponseError: Requete refusee par 'benchmark_hf' : HTTP 400 (Bad Request)."
+        },
+        {
+          "example_id": "community-manager-01",
+          "expected_score": 90.0,
+          "overall_score": null,
+          "skill_score": null,
+          "experience_score": null,
+          "education_score": null,
+          "matched_skills": [],
+          "missing_skills": [],
+          "extracted_skills": [],
+          "extraction_method": "",
+          "latency_ms": 463,
+          "error": "AIProviderResponseError: Requete refusee par 'benchmark_hf' : HTTP 400 (Bad Request)."
+        },
+        {
+          "example_id": "data-analyst-weak-01",
+          "expected_score": 12.0,
+          "overall_score": null,
+          "skill_score": null,
+          "experience_score": null,
+          "education_score": null,
+          "matched_skills": [],
+          "missing_skills": [],
+          "extracted_skills": [],
+          "extraction_method": "",
+          "latency_ms": 541,
+          "error": "AIProviderResponseError: Requete refusee par 'benchmark_hf' : HTTP 400 (Bad Request)."
+        },
+        {
+          "example_id": "data-scientist-01",
+          "expected_score": 85.0,
+          "overall_score": null,
+          "skill_score": null,
+          "experience_score": null,
+          "education_score": null,
+          "matched_skills": [],
+          "missing_skills": [],
+          "extracted_skills": [],
+          "extraction_method": "",
+          "latency_ms": 545,
+          "error": "AIProviderResponseError: Requete refusee par 'benchmark_hf' : HTTP 400 (Bad Request)."
+        },
+        {
+          "example_id": "devops-01",
+          "expected_score": 90.0,
+          "overall_score": null,
+          "skill_score": null,
+          "experience_score": null,
+          "education_score": null,
+          "matched_skills": [],
+          "missing_skills": [],
+          "extracted_skills": [],
+          "extraction_method": "",
+          "latency_ms": 531,
+          "error": "AIProviderResponseError: Requete refusee par 'benchmark_hf' : HTTP 400 (Bad Request)."
+        },
+        {
+          "example_id": "dotnet-backend-01",
+          "expected_score": 28.0,
+          "overall_score": null,
+          "skill_score": null,
+          "experience_score": null,
+          "education_score": null,
+          "matched_skills": [],
+          "missing_skills": [],
+          "extracted_skills": [],
+          "extraction_method": "",
+          "latency_ms": 480,
+          "error": "AIProviderResponseError: Requete refusee par 'benchmark_hf' : HTTP 400 (Bad Request)."
+        },
+        {
+          "example_id": "flutter-mobile-01",
+          "expected_score": 42.0,
+          "overall_score": null,
+          "skill_score": null,
+          "experience_score": null,
+          "education_score": null,
+          "matched_skills": [],
+          "missing_skills": [],
+          "extracted_skills": [],
+          "extraction_method": "",
+          "latency_ms": 419,
+          "error": "AIProviderResponseError: Requete refusee par 'benchmark_hf' : HTTP 400 (Bad Request)."
+        },
+        {
+          "example_id": "fullstack-junior-01",
+          "expected_score": 86.0,
+          "overall_score": null,
+          "skill_score": null,
+          "experience_score": null,
+          "education_score": null,
+          "matched_skills": [],
+          "missing_skills": [],
+          "extracted_skills": [],
+          "extraction_method": "",
+          "latency_ms": 490,
+          "error": "AIProviderResponseError: Requete refusee par 'benchmark_hf' : HTTP 400 (Bad Request)."
+        },
+        {
+          "example_id": "java-spring-01",
+          "expected_score": 90.0,
+          "overall_score": null,
+          "skill_score": null,
+          "experience_score": null,
+          "education_score": null,
+          "matched_skills": [],
+          "missing_skills": [],
+          "extracted_skills": [],
+          "extraction_method": "",
+          "latency_ms": 414,
+          "error": "AIProviderResponseError: Requete refusee par 'benchmark_hf' : HTTP 400 (Bad Request)."
+        },
+        {
+          "example_id": "node-backend-01",
+          "expected_score": 88.0,
+          "overall_score": null,
+          "skill_score": null,
+          "experience_score": null,
+          "education_score": null,
+          "matched_skills": [],
+          "missing_skills": [],
+          "extracted_skills": [],
+          "extraction_method": "",
+          "latency_ms": 394,
+          "error": "AIProviderResponseError: Requete refusee par 'benchmark_hf' : HTTP 400 (Bad Request)."
+        },
+        {
+          "example_id": "php-laravel-backend-01",
+          "expected_score": 32.0,
+          "overall_score": null,
+          "skill_score": null,
+          "experience_score": null,
+          "education_score": null,
+          "matched_skills": [],
+          "missing_skills": [],
+          "extracted_skills": [],
+          "extraction_method": "",
+          "latency_ms": 454,
+          "error": "AIProviderResponseError: Requete refusee par 'benchmark_hf' : HTTP 400 (Bad Request)."
+        },
+        {
+          "example_id": "py-backend-junior-01",
+          "expected_score": 52.0,
+          "overall_score": null,
+          "skill_score": null,
+          "experience_score": null,
+          "education_score": null,
+          "matched_skills": [],
+          "missing_skills": [],
+          "extracted_skills": [],
+          "extraction_method": "",
+          "latency_ms": 727,
+          "error": "AIProviderResponseError: Requete refusee par 'benchmark_hf' : HTTP 400 (Bad Request)."
+        },
+        {
+          "example_id": "py-backend-senior-01",
+          "expected_score": 92.0,
+          "overall_score": null,
+          "skill_score": null,
+          "experience_score": null,
+          "education_score": null,
+          "matched_skills": [],
+          "missing_skills": [],
+          "extracted_skills": [],
+          "extraction_method": "",
+          "latency_ms": 806,
+          "error": "AIProviderResponseError: Requete refusee par 'benchmark_hf' : HTTP 400 (Bad Request)."
+        },
+        {
+          "example_id": "react-frontend-01",
+          "expected_score": 88.0,
+          "overall_score": null,
+          "skill_score": null,
+          "experience_score": null,
+          "education_score": null,
+          "matched_skills": [],
+          "missing_skills": [],
+          "extracted_skills": [],
+          "extraction_method": "",
+          "latency_ms": 655,
+          "error": "AIProviderResponseError: Requete refusee par 'benchmark_hf' : HTTP 400 (Bad Request)."
+        },
+        {
+          "example_id": "react-native-01",
+          "expected_score": 87.0,
+          "overall_score": null,
+          "skill_score": null,
+          "experience_score": null,
+          "education_score": null,
+          "matched_skills": [],
+          "missing_skills": [],
+          "extracted_skills": [],
+          "extraction_method": "",
+          "latency_ms": 440,
+          "error": "AIProviderResponseError: Requete refusee par 'benchmark_hf' : HTTP 400 (Bad Request)."
+        },
+        {
+          "example_id": "senior-to-junior-01",
+          "expected_score": 68.0,
+          "overall_score": null,
+          "skill_score": null,
+          "experience_score": null,
+          "education_score": null,
+          "matched_skills": [],
+          "missing_skills": [],
+          "extracted_skills": [],
+          "extraction_method": "",
+          "latency_ms": 413,
+          "error": "AIProviderResponseError: Requete refusee par 'benchmark_hf' : HTTP 400 (Bad Request)."
+        }
+      ]
+    }
+  }
+}

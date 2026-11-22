@@ -1,0 +1,115 @@
+{
+  "dataset": "/mnt/data/JoJo/CODES/etp_platform/benchmarks/matching/dataset.json",
+  "weights": {
+    "skills": 0.6,
+    "experience": 0.25,
+    "education": 0.15
+  },
+  "generated_at": "2026-11-22T21:19:32.365588+00:00",
+  "providers": {
+    "deterministic": {
+      "model_id": "heuristics",
+      "metrics": {
+        "n_examples": 3,
+        "n_scored": 3,
+        "n_errors": 0,
+        "mae": 4.67,
+        "rmse": 5.61,
+        "spearman": 1.0,
+        "mean_predicted": 73.0,
+        "mean_expected": 77.33,
+        "mean_latency_ms": 1.0
+      },
+      "examples": [
+        {
+          "example_id": "py-backend-junior-01",
+          "expected_score": 52.0,
+          "overall_score": 46.5,
+          "skill_score": 40.0,
+          "experience_score": 60.0,
+          "education_score": 50.0,
+          "matched_skills": [
+            "python",
+            "git"
+          ],
+          "missing_skills": [
+            "fastapi",
+            "postgresql",
+            "docker"
+          ],
+          "extracted_skills": [
+            "css",
+            "django",
+            "flask",
+            "git",
+            "html",
+            "python",
+            "rest"
+          ],
+          "extraction_method": "regex_fallback",
+          "latency_ms": 1,
+          "error": null
+        },
+        {
+          "example_id": "py-backend-senior-01",
+          "expected_score": 92.0,
+          "overall_score": 92.5,
+          "skill_score": 100.0,
+          "experience_score": 100.0,
+          "education_score": 50.0,
+          "matched_skills": [
+            "python",
+            "fastapi",
+            "postgresql",
+            "docker",
+            "git"
+          ],
+          "missing_skills": [],
+          "extracted_skills": [
+            "ci/cd",
+            "django",
+            "docker",
+            "fastapi",
+            "git",
+            "kubernetes",
+            "postgresql",
+            "python",
+            "redis"
+          ],
+          "extraction_method": "regex_fallback",
+          "latency_ms": 2,
+          "error": null
+        },
+        {
+          "example_id": "react-frontend-01",
+          "expected_score": 88.0,
+          "overall_score": 80.0,
+          "skill_score": 100.0,
+          "experience_score": 50.0,
+          "education_score": 50.0,
+          "matched_skills": [
+            "react",
+            "typescript",
+            "javascript",
+            "tailwind",
+            "git"
+          ],
+          "missing_skills": [],
+          "extracted_skills": [
+            "css",
+            "git",
+            "html",
+            "javascript",
+            "react",
+            "tailwind",
+            "typescript",
+            "vue"
+          ],
+          "extraction_method": "regex_fallback",
+          "latency_ms": 1,
+          "error": null
+        }
+      ]
+    }
+  }
+}

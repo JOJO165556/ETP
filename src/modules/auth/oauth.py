@@ -115,7 +115,7 @@ async def oauth_callback(
     logger = logging.getLogger(__name__)
 
     async with httpx.AsyncClient() as http_client:
-        # 1. Échange du code contre un access token
+        # Échange du code contre un access token
         token_resp = await http_client.post(
             config["token_url"],
             data={
@@ -141,7 +141,7 @@ async def oauth_callback(
         if not access_token:
             raise HTTPException(status_code=400, detail="Access token manquant dans la réponse du provider.")
 
-        # 2. Récupération des informations utilisateur
+        # Récupération des informations utilisateur
         userinfo_resp = await http_client.get(
             config["userinfo_url"],
             headers={"Authorization": f"Bearer {access_token}"}

@@ -140,7 +140,7 @@ class Settings(BaseSettings):
         return self.ENVIRONMENT == "test"
 
     GEMINI_API_KEY: Optional[str] = None
-    GEMINI_MODEL: str = "gemini-2.5-flash"
+    GEMINI_MODEL: str = "gemini-3.8-flash"
     GEMINI_API_BASE: str = "https://generativelanguage.googleapis.com/v1beta"
     HF_API_KEY: Optional[str] = None
     HF_MODEL: str = "mistralai/Mistral-7B-Instruct-v0.3"

@@ -29,7 +29,7 @@ class NotificationRepository(BaseAsyncRepository[Notification]):
             .limit(limit)
         )
         if unread_only:
-            query = query.where(self.model.is_read == False)  # noqa: E712
+            query = query.where(self.model.is_read.is_(False))
         result = await self.session.execute(query)
         return result.scalars().all()
 
@@ -40,7 +40,7 @@ class NotificationRepository(BaseAsyncRepository[Notification]):
             .select_from(self.model)
             .where(
                 self.model.user_id == user_id,
-                self.model.is_read == False,  # noqa: E712
+                self.model.is_read.is_(False),
             )
         )
         result = await self.session.execute(query)
@@ -54,7 +54,7 @@ class NotificationRepository(BaseAsyncRepository[Notification]):
             .where(self.model.user_id == user_id)
         )
         if unread_only:
-            query = query.where(self.model.is_read == False)  # noqa: E712
+            query = query.where(self.model.is_read.is_(False))
         result = await self.session.execute(query)
         return int(result.scalar_one() or 0)
 
@@ -75,7 +75,7 @@ class NotificationRepository(BaseAsyncRepository[Notification]):
             update(self.model)
             .where(
                 self.model.user_id == user_id,
-                self.model.is_read == False,  # noqa: E712
+                self.model.is_read.is_(False),
             )
             .values(is_read=True)
             .execution_options(synchronize_session="fetch")

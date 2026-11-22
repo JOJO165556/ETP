@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 
 DEFAULT_MODELS: dict[str, str] = {
     "huggingface": "mistralai/Mistral-7B-Instruct-v0.3",
-    "gemini": "gemini-2.5-flash",
+    "gemini": "gemini-3.8-flash",
 }
 
 DEFAULT_MODEL_PARAMS: dict[str, Any] = {"temperature": 0.1, "max_tokens": 1024}
