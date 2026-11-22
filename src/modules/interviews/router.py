@@ -5,7 +5,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.core.database import get_db
 from src.modules.applications.repository import ApplicationRepository
-from src.modules.auth.dependencies import require_roles, tenant_company_id
+from src.modules.auth.dependencies import get_current_user, require_roles, tenant_company_id
+from src.modules.interviews.models import Interview
 from src.modules.interviews.schemas import InterviewCreate, InterviewRead, InterviewUpdate
 from src.modules.interviews.services import InterviewService
 from src.modules.users.models import User, UserRole
@@ -13,6 +14,38 @@ from src.modules.users.models import User, UserRole
 router = APIRouter(prefix="/interviews", tags=["Entretiens"])
 
 _RECRUITER_OR_ADMIN = require_roles(UserRole.RECRUITER, UserRole.COMPANY_ADMIN, UserRole.SUPERADMIN)
+
+
+def _serialize_interview(interview: Interview) -> dict:
+    """Serialise un entretien avec les infos d'affichage des relations."""
+    application = interview.application
+    job = application.job if application is not None else None
+    candidate = application.candidate if application is not None else None
+    candidate_name = None
+    if candidate is not None:
+        profile = getattr(candidate, "profile", None)
+        full_name = (
+            " ".join(p for p in (profile.first_name, profile.last_name) if p).strip()
+            if profile is not None
+            else ""
+        )
+        candidate_name = full_name or candidate.email
+    return {
+        "id": str(interview.id),
+        "application_id": str(interview.application_id),
+        "interviewer_id": str(interview.interviewer_id),
+        "scheduled_at": interview.scheduled_at.isoformat() if interview.scheduled_at else None,
+        "duration_minutes": interview.duration_minutes,
+        "status": interview.status,
+        "meeting_link": interview.meeting_link,
+        "location": interview.location,
+        "notes": interview.notes,
+        "created_at": interview.created_at.isoformat() if interview.created_at else None,
+        "updated_at": interview.updated_at.isoformat() if interview.updated_at else None,
+        "job_title": job.title if job is not None else None,
+        "company_name": job.company.name if job is not None and job.company is not None else None,
+        "candidate_name": candidate_name,
+    }
 
 
 @router.post(
@@ -88,6 +121,23 @@ async def get_application_interviews(
     service = InterviewService(db)
     interviews = await service.get_interviews_by_application(db, application_id)
     return interviews
+
+
+@router.get(
+    "/me",
+    response_model=List[InterviewRead],
+    summary="Mes entretiens",
+)
+async def get_my_interviews(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Entretiens où l'utilisateur connecté est recruteur ou candidat.
+    """
+    service = InterviewService(db)
+    interviews = await service.get_interviews_for_user(db, str(current_user.id))
+    return [_serialize_interview(i) for i in interviews]
 
 
 @router.get(

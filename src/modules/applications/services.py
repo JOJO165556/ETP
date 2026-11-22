@@ -20,7 +20,7 @@ class ApplicationService:
         Vérifie si le candidat a déjà postulé.
         Associe le CV du profil s'il existe.
         """
-        # 1. Vérifier si l'offre existe et est active
+        # Vérifier si l'offre existe et est active
         job = await self.job_repo.get(job_id)
         if not job or job.status != JobStatus.ACTIVE:
             raise HTTPException(
@@ -28,7 +28,7 @@ class ApplicationService:
                 detail="Offre d'emploi introuvable ou inactive."
             )
 
-        # 2. Vérifier si déjà postulé
+        # Vérifier si déjà postulé
         existing_app = await self.repo.get_by_candidate_and_job(candidate_id, job_id)
         if existing_app:
             raise HTTPException(
@@ -36,11 +36,11 @@ class ApplicationService:
                 detail="Vous avez déjà postulé à cette offre."
             )
 
-        # 3. Récupérer le CV du profil du candidat
+        # Récupérer le CV du profil du candidat
         profile = await self.profile_repo.get_by_user_id(candidate_id)
         cv_key = profile.cv_key if profile else None
 
-        # 4. Créer la candidature
+        # Créer la candidature
         app_data = {
             "job_id": job_id,
             "candidate_id": candidate_id,

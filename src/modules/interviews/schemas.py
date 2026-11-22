@@ -1,5 +1,6 @@
 from datetime import datetime
 from typing import Optional
+from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
@@ -37,9 +38,14 @@ class InterviewUpdate(BaseModel):
 
 
 class InterviewRead(InterviewBase):
-    id: str
+    id: UUID
+    application_id: UUID
+    interviewer_id: UUID
     status: InterviewStatus
     created_at: datetime
     updated_at: datetime
+    job_title: Optional[str] = None
+    company_name: Optional[str] = None
+    candidate_name: Optional[str] = None
 
     model_config = ConfigDict(from_attributes=True)

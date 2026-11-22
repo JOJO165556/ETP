@@ -36,6 +36,11 @@ class RegisterRequest(BaseModel):
     password: str = Field(min_length=8, max_length=128, description="Mot de passe d'au moins 8 caractères")
     first_name: str | None = None
     last_name: str | None = None
+    company_name: str | None = Field(
+        default=None,
+        max_length=255,
+        description="Nom de l'entreprise (requis pour une inscription recruteur)",
+    )
 
 
 class RefreshTokenRequest(BaseModel):

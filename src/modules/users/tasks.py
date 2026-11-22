@@ -22,10 +22,10 @@ async def _process_cv_async(user_id: str, cv_key: str):
     os.close(fd)
     
     try:
-        # 1. Télécharger le fichier depuis MinIO
+        # Télécharger le fichier depuis MinIO
         await storage.download_file(cv_key, temp_path)
         
-        # 2. Envoyer le fichier au service d'IA existant
+        # Envoyer le fichier au service d'IA existant
         logger.info(f"Envoi du document à l'IA d'extraction ({AI_SERVICE_URL})...")
         async with httpx.AsyncClient() as client:
             with open(temp_path, "rb") as f:
@@ -41,7 +41,7 @@ async def _process_cv_async(user_id: str, cv_key: str):
         extracted_skills = ai_data.get("skills", [])
         logger.info(f"Compétences extraites par l'IA pour {user_id} : {extracted_skills}")
         
-        # 3. Mettre à jour le profil avec les résultats
+        # Mettre à jour le profil avec les résultats
         async with async_session_maker() as session:
             profile_repo = UserProfileRepository(session)
             await profile_repo.update_by_user_id(

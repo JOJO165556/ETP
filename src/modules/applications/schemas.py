@@ -32,6 +32,12 @@ class ApplicationResponse(ApplicationBase):
     celery_task_id: str | None = None
     celery_task_status: str | None = None
     celery_task_result: dict | None = None
+    job_title: str | None = None
+    company_name: str | None = None
+    candidate_name: str | None = None
+    candidate_email: str | None = None
+    created_at: str | None = None
+    updated_at: str | None = None
 
 
 class ApplicationSubmitResponse(BaseModel):

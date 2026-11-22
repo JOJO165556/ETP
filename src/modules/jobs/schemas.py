@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from pydantic import BaseModel, ConfigDict, Field
 from typing import List
 from src.modules.jobs.models import JobStatus
@@ -55,6 +57,8 @@ class JobResponse(JobBase):
     id: str
     company_id: str
     status: JobStatus
+    company_name: str | None = None
+    created_at: datetime | None = None
 
 class CandidateMatchResponse(BaseModel):
     model_config = ConfigDict(json_schema_extra={

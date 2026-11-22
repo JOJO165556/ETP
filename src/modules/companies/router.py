@@ -12,9 +12,11 @@ from src.modules.companies.repository import CompanyRepository
 router = APIRouter(prefix="/companies", tags=["Entreprises"])
 
 _SUPERADMIN = require_roles(UserRole.SUPERADMIN)
-_COMPANY_ADMIN_OR_SUPERADMIN = require_roles(UserRole.COMPANY_ADMIN, UserRole.SUPERADMIN)
+_COMPANY_MEMBER_OR_SUPERADMIN = require_roles(
+    UserRole.RECRUITER, UserRole.COMPANY_ADMIN, UserRole.SUPERADMIN
+)
 
-@router.post("/", response_model=CompanyResponse, status_code=status.HTTP_201_CREATED, summary="Créer une entreprise")
+@router.post("", response_model=CompanyResponse, status_code=status.HTTP_201_CREATED, summary="Créer une entreprise")
 async def create_company(
     company_in: CompanyCreate,
     current_admin: User = Depends(_SUPERADMIN),
@@ -29,7 +31,7 @@ async def create_company(
     await db.commit()
     return company
 
-@router.get("/", response_model=List[CompanyResponse], summary="Lister les entreprises")
+@router.get("", response_model=List[CompanyResponse], summary="Lister les entreprises")
 async def list_companies(
     skip: int = 0,
     limit: int = 100,
@@ -62,15 +64,16 @@ async def get_company(
 async def update_company(
     company_id: str,
     company_in: CompanyUpdate,
-    current_user: User = Depends(_COMPANY_ADMIN_OR_SUPERADMIN),
+    current_user: User = Depends(_COMPANY_MEMBER_OR_SUPERADMIN),
     db: AsyncSession = Depends(get_db)
 ):
     """
     Met à jour les informations d'une entreprise.
-    Restreint au SUPERADMIN ou au COMPANY_ADMIN de cette même entreprise.
+    Restreint au SUPERADMIN ou à un membre (RECRUITER/COMPANY_ADMIN)
+    de cette même entreprise.
     """
-    # Vérification des droits pour un COMPANY_ADMIN
-    if current_user.role == UserRole.COMPANY_ADMIN and str(current_user.company_id) != company_id:
+    # Vérification des droits pour les membres de l'entreprise
+    if current_user.role != UserRole.SUPERADMIN and str(current_user.company_id) != company_id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Vous n'êtes pas autorisé à modifier les informations d'une autre entreprise."

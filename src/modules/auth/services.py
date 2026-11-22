@@ -33,6 +33,12 @@ RESEND_RATE_LIMIT = 3
 RESEND_RATE_WINDOW = 3600  # 1 heure
 
 
+def _default_company_name(email: str) -> str:
+    """Nom d'entreprise de secours dérivé du domaine de l'email du recruteur."""
+    domain = email.rsplit("@", 1)[-1].split(".")[0] if "@" in email else ""
+    return domain.capitalize() or "Mon entreprise"
+
+
 class AuthService:
     def __init__(self, db: AsyncSession):
         self.db = db
@@ -162,12 +168,25 @@ class AuthService:
                 detail="Un compte avec cet email existe deja"
             )
 
+        # Un recruteur doit être rattaché à une entreprise pour publier des offres.
+        # L'entreprise est créée dans la même transaction que l'utilisateur.
+        company_id = None
+        if role == UserRole.RECRUITER:
+            from src.modules.companies.schemas import CompanyCreate
+            from src.modules.companies.services import CompanyService
+            company_name = (data.company_name or "").strip() or _default_company_name(data.email)
+            company = await CompanyService(self.db).create_company(
+                CompanyCreate(name=company_name)
+            )
+            company_id = str(company.id)
+
         user = await self.user_repo.create({
             "email": data.email,
             "hashed_password": get_password_hash(data.password),
             "role": role,
             "is_active": True,
             "is_verified": False,
+            "company_id": company_id,
         })
 
         # Mettre a jour le profil si fourni

@@ -34,7 +34,13 @@ class Interview(Base, BaseUUIDMixin, AuditMixin):
     )
     duration_minutes: Mapped[int] = mapped_column(Integer, default=45, nullable=False)
     status: Mapped[InterviewStatus] = mapped_column(
-        SQLEnum(InterviewStatus), default=InterviewStatus.SCHEDULED, nullable=False, index=True
+        SQLEnum(
+            InterviewStatus,
+            values_callable=lambda enum_cls: [member.value for member in enum_cls],
+        ),
+        default=InterviewStatus.SCHEDULED,
+        nullable=False,
+        index=True,
     )
     meeting_link: Mapped[str | None] = mapped_column(String(512), nullable=True)
     location: Mapped[str | None] = mapped_column(String(255), nullable=True)

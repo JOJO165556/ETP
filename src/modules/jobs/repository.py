@@ -1,5 +1,6 @@
 from sqlalchemy import select, func, cast
-from typing import Sequence
+from sqlalchemy.orm import selectinload
+from typing import List, Sequence
 from geoalchemy2 import Geography
 from src.core.repository import BaseAsyncRepository
 from src.modules.jobs.models import Job, JobStatus
@@ -9,10 +10,58 @@ class JobRepository(BaseAsyncRepository[Job]):
     def __init__(self, session):
         super().__init__(Job, session)
 
+    async def get(self, id) -> Job | None:
+        """Récupère une offre avec son entreprise (évite le lazy-load async)."""
+        query = (
+            select(self.model)
+            .options(selectinload(Job.company))
+            .where(self.model.id == id)
+        )
+        if hasattr(self.model, "is_deleted"):
+            query = query.where(self.model.is_deleted.is_(False))
+        result = await self.session.execute(query)
+        return result.scalar_one_or_none()
+
+    async def list(self, skip: int = 0, limit: int = 100) -> Sequence[Job]:
+        """Liste les offres avec leur entreprise."""
+        query = (
+            select(self.model)
+            .options(selectinload(Job.company))
+            .offset(skip)
+            .limit(limit)
+        )
+        if hasattr(self.model, "is_deleted"):
+            query = query.where(self.model.is_deleted.is_(False))
+        result = await self.session.execute(query)
+        return result.scalars().all()
+
+    async def get_by_company(
+        self,
+        company_id: str,
+        status: JobStatus | None = None,
+        skip: int = 0,
+        limit: int = 100,
+    ) -> Sequence[Job]:
+        """Liste les offres d'une entreprise, tous statuts confondus par défaut."""
+        query = (
+            select(self.model)
+            .options(selectinload(Job.company))
+            .where(self.model.company_id == company_id)
+            .offset(skip)
+            .limit(limit)
+        )
+        if status is not None:
+            query = query.where(self.model.status == status)
+        if hasattr(self.model, "is_deleted"):
+            query = query.where(self.model.is_deleted.is_(False))
+        result = await self.session.execute(query)
+        return result.scalars().all()
+
     async def get_active_jobs_by_company(self, company_id: str) -> Sequence[Job]:
         """Récupérer uniquement les offres d'emploi actives d'une entreprise"""
         query = (
             select(self.model)
+            .options(selectinload(Job.company))
             .where(self.model.company_id == company_id)
             .where(self.model.status == JobStatus.ACTIVE)
         )
@@ -31,6 +80,7 @@ class JobRepository(BaseAsyncRepository[Job]):
         
         query = (
             select(self.model)
+            .options(selectinload(Job.company))
             .where(self.model.status == JobStatus.ACTIVE)
             .where(
                 func.ST_DWithin(
@@ -43,7 +93,7 @@ class JobRepository(BaseAsyncRepository[Job]):
         result = await self.session.execute(query)
         return result.scalars().all()
 
-    async def find_matching_candidates_for_job(self, job_id: str) -> list[dict]:
+    async def find_matching_candidates_for_job(self, job_id: str) -> List[dict]:
         """
         Matching Engine : Trouve les meilleurs candidats pour une offre.
         Combine la distance géographique (PostGIS) et le recouvrement de compétences (JSON).
@@ -52,7 +102,7 @@ class JobRepository(BaseAsyncRepository[Job]):
         if not job:
             return []
 
-        # 1. Requête pour récupérer les profils candidats actifs avec leur distance (si applicable)
+        # Requête pour récupérer les profils candidats actifs avec leur distance (si applicable)
         distance_col = None
         if job.job_location is not None:
             distance_col = func.ST_Distance(

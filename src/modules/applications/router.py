@@ -4,8 +4,7 @@ from sqlalchemy import select, update
 from typing import List
 
 from src.core.database import get_db
-from src.core.storage import AsyncStorageService
-from src.modules.auth.dependencies import get_current_user, require_roles, tenant_company_id
+from src.modules.auth.dependencies import require_roles
 from src.modules.users.models import User, UserRole
 from src.modules.applications.schemas import ApplicationResponse, ApplicationUpdateStage, ApplicationSubmitResponse, TaskStatusResponse
 from src.modules.applications.services import ApplicationService
@@ -27,6 +26,19 @@ def _serialize_application(app: Application) -> dict:
     company_name = None
     if job is not None and job.company is not None:
         company_name = job.company.name
+    candidate = app.candidate if app is not None else None
+    candidate_name = None
+    candidate_email = None
+    if candidate is not None:
+        candidate_email = candidate.email
+        profile = getattr(candidate, "profile", None)
+        if profile is not None:
+            full_name = " ".join(
+                part for part in (profile.first_name, profile.last_name) if part
+            ).strip()
+            candidate_name = full_name or candidate.email
+        else:
+            candidate_name = candidate.email
     return {
         "id": str(app.id),
         "job_id": str(app.job_id),
@@ -39,6 +51,8 @@ def _serialize_application(app: Application) -> dict:
         "celery_task_result": app.celery_task_result,
         "job_title": job.title if job is not None else None,
         "company_name": company_name,
+        "candidate_name": candidate_name,
+        "candidate_email": candidate_email,
         "created_at": app.created_at.isoformat() if app.created_at else None,
         "updated_at": app.updated_at.isoformat() if app.updated_at else None,
     }
@@ -80,7 +94,7 @@ async def apply_to_job(
     repo = ApplicationRepository(db)
     application = await repo.get(str(application.id))
     return ApplicationSubmitResponse(
-        application=ApplicationResponse.model_validate(application),
+        application=ApplicationResponse.model_validate(_serialize_application(application)),
         task_id=task_result.id if task_result else None,
         task_status="PENDING" if task_result else None,
     )
@@ -163,74 +177,6 @@ async def get_job_applications(
     return [_serialize_application(app) for app in applications]
 
 
-@router.get(
-    "/{app_id}/cv",
-    summary="Obtenir le lien signé du CV d'une candidature",
-    responses={403: {"description": "Accès non autorisé"}, 404: {"description": "Candidature ou CV introuvable"}},
-)
-async def get_application_cv_link(
-    app_id: str,
-    current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
-) -> dict[str, str]:
-    """Génère une URL signée temporaire pour le CV d'une candidature.
-
-    Règles de possession (anti-IDOR) :
-    - CANDIDATE : uniquement ses propres candidatures ;
-    - RECRUITER / COMPANY_ADMIN : uniquement les candidatures dont l'offre
-      appartient à son entreprise ;
-    - SUPERADMIN : accès global.
-    """
-    repo = ApplicationRepository(db)
-    application = await repo.get_with_details(app_id)
-    if not application:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Candidature introuvable.",
-        )
-
-    if current_user.role == UserRole.SUPERADMIN:
-        pass
-    elif current_user.role == UserRole.CANDIDATE:
-        if str(application.candidate_id) != str(current_user.id):
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Accès non autorisé à ce fichier.",
-            )
-    elif current_user.role in (UserRole.RECRUITER, UserRole.COMPANY_ADMIN):
-        company_id = tenant_company_id(current_user)
-        job = application.job
-        if job is None or str(job.company_id) != company_id:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Accès non autorisé à ces données multi-tenant.",
-            )
-    else:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Accès non autorisé.",
-        )
-
-    if not application.resume_storage_path:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Aucun CV n'est associé à cette candidature.",
-        )
-
-    try:
-        secure_url = await AsyncStorageService().generate_presigned_url(
-            file_key=application.resume_storage_path,
-            expires_in=3600,
-        )
-    except Exception as exc:
-        raise HTTPException(
-            status_code=status.HTTP_502_BAD_GATEWAY,
-            detail=f"Erreur lors de la génération du lien sécurisé : {exc}",
-        ) from exc
-
-    return {"download_url": secure_url}
-
-
 @router.patch("/{app_id}/stage", response_model=ApplicationResponse, summary="Modifier le statut d'une candidature")
 async def update_application_stage(
     app_id: str,
@@ -256,7 +202,8 @@ async def update_application_stage(
     )
     await db.commit()
     repo = ApplicationRepository(db)
-    return await repo.get(str(application.id))
+    application = await repo.get(str(application.id))
+    return _serialize_application(application)
 
 
 @router.post(

@@ -1,11 +1,20 @@
 from datetime import datetime, timedelta
 from typing import List, Optional
 
-from sqlalchemy import and_, select, text
+from sqlalchemy import and_, or_, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from src.core.repository import BaseAsyncRepository
+from src.modules.applications.models import Application
 from src.modules.interviews.models import Interview, InterviewStatus
+from src.modules.jobs.models import Job
+from src.modules.users.models import User
+
+_INTERVIEW_EAGER_LOAD = (
+    selectinload(Interview.application).selectinload(Application.job).selectinload(Job.company),
+    selectinload(Interview.application).selectinload(Application.candidate).selectinload(User.profile),
+)
 
 
 class InterviewRepository(BaseAsyncRepository[Interview]):
@@ -38,6 +47,22 @@ class InterviewRepository(BaseAsyncRepository[Interview]):
 
         query = query.order_by(self.model.scheduled_at)
         result = await db.execute(query)
+        return result.scalars().all()
+
+    async def get_for_user(self, db: AsyncSession, user_id: str) -> List[Interview]:
+        """Entretiens où l'utilisateur est recruteur ou candidat."""
+        result = await db.execute(
+            select(self.model)
+            .options(*_INTERVIEW_EAGER_LOAD)
+            .join(Application, self.model.application_id == Application.id)
+            .where(
+                or_(
+                    self.model.interviewer_id == user_id,
+                    Application.candidate_id == user_id,
+                )
+            )
+            .order_by(self.model.scheduled_at)
+        )
         return result.scalars().all()
 
     async def get_upcoming_interviews(

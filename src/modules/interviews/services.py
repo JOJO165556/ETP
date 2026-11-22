@@ -126,6 +126,12 @@ class InterviewService:
         """Récupère tous les entretiens d'une candidature."""
         return await self.interview_repo.get_by_application(db, application_id)
 
+    async def get_interviews_for_user(
+        self, db: AsyncSession, user_id: str
+    ) -> list[Interview]:
+        """Entretiens où l'utilisateur est recruteur ou candidat."""
+        return await self.interview_repo.get_for_user(db, user_id)
+
     async def get_upcoming_interviews(
         self, db: AsyncSession, interviewer_id: str, days: int = 7
     ) -> list[Interview]:
@@ -135,44 +141,35 @@ class InterviewService:
     async def _send_interview_notifications(
         self, db: AsyncSession, interview: Interview, application: Application, notification_service
     ) -> None:
-        """Envoie les notifications email au candidat et au recruteur."""
-        # Notification au candidat
-        try:
-            await notification_service.send_email(
-                db=db,
-                to_email=application.candidate.email,
-                subject="Entretien programmé",
-                template_name="interview_scheduled",
-                context={
-                    "candidate_name": application.candidate.profile.first_name or "Candidat",
-                    "job_title": application.job.title,
-                    "company_name": application.job.company.name,
-                    "scheduled_at": interview.scheduled_at,
-                    "duration_minutes": interview.duration_minutes,
-                    "meeting_link": interview.meeting_link,
-                    "location": interview.location,
-                },
-            )
-        except Exception as e:
-            # Log l'erreur mais ne pas bloquer la création de l'entretien
-            print(f"Failed to send candidate notification: {e}")
+        """Crée les notifications in-app pour le candidat et le recruteur."""
+        from src.modules.notifications.models import NotificationType
 
-        # Notification au recruteur
-        try:
-            await notification_service.send_email(
-                db=db,
-                to_email=interview.interviewer.email,
-                subject="Nouvel entretien programmé",
-                template_name="interview_recruiter_notification",
-                context={
-                    "recruiter_name": interview.interviewer.profile.first_name or "Recruteur",
-                    "candidate_name": application.candidate.profile.first_name or "Candidat",
-                    "job_title": application.job.title,
-                    "scheduled_at": interview.scheduled_at,
-                    "duration_minutes": interview.duration_minutes,
-                    "meeting_link": interview.meeting_link,
-                    "location": interview.location,
-                },
-            )
-        except Exception as e:
-            print(f"Failed to send recruiter notification: {e}")
+        scheduled_label = interview.scheduled_at.strftime("%d/%m/%Y à %H:%M")
+        candidate_name = (
+            application.candidate.profile.first_name
+            if application.candidate and application.candidate.profile
+            else "Candidat"
+        )
+        job_title = application.job.title if application.job else "votre candidature"
+
+        await notification_service.create(
+            user_id=application.candidate_id,
+            title="Entretien programmé",
+            message=(
+                f"Votre entretien pour {job_title} est planifié "
+                f"le {scheduled_label}."
+            ),
+            notification_type=NotificationType.INTERVIEW,
+            link="/interviews",
+        )
+
+        await notification_service.create(
+            user_id=interview.interviewer_id,
+            title="Entretien programmé",
+            message=(
+                f"Entretien avec {candidate_name} pour {job_title} "
+                f"le {scheduled_label}."
+            ),
+            notification_type=NotificationType.INTERVIEW,
+            link="/interviews",
+        )

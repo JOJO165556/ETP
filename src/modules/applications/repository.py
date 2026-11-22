@@ -4,6 +4,12 @@ from typing import Sequence
 from src.core.repository import BaseAsyncRepository
 from src.modules.applications.models import Application, ApplicationNote
 from src.modules.jobs.models import Job
+from src.modules.users.models import User
+
+_APPLICATION_EAGER_LOAD = (
+    selectinload(Application.job).selectinload(Job.company),
+    selectinload(Application.candidate).selectinload(User.profile),
+)
 
 class ApplicationRepository(BaseAsyncRepository[Application]):
     def __init__(self, session):
@@ -13,10 +19,7 @@ class ApplicationRepository(BaseAsyncRepository[Application]):
         """Récupère une candidature avec ses relations job et company."""
         query = (
             select(self.model)
-            .options(
-                selectinload(self.model.job).selectinload(Job.company),
-                selectinload(self.model.candidate),
-            )
+            .options(*_APPLICATION_EAGER_LOAD)
             .where(self.model.id == id)
         )
         if hasattr(self.model, "is_deleted"):
@@ -26,13 +29,21 @@ class ApplicationRepository(BaseAsyncRepository[Application]):
 
     async def get_applications_by_job(self, job_id: str) -> Sequence[Application]:
         """Lister toutes les candidatures reçues pour un poste spécifique"""
-        query = select(self.model).where(self.model.job_id == job_id)
+        query = (
+            select(self.model)
+            .options(*_APPLICATION_EAGER_LOAD)
+            .where(self.model.job_id == job_id)
+        )
         result = await self.session.execute(query)
         return result.scalars().all()
 
     async def get_applications_by_candidate(self, candidate_id: str) -> Sequence[Application]:
         """Lister toutes les candidatures d'un candidat"""
-        query = select(self.model).where(self.model.candidate_id == candidate_id)
+        query = (
+            select(self.model)
+            .options(*_APPLICATION_EAGER_LOAD)
+            .where(self.model.candidate_id == candidate_id)
+        )
         result = await self.session.execute(query)
         return result.scalars().all()
 
