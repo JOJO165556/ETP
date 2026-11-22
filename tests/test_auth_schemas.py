@@ -17,9 +17,13 @@ class TestAuthSchemas:
         assert td.token_type == "refresh"
 
     def test_register_request(self):
-        req = RegisterRequest(email="a@b.com", password="secret", first_name="Jo")
+        req = RegisterRequest(email="a@b.com", password="motdepasse123", first_name="Jo")
         assert req.email == "a@b.com"
         assert req.first_name == "Jo"
+
+    def test_register_request_rejette_un_mot_de_passe_court(self):
+        with pytest.raises(ValueError):
+            RegisterRequest(email="a@b.com", password="court", first_name="Jo")
 
     def test_refresh_token_request(self):
         req = RefreshTokenRequest(refresh_token="xyz")

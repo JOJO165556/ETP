@@ -45,7 +45,13 @@ def _word_match(keyword: str, text: str) -> bool:
 
 
 def _detect_level(text_lower: str, keywords: dict[str, list[str]], order: list[str]) -> str:
-    for level in order:
+    """Retourne le niveau le plus eleve mentionne (``order`` est croissant).
+
+    Parcourir l'ordre a l'envers evite qu'un CV mentionnant a la fois un diplome
+    et un diplome superieur (ou "senior" et un nombre d'annees) soit classe au
+    niveau le plus faible.
+    """
+    for level in reversed(order):
         if any(_word_match(keyword, text_lower) for keyword in keywords.get(level, [])):
             return level
     return "unknown"
