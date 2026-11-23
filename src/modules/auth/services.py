@@ -185,7 +185,7 @@ class AuthService:
             "hashed_password": get_password_hash(data.password),
             "role": role,
             "is_active": True,
-            "is_verified": False,
+            "is_verified": True,
             "company_id": company_id,
         })
 
