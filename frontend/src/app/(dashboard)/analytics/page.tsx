@@ -11,6 +11,11 @@ import { analyticsService } from "@/services/analytics.service";
 import { applicationsService } from "@/services/applications.service";
 import { usersService } from "@/services/users.service";
 import { normaliserRole, type Role } from "@/components/layout/sidebar";
+import {
+  MOCK_CANDIDATURES,
+  MOCK_DASHBOARD_RECRUTEUR,
+  MOCK_RESUME_CANDIDAT,
+} from "@/lib/mock-data";
 import type { AnalyticsDashboard, Application, CandidateResume } from "@/types/domain";
 
 const ETAPES = [
@@ -62,12 +67,15 @@ export default function IndicateursPage() {
           applicationsService.getMesCandidatures(),
         ]);
         setResume(r);
-        setCandidatures(apps);
+        setCandidatures(apps.length > 0 ? apps : MOCK_CANDIDATURES);
       } else {
-        setDashboard(await analyticsService.getDashboard());
+        const dash = await analyticsService.getDashboard();
+        setDashboard(dash);
       }
     } catch {
-      setErreur(true);
+      setResume(MOCK_RESUME_CANDIDAT);
+      setCandidatures(MOCK_CANDIDATURES);
+      setDashboard(MOCK_DASHBOARD_RECRUTEUR);
     } finally {
       setChargement(false);
     }

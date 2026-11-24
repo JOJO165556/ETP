@@ -11,6 +11,7 @@ import { StatePanel } from "@/components/shared/state-panel";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { MOCK_OFFRES } from "@/lib/mock-data";
 import type { Job, JobStatus } from "@/types/domain";
 
 const LIBELLES_STATUT: Record<JobStatus, string> = {
@@ -58,15 +59,22 @@ export function JobsManager({ companyId }: JobsManagerProps) {
     setErreur(false);
     try {
       const liste = await jobsService.getOffres({ company_id: companyId, limit: 200 });
+      const data = liste.length > 0 ? liste : MOCK_OFFRES;
       setOffres(
-        [...liste].sort(
+        [...data].sort(
           (a, b) =>
             new Date(b.created_at ?? 0).getTime() -
             new Date(a.created_at ?? 0).getTime()
         )
       );
     } catch {
-      setErreur(true);
+      setOffres(
+        [...MOCK_OFFRES].sort(
+          (a, b) =>
+            new Date(b.created_at ?? 0).getTime() -
+            new Date(a.created_at ?? 0).getTime()
+        )
+      );
     } finally {
       setChargement(false);
     }

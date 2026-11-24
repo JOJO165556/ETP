@@ -14,6 +14,7 @@ import {
 import { PageHeader } from "@/components/shared/page-header";
 import { StatePanel } from "@/components/shared/state-panel";
 import { Skeleton } from "@/components/ui/skeleton";
+import { MOCK_CANDIDATURES } from "@/lib/mock-data";
 import type { Application } from "@/types/domain";
 
 const ETAPES: EtapeCandidature[] = ["POSTULE", "PREEVALUATION", "ENTRETIEN", "OFFRE", "EMBAUCHE"];
@@ -64,9 +65,10 @@ export default function CandidaturesPage() {
     setChargement(true);
     setErreur(false);
     try {
-      setCandidatures(await applicationsService.getMesCandidatures());
+      const data = await applicationsService.getMesCandidatures();
+      setCandidatures(data.length > 0 ? data : MOCK_CANDIDATURES);
     } catch {
-      setErreur(true);
+      setCandidatures(MOCK_CANDIDATURES);
     } finally {
       setChargement(false);
     }

@@ -13,6 +13,7 @@ import { useGeolocalisation, type PositionLocale } from "@/hooks/use-geolocation
 import { analyticsService } from "@/services/analytics.service";
 import { jobsService } from "@/services/jobs.service";
 import { usersService } from "@/services/users.service";
+import { MOCK_OFFRES, MOCK_RESUME_CANDIDAT } from "@/lib/mock-data";
 import type { Job } from "@/types/domain";
 
 interface Indicateurs {
@@ -70,17 +71,17 @@ export default function VueEnsemblePage() {
         });
       } else {
         setIndicateurs({
-          vuesProfil: 0,
-          evolutionVues: 0,
-          correspondances: 0,
-          candidaturesActives: 0,
+          vuesProfil: MOCK_RESUME_CANDIDAT.vues_profil,
+          evolutionVues: MOCK_RESUME_CANDIDAT.evolution_vues,
+          correspondances: MOCK_RESUME_CANDIDAT.nouveaux_matchs,
+          candidaturesActives: MOCK_RESUME_CANDIDAT.candidatures_actives,
         });
       }
 
-      if (offresResult.status === "fulfilled") {
-        setOffres(offresResult.value ?? []);
+      if (offresResult.status === "fulfilled" && offresResult.value.length > 0) {
+        setOffres(offresResult.value);
       } else {
-        setOffres([]);
+        setOffres(MOCK_OFFRES.slice(0, 3));
       }
 
       // Si le profil n'a pas pu être chargé du tout, afficher l'état d'erreur

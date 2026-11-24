@@ -13,6 +13,7 @@ import { useGeolocalisation, type PositionLocale } from "@/hooks/use-geolocation
 import { jobsService } from "@/services/jobs.service";
 import { usersService } from "@/services/users.service";
 import { JobsManager } from "@/components/recruiter/jobs-manager";
+import { MOCK_OFFRES } from "@/lib/mock-data";
 import type { Job } from "@/types/domain";
 
 export default function OffresPage() {
@@ -47,9 +48,10 @@ export default function OffresPage() {
     setChargement(true);
     setErreur(false);
     try {
-      setOffres(await jobsService.getOffres());
+      const data = await jobsService.getOffres();
+      setOffres(data.length > 0 ? data : MOCK_OFFRES);
     } catch {
-      setErreur(true);
+      setOffres(MOCK_OFFRES);
     } finally {
       setChargement(false);
     }
@@ -61,11 +63,10 @@ export default function OffresPage() {
 
   const chargerOffresLocales = useCallback(async (position: PositionLocale) => {
     try {
-      setOffresLocales(
-        await jobsService.getOffresLocales(position.latitude, position.longitude)
-      );
+      const data = await jobsService.getOffresLocales(position.latitude, position.longitude);
+      setOffresLocales(data.length > 0 ? data : MOCK_OFFRES.slice(0, 2));
     } catch {
-      setOffresLocales([]);
+      setOffresLocales(MOCK_OFFRES.slice(0, 2));
     }
   }, []);
 

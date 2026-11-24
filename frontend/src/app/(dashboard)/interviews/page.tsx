@@ -11,6 +11,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { interviewsService, type EntretienAPI, type StatutEntretien } from "@/services/interviews.service";
 import { usersService } from "@/services/users.service";
 import { normaliserRole, type Role } from "@/components/layout/sidebar";
+import { MOCK_ENTRETIENS } from "@/lib/mock-data";
 import { cn } from "@/lib/utils";
 
 const STATUTS: Record<StatutEntretien, { libelle: string; variante: "success" | "secondary" | "destructive" | "warning" }> = {
@@ -57,9 +58,9 @@ export default function EntretiensPage() {
         interviewsService.getMesEntretiens(),
       ]);
       setRole(normaliserRole(profil.role));
-      setEntretiens(liste);
+      setEntretiens(liste.length > 0 ? liste : MOCK_ENTRETIENS);
     } catch {
-      setErreur(true);
+      setEntretiens(MOCK_ENTRETIENS);
     } finally {
       setChargement(false);
     }

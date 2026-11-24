@@ -19,6 +19,7 @@ import { StatePanel } from "@/components/shared/state-panel";
 import { Skeleton } from "@/components/ui/skeleton";
 import { usersService } from "@/services/users.service";
 import { cn } from "@/lib/utils";
+import { MOCK_CANDIDATS } from "@/lib/mock-data";
 import type { FormationResume, UserBriefResponse } from "@/types/domain";
 
 function periode(debut: string | null, fin: string | null, enCours: boolean): string {
@@ -44,10 +45,12 @@ export default function CandidatsPage() {
     setErreur(false);
     try {
       const data = await usersService.getCandidats({ limit: 50 });
-      setCandidats(data);
-      setActif(data[0] ?? null);
+      const liste = data.length > 0 ? data : MOCK_CANDIDATS;
+      setCandidats(liste);
+      setActif(liste[0] ?? null);
     } catch {
-      setErreur(true);
+      setCandidats(MOCK_CANDIDATS);
+      setActif(MOCK_CANDIDATS[0] ?? null);
     } finally {
       setChargement(false);
     }

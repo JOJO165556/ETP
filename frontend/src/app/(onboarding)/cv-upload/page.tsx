@@ -26,9 +26,30 @@ export default function CVUploadPage() {
   /* Gère le dépôt (drag & drop) du fichier */
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
+    e.stopPropagation();
     setIsDragging(false);
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      setFile(e.dataTransfer.files[0]);
+    const dropped = e.dataTransfer.files?.[0];
+    if (dropped) setFile(dropped);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragEnter = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    // Ne passe à false que si on quitte réellement la zone (pas un enfant)
+    if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+      setIsDragging(false);
     }
   };
 
@@ -92,10 +113,10 @@ export default function CVUploadPage() {
 
       {/* Zone de Drag & Drop */}
       <div className="group relative w-full">
-        {/* Effet lumineux au survol */}
+        {/* Effet lumineux au survol — pointer-events-none pour ne pas intercepter les événements drag */}
         <div
           className={cn(
-            "absolute -inset-1 rounded-2xl opacity-0 blur-md transition-opacity duration-500",
+            "pointer-events-none absolute -inset-1 rounded-2xl opacity-0 blur-md transition-opacity duration-500",
             isDragging
               ? "bg-primary/30 opacity-100"
               : "group-hover:bg-muted group-hover:opacity-100"
@@ -103,12 +124,10 @@ export default function CVUploadPage() {
         />
 
         <div
-          onClick={() => fileInputRef.current?.click()}
-          onDragOver={(e) => {
-            e.preventDefault();
-            setIsDragging(true);
-          }}
-          onDragLeave={() => setIsDragging(false)}
+          onClick={() => { if (!isDragging) fileInputRef.current?.click(); }}
+          onDragOver={handleDragOver}
+          onDragEnter={handleDragEnter}
+          onDragLeave={handleDragLeave}
           onDrop={handleDrop}
           role="button"
           tabIndex={0}

@@ -34,10 +34,24 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
     credentials: "same-origin",
   });
 
-  // 401 Non autorisé ou 403 session invalide : nettoyage et redirection
+  // 401 : déconnexion uniquement si le token est définitivement invalide
+  // (pas pour des ressources protégées ponctuelles qui échouent temporairement)
+  // On ne déclenche le logout que si l'endpoint est lié à la session elle-même.
+  const isSessionEndpoint =
+    endpoint.includes("/auth/me") ||
+    endpoint.includes("/users/me") ||
+    endpoint.includes("/auth/login") ||
+    endpoint.includes("/auth/token");
+  if (res.status === 401 && isSessionEndpoint) {
+    if (typeof window !== "undefined") {
+      fetch("/api/auth/logout").catch(() => {});
+      window.location.href = "/login?error=session_expired";
+    }
+    throw new Error("Session expirée ou non autorisée");
+  }
   if (
-    res.status === 401 ||
-    (res.status === 403 && (endpoint.includes("/users/me") || endpoint.includes("/auth/me")))
+    res.status === 403 &&
+    (endpoint.includes("/users/me") || endpoint.includes("/auth/me"))
   ) {
     if (typeof window !== "undefined") {
       fetch("/api/auth/logout").catch(() => {});
