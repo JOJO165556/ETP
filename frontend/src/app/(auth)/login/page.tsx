@@ -51,7 +51,9 @@ export default function LoginPage() {
         body: JSON.stringify(tokens),
       });
 
-      router.push("/overview");
+      const params = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
+      const from = params?.get("from");
+      window.location.href = from && from.startsWith("/") ? from : "/overview";
     } catch {
       setError("Email ou mot de passe incorrect.");
     }

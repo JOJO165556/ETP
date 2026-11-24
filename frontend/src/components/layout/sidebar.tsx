@@ -47,7 +47,6 @@ const NAVIGATION: Record<Role, NavSection[]> = {
         { libelle: "Vue d'ensemble", href: "/overview", icone: LayoutDashboard },
         { libelle: "Offres d'emploi", href: "/jobs", icone: Briefcase },
         { libelle: "Mes candidatures", href: "/applications", icone: ClipboardList },
-        { libelle: "Mon profil", href: "/settings", icone: User },
       ],
     },
   ],
@@ -66,7 +65,6 @@ const NAVIGATION: Record<Role, NavSection[]> = {
       items: [
         { libelle: "Indicateurs", href: "/analytics", icone: BarChart3 },
         { libelle: "Entreprise", href: "/settings/general", icone: Building2 },
-        { libelle: "Mon profil", href: "/settings", icone: User },
       ],
     },
   ],
@@ -90,10 +88,6 @@ const NAVIGATION: Record<Role, NavSection[]> = {
         { libelle: "Connexions", href: "/settings/integrations", icone: Plug },
         { libelle: "Entreprise", href: "/settings/general", icone: Building2 },
       ],
-    },
-    {
-      titre: "Compte",
-      items: [{ libelle: "Mon profil", href: "/settings", icone: User }],
     },
   ],
 };
@@ -147,6 +141,16 @@ export function Sidebar({ role, collapsed, onToggle, onNavigate, mobile, nomComp
   const sections = NAVIGATION[role];
   const initiales = calculerInitiales(nomComplet, email);
 
+  const seDeconnecter = async () => {
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+    } catch {
+      // Poursuite de la redirection
+    }
+    if (onNavigate) onNavigate();
+    window.location.href = "/login";
+  };
+
   return (
     <aside
       className={cn(
@@ -179,23 +183,18 @@ export function Sidebar({ role, collapsed, onToggle, onNavigate, mobile, nomComp
           )}
         </Link>
 
-        {!(collapsed && !mobile) && (
-          <div className="flex items-center gap-1">
-            <ThemeToggle />
-            {!mobile && (
-              <button
-                type="button"
-                onClick={onToggle}
-                aria-label={collapsed ? "Déplier la navigation" : "Replier la navigation"}
-                className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-foreground"
-              >
-                <ChevronDown
-                  size={16}
-                  className={cn("transition-transform duration-200", collapsed ? "-rotate-90" : "rotate-0")}
-                />
-              </button>
-            )}
-          </div>
+        {!(collapsed && !mobile) && !mobile && (
+          <button
+            type="button"
+            onClick={onToggle}
+            aria-label={collapsed ? "Déplier la navigation" : "Replier la navigation"}
+            className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-foreground"
+          >
+            <ChevronDown
+              size={16}
+              className={cn("transition-transform duration-200", collapsed ? "-rotate-90" : "rotate-0")}
+            />
+          </button>
         )}
       </div>
 
@@ -286,18 +285,18 @@ export function Sidebar({ role, collapsed, onToggle, onNavigate, mobile, nomComp
           )}
         </Link>
 
-        <Link
-          href="/api/auth/logout"
-          onClick={onNavigate}
+        <button
+          type="button"
+          onClick={seDeconnecter}
           title={collapsed && !mobile ? "Se déconnecter" : undefined}
           className={cn(
-            "group flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive",
+            "group flex w-full items-center gap-2.5 rounded-md px-2.5 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive",
             collapsed && !mobile ? "justify-center" : "justify-start"
           )}
         >
           <LogOut className="h-4 w-4 shrink-0" aria-hidden="true" />
           {!(collapsed && !mobile) && <span>Se déconnecter</span>}
-        </Link>
+        </button>
       </div>
     </aside>
   );

@@ -18,7 +18,7 @@ import { Button } from "@/components/ui/button";
 import { StatePanel } from "@/components/shared/state-panel";
 import { Skeleton } from "@/components/ui/skeleton";
 import { usersService } from "@/services/users.service";
-import { cn } from "@/lib/utils";
+import { cn, normaliserRecherche } from "@/lib/utils";
 import { MOCK_CANDIDATS } from "@/lib/mock-data";
 import type { FormationResume, UserBriefResponse } from "@/types/domain";
 
@@ -61,19 +61,18 @@ export default function CandidatsPage() {
   }, [charger]);
 
   const filtres = useMemo(() => {
-    const terme = recherche.trim().toLowerCase();
+    const terme = normaliserRecherche(recherche);
     if (!terme) return candidats;
     return candidats.filter((candidat) =>
-      [
-        candidat.nom_complet ?? "",
-        candidat.email,
-        ...(candidat.skills ?? []),
-        ...(candidat.experiences ?? []).map((e) => `${e.poste} ${e.entreprise}`),
-        ...(candidat.formations ?? []).map((f) => `${f.diplome} ${f.etablissement}`),
-      ]
-        .join(" ")
-        .toLowerCase()
-        .includes(terme)
+      normaliserRecherche(
+        [
+          candidat.nom_complet ?? "",
+          candidat.email,
+          ...(candidat.skills ?? []),
+          ...(candidat.experiences ?? []).map((e) => `${e.poste} ${e.entreprise}`),
+          ...(candidat.formations ?? []).map((f) => `${f.diplome} ${f.etablissement}`),
+        ].join(" ")
+      ).includes(terme)
     );
   }, [candidats, recherche]);
 

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { Briefcase, Loader2, Plus } from "lucide-react";
 
 import { jobsService } from "@/services/jobs.service";
@@ -47,12 +48,20 @@ interface JobsManagerProps {
 
 /* Vue recruteur de /jobs : publication, suivi et gestion du cycle de vie des offres. */
 export function JobsManager({ companyId }: JobsManagerProps) {
+  const searchParams = useSearchParams();
   const [offres, setOffres] = useState<Job[]>([]);
   const [chargement, setChargement] = useState(true);
   const [erreur, setErreur] = useState(false);
   const [modaleOuverte, setModaleOuverte] = useState(false);
   const [edition, setEdition] = useState<Job | null>(null);
   const [actionEnCours, setActionEnCours] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (searchParams.get("action") === "create") {
+      setEdition(null);
+      setModaleOuverte(true);
+    }
+  }, [searchParams]);
 
   const charger = useCallback(async () => {
     setChargement(true);

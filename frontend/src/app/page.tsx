@@ -99,50 +99,107 @@ export default function LandingPage() {
       </header>
 
       <main className="flex-1">
-        <section className="mx-auto max-w-6xl px-4 py-20 sm:px-6 lg:px-8 lg:py-28">
-          <div className="max-w-3xl">
-            <p className="text-sm font-medium text-primary">
-              Recrutement candidats et entreprises
-            </p>
-            <h1 className="mt-3 text-4xl leading-tight font-semibold tracking-tight sm:text-5xl">
-              Recruter sans perdre de temps, postuler sans se perdre.
-            </h1>
-            <p className="mt-5 max-w-2xl text-base leading-relaxed text-muted-foreground sm:text-lg">
-              ETP réunit dans un seul espace les offres, les candidatures et les entretiens.
-              Les candidats suivent l&apos;avancement de leur dossier. Les équipes recrutement
-              gardent une vue claire sur chaque décision.
-            </p>
+        <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8 lg:py-24">
+          <div className="grid items-center gap-12 lg:grid-cols-12">
+            <div className="lg:col-span-7">
+              <span className="inline-flex items-center rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
+                Recrutement nouvelle génération
+              </span>
+              <h1 className="mt-4 text-4xl leading-tight font-bold tracking-tight sm:text-5xl lg:text-6xl">
+                Recruter sans perdre de temps, postuler sans se perdre.
+              </h1>
+              <p className="mt-5 max-w-2xl text-base leading-relaxed text-muted-foreground sm:text-lg">
+                ETP réunit dans un seul espace les offres, les candidatures et les entretiens.
+                Les candidats suivent l&apos;avancement de leur dossier. Les équipes recrutement
+                gardent une vue claire sur chaque décision.
+              </p>
 
-            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              <Button size="lg" className="gap-2" render={<Link href="/register?role=candidate" />}>
-                <User size={17} aria-hidden="true" />
-                Créer un compte candidat
-              </Button>
-              <Button
-                size="lg"
-                variant="outline"
-                className="gap-2"
-                render={<Link href="/register?role=recruiter" />}
-              >
-                <Building2 size={17} aria-hidden="true" />
-                Créer un espace entreprise
-              </Button>
+              <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
+                <Button size="lg" className="gap-2 shadow-sm" render={<Link href="/register?role=candidate" />}>
+                  <User size={17} aria-hidden="true" />
+                  Créer un compte candidat
+                </Button>
+                <Button
+                  size="lg"
+                  variant="outline"
+                  className="gap-2"
+                  render={<Link href="/register?role=recruiter" />}
+                >
+                  <Building2 size={17} aria-hidden="true" />
+                  Créer un espace entreprise
+                </Button>
+              </div>
+
+              <ul className="mt-10 flex flex-wrap items-center gap-x-6 gap-y-3 text-xs sm:text-sm text-muted-foreground">
+                <li className="inline-flex items-center gap-2">
+                  <ShieldCheck size={16} className="text-success shrink-0" aria-hidden="true" />
+                  Données cloisonnées par entreprise
+                </li>
+                <li className="inline-flex items-center gap-2">
+                  <ShieldCheck size={16} className="text-success shrink-0" aria-hidden="true" />
+                  CV consultés par lien temporaire
+                </li>
+                <li className="inline-flex items-center gap-2">
+                  <ShieldCheck size={16} className="text-success shrink-0" aria-hidden="true" />
+                  Accès et suppression sécurisés
+                </li>
+              </ul>
             </div>
 
-            <ul className="mt-10 flex flex-wrap items-center gap-x-6 gap-y-3 text-sm text-muted-foreground">
-              <li className="inline-flex items-center gap-2">
-                <ShieldCheck size={16} className="text-success" aria-hidden="true" />
-                Données cloisonnées par entreprise
-              </li>
-              <li className="inline-flex items-center gap-2">
-                <ShieldCheck size={16} className="text-success" aria-hidden="true" />
-                CV consultés par lien temporaire
-              </li>
-              <li className="inline-flex items-center gap-2">
-                <ShieldCheck size={16} className="text-success" aria-hidden="true" />
-                Accès et suppression de vos données
-              </li>
-            </ul>
+            <div className="lg:col-span-5">
+              <div className="relative mx-auto w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-xl backdrop-blur-sm sm:p-8">
+                <div className="flex items-center justify-between border-b border-border pb-4">
+                  <div className="flex items-center gap-2.5">
+                    <span className="flex h-3 w-3 rounded-full bg-destructive/80" />
+                    <span className="flex h-3 w-3 rounded-full bg-warning/80" />
+                    <span className="flex h-3 w-3 rounded-full bg-success/80" />
+                  </div>
+                  <span className="text-xs font-medium text-muted-foreground">Aperçu en direct</span>
+                </div>
+
+                <div className="mt-5 space-y-4">
+                  <div className="rounded-xl border border-border bg-muted/40 p-4">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="font-semibold text-foreground">Score de correspondance</span>
+                      <span className="rounded bg-primary/10 px-2 py-0.5 font-bold text-primary">88%</span>
+                    </div>
+                    <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-secondary">
+                      <div className="h-full rounded-full bg-primary" style={{ width: "88%" }} />
+                    </div>
+                    <p className="mt-2 text-xs text-muted-foreground">
+                      Compétences vérifiées : Python, FastAPI, React
+                    </p>
+                  </div>
+
+                  <div className="rounded-xl border border-border bg-muted/40 p-4">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="font-semibold text-foreground">Prochain entretien</span>
+                      <span className="rounded bg-success/10 px-2 py-0.5 font-semibold text-success">Confirmé</span>
+                    </div>
+                    <p className="mt-2 text-sm font-medium text-foreground">
+                      Développeur Full Stack · Lomé, Togo
+                    </p>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      Demain à 10h00 · Visioconférence
+                    </p>
+                  </div>
+
+                  <div className="rounded-xl border border-border bg-muted/40 p-4">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="font-semibold text-foreground">Étape de candidature</span>
+                      <span className="text-muted-foreground">Étape 3 sur 5</span>
+                    </div>
+                    <div className="mt-3 flex items-center justify-between gap-1 text-[11px] font-medium">
+                      <span className="text-success font-semibold">Envoyée</span>
+                      <span className="text-muted-foreground">→</span>
+                      <span className="text-success font-semibold">Présélection</span>
+                      <span className="text-muted-foreground">→</span>
+                      <span className="text-primary font-bold">Entretien</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </section>
 

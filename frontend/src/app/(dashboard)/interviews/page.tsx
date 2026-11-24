@@ -188,8 +188,7 @@ export default function EntretiensPage() {
                         role !== "CANDIDAT" ? entretien.candidate_name : null,
                       ]
                         .filter(Boolean)
-                        .join(" · ") ||
-                        `Référence candidature ${entretien.application_id.slice(0, 8)}`}
+                        .join(" · ") || "Entretien de recrutement"}
                     </p>
                   </div>
                 </div>

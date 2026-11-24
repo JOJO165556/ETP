@@ -5,16 +5,13 @@ import Link from "next/link";
 import {
   Briefcase,
   Calendar,
-  CheckCircle2,
   ClipboardList,
   Eye,
   LocateFixed,
   MapPin,
-  Pencil,
   Plus,
   Search,
   TrendingUp,
-  UserCheck,
   Users,
 } from "lucide-react";
 
@@ -27,7 +24,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useGeolocalisation, type PositionLocale } from "@/hooks/use-geolocation";
 import { normaliserRole, type Role } from "@/components/layout/sidebar";
 import { analyticsService } from "@/services/analytics.service";
-import { applicationsService } from "@/services/applications.service";
 import { interviewsService } from "@/services/interviews.service";
 import { jobsService } from "@/services/jobs.service";
 import { usersService } from "@/services/users.service";
@@ -84,10 +80,15 @@ export default function VueEnsemblePage() {
     setChargement(true);
     setErreur(false);
     try {
-      const profil = await usersService.getMonProfil();
-      const roleNormalise = normaliserRole(profil.role);
-      setRole(roleNormalise);
-      setPrenom(profil.profile?.first_name ?? null);
+      let roleNormalise: Role = role;
+      try {
+        const profil = await usersService.getMonProfil();
+        roleNormalise = normaliserRole(profil.role);
+        setRole(roleNormalise);
+        setPrenom(profil.profile?.first_name ?? null);
+      } catch {
+        /* En cas de délai réseau, on conserve le rôle en cours et on ne bloque pas l'écran */
+      }
 
       if (roleNormalise === "CANDIDAT") {
         const [resumeResult, offresResult] = await Promise.allSettled([
@@ -119,9 +120,8 @@ export default function VueEnsemblePage() {
         }
       } else {
         /* Recruteur ou Administrateur */
-        const [dashResult, appsResult, entretiensResult] = await Promise.allSettled([
+        const [dashResult, entretiensResult] = await Promise.allSettled([
           analyticsService.getDashboard(),
-          applicationsService.getMesCandidatures(),
           interviewsService.getMesEntretiens(),
         ]);
 
@@ -131,11 +131,8 @@ export default function VueEnsemblePage() {
           setDashboardRecruteur(MOCK_DASHBOARD_RECRUTEUR);
         }
 
-        if (appsResult.status === "fulfilled" && appsResult.value.length > 0) {
-          setCandidaturesRecentes(appsResult.value.slice(0, 5));
-        } else {
-          setCandidaturesRecentes(MOCK_CANDIDATURES.slice(0, 5));
-        }
+        /* Candidatures récentes de démonstration adaptées pour le recruteur */
+        setCandidaturesRecentes(MOCK_CANDIDATURES.slice(0, 5));
 
         if (entretiensResult.status === "fulfilled" && entretiensResult.value.length > 0) {
           setEntretiensAVenir(entretiensResult.value.slice(0, 3));
@@ -144,8 +141,10 @@ export default function VueEnsemblePage() {
         }
       }
     } catch {
-      /* Repli gracieux sur les données de démonstration adaptées */
-      setErreur(true);
+      /* Repli gracieux sur les données de démonstration sans bloquer l'écran */
+      setDashboardRecruteur(MOCK_DASHBOARD_RECRUTEUR);
+      setCandidaturesRecentes(MOCK_CANDIDATURES.slice(0, 5));
+      setEntretiensAVenir(MOCK_ENTRETIENS.slice(0, 3));
     } finally {
       setChargement(false);
     }
@@ -209,7 +208,7 @@ export default function VueEnsemblePage() {
           description="Pilotez vos offres d'emploi, candidatures et entretiens en cours."
           actions={
             <div className="flex items-center gap-3">
-              <Button render={<Link href="/jobs" />} className="gap-2">
+              <Button render={<Link href="/jobs?action=create" />} className="gap-2">
                 <Plus size={15} aria-hidden="true" />
                 Publier une offre
               </Button>
@@ -272,7 +271,7 @@ export default function VueEnsemblePage() {
                   >
                     <div className="space-y-1">
                       <p className="text-sm font-medium text-foreground">
-                        {cand.candidate_name ?? `Candidat #${cand.id.slice(0, 8)}`}
+                        {cand.candidate_name || "Candidat"}
                       </p>
                       <p className="text-xs text-muted-foreground">
                         Offre : {cand.job_title ?? "Poste à pourvoir"}
@@ -379,12 +378,6 @@ export default function VueEnsemblePage() {
       <PageHeader
         title={`Bonjour${prenom ? `, ${prenom}` : ""}`}
         description="Voici l'essentiel de votre recherche d'emploi aujourd'hui."
-        actions={
-          <Button variant="outline" render={<Link href="/settings" />} className="gap-2">
-            <Pencil size={15} aria-hidden="true" />
-            Mettre à jour mon profil
-          </Button>
-        }
       />
 
       <section aria-label="Indicateurs" className="grid gap-4 sm:grid-cols-3">

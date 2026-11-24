@@ -34,23 +34,11 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
     credentials: "same-origin",
   });
 
-  // 401 : Déconnexion automatique uniquement si l'endpoint de validation de session
-  // explicite (/auth/me ou /auth/refresh) confirme l'invalidation définitive.
-  // On ne redirige JAMAIS sur un échec temporaire de /users/me ou de requêtes métier
-  // afin d'éviter les déconnexions intempestives lors d'un cold start du serveur.
-  const isStrictSessionCheck =
-    endpoint === "/auth/me" || endpoint === "/auth/refresh";
-  if (res.status === 401 && isStrictSessionCheck) {
-    if (typeof window !== "undefined") {
-      fetch("/api/auth/logout").catch(() => {});
-      window.location.href = "/login?error=session_expired";
-    }
-    throw new Error("Session expirée ou non autorisée");
-  }
-  if (
-    res.status === 403 &&
-    (endpoint.includes("/users/me") || endpoint.includes("/auth/me"))
-  ) {
+  // Gestion des erreurs d'authentification :
+  // On ne déclenche de redirection globale vers /login QUE si l'endpoint de rafraîchissement
+  // de session (/auth/refresh) échoue avec 401. Cela évite les déconnexions en cascade
+  // lors de requêtes métier ponctuelles ou de lenteurs temporaires.
+  if (res.status === 401 && endpoint === "/auth/refresh") {
     if (typeof window !== "undefined") {
       fetch("/api/auth/logout").catch(() => {});
       window.location.href = "/login?error=session_expired";

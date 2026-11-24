@@ -13,6 +13,7 @@ import { useGeolocalisation, type PositionLocale } from "@/hooks/use-geolocation
 import { jobsService } from "@/services/jobs.service";
 import { usersService } from "@/services/users.service";
 import { JobsManager } from "@/components/recruiter/jobs-manager";
+import { normaliserRecherche } from "@/lib/utils";
 import { MOCK_OFFRES } from "@/lib/mock-data";
 import type { Job } from "@/types/domain";
 
@@ -78,18 +79,17 @@ export default function OffresPage() {
   } = useGeolocalisation(chargerOffresLocales);
 
   const resultats = useMemo(() => {
-    const terme = recherche.trim().toLowerCase();
+    const terme = normaliserRecherche(recherche);
     const liste = terme
       ? offres.filter((offre) =>
-          [
-            offre.title,
-            offre.company_name ?? "",
-            offre.formatted_address ?? "",
-            ...(offre.required_skills ?? []),
-          ]
-            .join(" ")
-            .toLowerCase()
-            .includes(terme)
+          normaliserRecherche(
+            [
+              offre.title,
+              offre.company_name ?? "",
+              offre.formatted_address ?? "",
+              ...(offre.required_skills ?? []),
+            ].join(" ")
+          ).includes(terme)
         )
       : offres;
 

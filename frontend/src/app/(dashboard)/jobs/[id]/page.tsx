@@ -2,7 +2,17 @@
 
 import { use, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { ChevronRight, Share2, MapPin, Briefcase, Building2, CheckCircle2 } from "lucide-react";
+import {
+  ChevronRight,
+  Share2,
+  MapPin,
+  Briefcase,
+  Building2,
+  CheckCircle2,
+  GraduationCap,
+  Sparkles,
+  Gift,
+} from "lucide-react";
 import { jobsService } from "@/services/jobs.service";
 import { usersService } from "@/services/users.service";
 import { JobFormModal } from "@/components/shared/job-form-modal";
@@ -106,29 +116,92 @@ export default function DetailOffrePage({
     });
   }, [competences, skillsUtilisateur]);
 
-  // Le backend fournit la description brute : les lignes deviennent des responsabilités.
-  const responsabilites = useMemo(() => {
-    if (!offre?.description) return [];
-    return offre.description
-      .split("\n")
-      .map((ligne) => ligne.trim())
-      .filter((ligne) => ligne.length > 0 && !/^[-•*]\s*$/.test(ligne))
-      .map((ligne) => ligne.replace(/^[-•*]\s*/, ""));
+  /* Décomposition intelligente de la description en sections riches (style ATS) */
+  const details = useMemo(() => {
+    if (!offre?.description) {
+      return {
+        aPropos: "",
+        missions: [] as string[],
+        profil: [] as string[],
+        avantages: [] as string[],
+      };
+    }
+
+    const lignes = offre.description.split("\n").map((l) => l.trim());
+    const aPropos: string[] = [];
+    const missions: string[] = [];
+    const profil: string[] = [];
+    const avantages: string[] = [];
+
+    let sectionActuelle: "aPropos" | "missions" | "profil" | "avantages" = "aPropos";
+
+    for (const ligne of lignes) {
+      if (!ligne) continue;
+      const lower = ligne.toLowerCase();
+
+      if (lower.startsWith("mission") || lower.includes("responsabilit")) {
+        sectionActuelle = "missions";
+        continue;
+      }
+      if (lower.startsWith("profil") || lower.includes("prerequis") || lower.includes("qualifications")) {
+        sectionActuelle = "profil";
+        continue;
+      }
+      if (lower.startsWith("avantage") || lower.includes("conditions du poste") || lower.includes("ce que nous offrons")) {
+        sectionActuelle = "avantages";
+        continue;
+      }
+
+      const texteNettoye = ligne.replace(/^[-•*]\s*/, "");
+      const estPuce = /^[-•*]\s*/.test(ligne);
+
+      if (sectionActuelle === "missions") {
+        missions.push(texteNettoye);
+      } else if (sectionActuelle === "profil") {
+        profil.push(texteNettoye);
+      } else if (sectionActuelle === "avantages") {
+        avantages.push(texteNettoye);
+      } else {
+        if (estPuce) {
+          missions.push(texteNettoye);
+        } else {
+          aPropos.push(ligne);
+        }
+      }
+    }
+
+    return {
+      aPropos: aPropos.join("\n\n"),
+      missions,
+      profil,
+      avantages,
+    };
   }, [offre]);
 
   const handlePostuler = async () => {
     setPostulant(true);
     setMessageCandidature(null);
     try {
+      if (id.startsWith("mock-")) {
+        await new Promise((resolve) => setTimeout(resolve, 500));
+        setMessageCandidature("Candidature envoyée avec succès ! Votre dossier est en cours d'évaluation.");
+        return;
+      }
       const reponse = await jobsService.postuler(id);
       setMessageCandidature(
         reponse.task_status === "PENDING"
           ? "Candidature envoyée ! L'analyse de votre CV est en cours."
           : "Candidature envoyée avec succès !"
       );
-    } catch (e) {
-      console.error(e);
-      setMessageCandidature("Erreur lors de l'envoi de la candidature.");
+    } catch (e: unknown) {
+      const err = e as { status?: number; message?: string };
+      if (err?.status === 409 || err?.message?.includes("déjà postulé")) {
+        setMessageCandidature("Vous avez déjà postulé à cette offre.");
+      } else if (err?.status === 403) {
+        setMessageCandidature("Seuls les profils candidats peuvent postuler à une offre.");
+      } else {
+        setMessageCandidature("Erreur lors de l'envoi de la candidature. Réessayez dans un instant.");
+      }
     } finally {
       setPostulant(false);
     }
@@ -306,27 +379,64 @@ export default function DetailOffrePage({
           </section>
         )}
 
-        {/* Contenu texte */}
+        {/* Contenu structuré de l'offre style ATS */}
         <div className="space-y-8">
-          <section>
-            <h2 className="mb-4 text-xl font-bold text-[var(--text-primary)]">À propos du poste</h2>
-            <div className="text-sm leading-relaxed text-[var(--text-primary)]/85">
-              {offre.description ? (
-                <p className="whitespace-pre-line">{offre.description}</p>
-              ) : (
-                <p className="text-[var(--text-muted)]">Aucune description disponible pour cette offre.</p>
-              )}
-            </div>
-          </section>
+          {details.aPropos && (
+            <section className="space-y-3">
+              <h2 className="flex items-center gap-2 text-xl font-bold text-[var(--text-primary)]">
+                <Briefcase size={20} className="text-primary" /> À propos du poste
+              </h2>
+              <div className="text-sm leading-relaxed text-[var(--text-primary)]/85 whitespace-pre-line">
+                {details.aPropos}
+              </div>
+            </section>
+          )}
 
-          {responsabilites.length > 0 && (
-            <section>
-              <h2 className="mb-4 text-xl font-bold text-[var(--text-primary)]">Responsabilités</h2>
-              <ul className="space-y-3">
-                {responsabilites.map((resp, idx) => (
-                  <li key={idx} className="flex gap-3 text-sm text-[var(--text-primary)]/85">
-                    <CheckCircle2 size={16} className="mt-0.5 shrink-0 text-[var(--brand-primary)]" />
-                    <span>{resp}</span>
+          {details.missions.length > 0 && (
+            <section className="space-y-3">
+              <h2 className="flex items-center gap-2 text-xl font-bold text-[var(--text-primary)]">
+                <CheckCircle2 size={20} className="text-primary" /> Missions et responsabilités
+              </h2>
+              <ul className="space-y-2.5">
+                {details.missions.map((mission, idx) => (
+                  <li key={idx} className="flex items-start gap-3 text-sm text-[var(--text-primary)]/85">
+                    <CheckCircle2 size={16} className="mt-0.5 shrink-0 text-primary" />
+                    <span>{mission}</span>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+
+          {details.profil.length > 0 && (
+            <section className="space-y-3">
+              <h2 className="flex items-center gap-2 text-xl font-bold text-[var(--text-primary)]">
+                <GraduationCap size={20} className="text-primary" /> Profil recherché
+              </h2>
+              <ul className="space-y-2.5">
+                {details.profil.map((critere, idx) => (
+                  <li key={idx} className="flex items-start gap-3 text-sm text-[var(--text-primary)]/85">
+                    <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />
+                    <span>{critere}</span>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+
+          {details.avantages.length > 0 && (
+            <section className="space-y-3">
+              <h2 className="flex items-center gap-2 text-xl font-bold text-[var(--text-primary)]">
+                <Gift size={20} className="text-primary" /> Avantages et cadre de travail
+              </h2>
+              <ul className="grid gap-2 sm:grid-cols-2">
+                {details.avantages.map((avantage, idx) => (
+                  <li
+                    key={idx}
+                    className="flex items-start gap-2.5 rounded-lg border border-[var(--border-subtle)] bg-[var(--surface-card)] p-3 text-xs font-medium text-foreground"
+                  >
+                    <Sparkles size={14} className="mt-0.5 shrink-0 text-primary" />
+                    <span>{avantage}</span>
                   </li>
                 ))}
               </ul>

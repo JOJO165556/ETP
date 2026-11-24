@@ -48,20 +48,16 @@ class AnalyticsRepository:
         total_result = await self.session.execute(total_base)
         total_jobs = total_result.scalar() or 0
 
-        active_result = await self.session.execute(
-            select(func.count(Job.id))
-            .where(Job.status == JobStatus.ACTIVE)
-            .where(Job.company_id == company_id) if company_id
-            else select(func.count(Job.id)).where(Job.status == JobStatus.ACTIVE)
-        )
+        active_q = select(func.count(Job.id)).where(Job.status == JobStatus.ACTIVE)
+        if company_id:
+            active_q = active_q.where(Job.company_id == company_id)
+        active_result = await self.session.execute(active_q)
         active_jobs = active_result.scalar() or 0
 
-        closed_result = await self.session.execute(
-            select(func.count(Job.id))
-            .where(Job.status == JobStatus.CLOSED)
-            .where(Job.company_id == company_id) if company_id
-            else select(func.count(Job.id)).where(Job.status == JobStatus.CLOSED)
-        )
+        closed_q = select(func.count(Job.id)).where(Job.status == JobStatus.CLOSED)
+        if company_id:
+            closed_q = closed_q.where(Job.company_id == company_id)
+        closed_result = await self.session.execute(closed_q)
         closed_jobs = closed_result.scalar() or 0
 
         subq = (

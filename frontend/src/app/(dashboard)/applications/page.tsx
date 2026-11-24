@@ -45,14 +45,26 @@ function dateRelative(iso: string | null): string | null {
   return `Mise à jour le ${new Date(iso).toLocaleDateString("fr-FR")}`;
 }
 
-function pipeline(etapeActuelle: EtapeCandidature, rejetee: boolean): ConfigEtape[] {
-  const indexCourante = ETAPES.indexOf(etapeActuelle);
+function pipeline(stage: string): ConfigEtape[] {
+  const rejetee = stage === "rejected";
+  const etapeCourante = ETAPE_SERVEUR[stage] ?? "POSTULE";
+  const indexCourante = ETAPES.indexOf(etapeCourante);
+
   return ETAPES.map((etape, index) => {
-    let statut: ConfigEtape["statut"] = "en_attente";
-    if (rejetee) statut = index >= indexCourante ? "rejetee" : "terminee";
-    else if (index < indexCourante) statut = "terminee";
-    else if (index === indexCourante) statut = "active";
-    return { etape, statut };
+    /* Étape 0 (POSTULE) : Toujours validée car la candidature a bien été reçue */
+    if (index === 0) {
+      return { etape, statut: "terminee" };
+    }
+
+    if (rejetee) {
+      /* La pré-évaluation signale le refus du dossier, les étapes suivantes restent non atteintes */
+      if (index === 1) return { etape, statut: "rejetee" };
+      return { etape, statut: "en_attente" };
+    }
+
+    if (index < indexCourante) return { etape, statut: "terminee" };
+    if (index === indexCourante) return { etape, statut: "active" };
+    return { etape, statut: "en_attente" };
   });
 }
 
@@ -160,7 +172,7 @@ export default function CandidaturesPage() {
                 </div>
 
                 <div className="w-full shrink-0 space-y-4 lg:w-[420px]">
-                  <PipelineProgress etapes={pipeline(app.etape, app.rejetee)} />
+                  <PipelineProgress etapes={pipeline(app.stage)} />
                   {MESSAGE_ETAPE[app.stage] && (
                     <div className="flex items-start gap-2 rounded-lg border border-border bg-muted/50 p-3">
                       <Calendar size={16} className="mt-0.5 shrink-0 text-muted-foreground" aria-hidden="true" />
