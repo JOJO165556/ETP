@@ -85,9 +85,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <TopBar
           title={titreDepuisChemin(chemin)}
           onOpenMenu={() => setDrawerOuvert(true)}
-          nomComplet={nomComplet}
-          email={email}
-          role={role}
         />
         <main className="flex-1 overflow-y-auto">{children}</main>
       </div>

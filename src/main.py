@@ -108,12 +108,17 @@ def _run_migrations() -> None:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Exécution automatique des migrations de base de données
-    await asyncio.to_thread(_run_migrations)
+    # En développement uniquement : migrations automatiques au démarrage
+    # En production, les migrations sont exécutées par le script de déploiement (Dockerfile / CI)
+    if not settings.is_production:
+        await asyncio.to_thread(_run_migrations)
 
-    # Initialisation des buckets MinIO / S3 pour les CVs
-    storage_service = AsyncStorageService()
-    await storage_service.initialize_buckets()
+    # Initialisation des buckets MinIO / S3 pour les CVs (non bloquant en cas d'indisponibilité)
+    try:
+        storage_service = AsyncStorageService()
+        await storage_service.initialize_buckets()
+    except Exception as exc:
+        logging.getLogger(__name__).warning("Initialisation stockage ignorée : %s", exc)
 
     yield
 

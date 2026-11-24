@@ -38,7 +38,8 @@ export default function OffresPage() {
   }, []);
 
   const estRecruteur =
-    (role === "recruiter" || role === "company_admin") && companyId !== null;
+    (role?.toLowerCase() === "recruiter" || role?.toLowerCase() === "company_admin") &&
+    companyId !== null;
 
   const charger = useCallback(async () => {
     if (!profilCharge || estRecruteur) {

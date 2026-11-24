@@ -71,10 +71,11 @@ export default function DetailOffrePage({
 
   const competences = offre?.required_skills ?? [];
 
+  const roleMinuscule = profil?.role?.toLowerCase();
   const estProprietaire = Boolean(
     offre &&
       profil &&
-      (profil.role === "recruiter" || profil.role === "company_admin") &&
+      (roleMinuscule === "recruiter" || roleMinuscule === "company_admin") &&
       profil.company_id != null &&
       String(profil.company_id) === offre.company_id
   );

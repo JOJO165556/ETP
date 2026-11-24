@@ -308,7 +308,7 @@ interface TopBarProps {
   onOpenMenu: () => void;
   nomComplet?: string | null;
   email?: string | null;
-  role: Role;
+  role?: Role;
 }
 
 function formaterDateNotification(iso: string): string {
@@ -496,30 +496,7 @@ function NotificationsBell() {
   );
 }
 
-export function TopBar({ title, onOpenMenu, nomComplet, email, role }: TopBarProps) {
-  const [menuOuvert, setMenuOuvert] = useState(false);
-  const conteneur = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!menuOuvert) return;
-    const fermer = (event: MouseEvent) => {
-      if (conteneur.current && !conteneur.current.contains(event.target as Node)) {
-        setMenuOuvert(false);
-      }
-    };
-    const echap = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setMenuOuvert(false);
-    };
-    document.addEventListener("mousedown", fermer);
-    document.addEventListener("keydown", echap);
-    return () => {
-      document.removeEventListener("mousedown", fermer);
-      document.removeEventListener("keydown", echap);
-    };
-  }, [menuOuvert]);
-
-  const initiales = calculerInitiales(nomComplet, email);
-
+export function TopBar({ title, onOpenMenu }: TopBarProps) {
   return (
     <header className="flex h-16 shrink-0 items-center justify-between gap-4 border-b border-border bg-background px-4 lg:px-8">
       <div className="flex min-w-0 items-center gap-3">
@@ -540,57 +517,6 @@ export function TopBar({ title, onOpenMenu, nomComplet, email, role }: TopBarPro
         <NotificationsBell />
         <div className="hidden lg:block">
           <ThemeToggle />
-        </div>
-        <div className="relative" ref={conteneur}>
-          <button
-            type="button"
-            onClick={() => setMenuOuvert((v) => !v)}
-            aria-haspopup="menu"
-            aria-expanded={menuOuvert}
-            className="flex items-center gap-2 rounded-full border border-border py-1 pr-2 pl-1 transition-colors hover:bg-muted"
-          >
-            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/10 text-[11px] font-semibold text-primary">
-              {initiales || "?"}
-            </span>
-            <span className="hidden max-w-[140px] truncate text-sm font-medium text-foreground sm:block">
-              {nomComplet ?? email ?? "Mon compte"}
-            </span>
-            <ChevronDown size={14} className="text-muted-foreground" aria-hidden="true" />
-          </button>
-
-          {menuOuvert && (
-            <div
-              role="menu"
-              className="absolute right-0 z-50 mt-2 w-60 rounded-lg border border-border bg-popover p-1.5 shadow-lg"
-            >
-              <div className="px-2.5 py-2">
-                <p className="truncate text-sm font-semibold text-popover-foreground">
-                  {nomComplet && nomComplet !== email ? nomComplet : LIBELLE_ROLE[role]}
-                </p>
-                <p className="truncate text-xs text-muted-foreground">
-                  {email ?? LIBELLE_ROLE[role]}
-                </p>
-              </div>
-              <div className="my-1 h-px bg-border" aria-hidden="true" />
-              <Link
-                href="/settings"
-                role="menuitem"
-                onClick={() => setMenuOuvert(false)}
-                className="flex items-center gap-2.5 rounded-md px-2.5 py-2 text-sm text-popover-foreground transition-colors hover:bg-muted"
-              >
-                <User size={15} aria-hidden="true" />
-                Mon profil
-              </Link>
-              <Link
-                href="/api/auth/logout"
-                role="menuitem"
-                className="flex items-center gap-2.5 rounded-md px-2.5 py-2 text-sm text-popover-foreground transition-colors hover:bg-muted"
-              >
-                <LogOut size={15} aria-hidden="true" />
-                Se déconnecter
-              </Link>
-            </div>
-          )}
         </div>
       </div>
     </header>
