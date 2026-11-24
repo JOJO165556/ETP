@@ -41,7 +41,7 @@ class Settings(BaseSettings):
     PROJECT_NAME: str = "ETP"
     API_V1_STR: str = "/api/v1"
     SECRET_KEY: str = _generate_secret()
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7  # 7 jours
     ENVIRONMENT: str = "development"
     FRONTEND_URL: str = "https://tryetp.vercel.app"
     EMAIL_VERIFICATION_EXPIRE_HOURS: int = 24

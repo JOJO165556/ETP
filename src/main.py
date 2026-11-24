@@ -1,7 +1,8 @@
 import asyncio
 import logging
+import time
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, Request, Response
+from fastapi import FastAPI, HTTPException, Request, Response
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -11,6 +12,9 @@ from src.core.database import engine
 from src.core.storage import AsyncStorageService
 from src.core.logging_config import setup_logging
 from src.core.health import health_check
+from src.core.rate_limit import RateLimitMiddleware
+
+logger = logging.getLogger("etp.api")
 
 # Log level DEBUG en dev, INFO en prod
 setup_logging(level="DEBUG" if settings.is_development else "INFO")
@@ -27,6 +31,31 @@ from src.modules.notifications.router import router as notifications_router
 from src.modules.search.router import router as search_router
 from src.modules.ai.router import router as ai_router
 from src.modules.interviews.router import router as interviews_router
+
+
+class RequestLoggingMiddleware(BaseHTTPMiddleware):
+    """Trace chaque requête HTTP avec méthode, chemin, code statut, durée et présence auth."""
+
+    async def dispatch(self, request: Request, call_next):
+        start = time.time()
+        has_auth = "authorization" in request.headers
+        has_cookie = "etp_access_token" in request.cookies
+
+        response: Response = await call_next(request)
+        duration_ms = (time.time() - start) * 1000
+
+        log_level = logging.WARNING if response.status_code >= 400 else logging.INFO
+        logger.log(
+            log_level,
+            "[HTTP] %s %s -> %s en %.1fms (auth: %s, cookie: %s)",
+            request.method,
+            request.url.path,
+            response.status_code,
+            duration_ms,
+            has_auth,
+            has_cookie,
+        )
+        return response
 
 
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
@@ -109,6 +138,9 @@ app = FastAPI(
 # Instrumentation Prometheus
 Instrumentator().instrument(app).expose(app)
 
+# Traçage des requêtes HTTP pour les logs en production
+app.add_middleware(RequestLoggingMiddleware)
+
 # Security headers
 app.add_middleware(SecurityHeadersMiddleware)
 
@@ -136,12 +168,24 @@ app.include_router(search_router, prefix=settings.API_V1_STR)
 app.include_router(ai_router, prefix=settings.API_V1_STR)
 app.include_router(interviews_router, prefix=settings.API_V1_STR)
 
-# Rate limiting (optionnel, necessite Redis)
-try:
-    from src.core.rate_limit import RateLimitMiddleware
-    app.add_middleware(RateLimitMiddleware, redis_url=str(settings.REDIS_URL), default_limit=100)
-except Exception:
-    pass
+# Rate limiting via Redis (100 requêtes / minute / client)
+app.add_middleware(RateLimitMiddleware, redis_url=str(settings.REDIS_URL), default_limit=100)
+
+@app.exception_handler(HTTPException)
+async def http_exception_handler(request: Request, exc: HTTPException):
+    logger.warning(
+        "[HTTP %d] %s %s : %s",
+        exc.status_code,
+        request.method,
+        request.url.path,
+        exc.detail,
+    )
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={"detail": exc.detail},
+        headers=exc.headers,
+    )
+
 
 @app.exception_handler(Exception)
 async def unhandled_exception_handler(request: Request, exc: Exception):

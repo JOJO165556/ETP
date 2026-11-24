@@ -1,4 +1,5 @@
 """Dependances d'authentification et d'autorisation."""
+import logging
 from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError
@@ -13,7 +14,12 @@ from src.modules.auth.schemas import TokenData
 from src.modules.users.models import User, UserRole
 from sqlalchemy.orm import selectinload
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl=f"{settings.API_V1_STR}/auth/login")
+logger = logging.getLogger("etp.auth")
+
+oauth2_scheme = OAuth2PasswordBearer(
+    tokenUrl=f"{settings.API_V1_STR}/auth/login",
+    auto_error=False,
+)
 
 
 async def get_current_user_optional(
@@ -57,36 +63,68 @@ async def get_current_user_optional(
 async def get_current_user(
     request: Request,
     db: AsyncSession = Depends(get_db),
-    token: str = Depends(oauth2_scheme),
+    bearer_token: str | None = Depends(oauth2_scheme),
 ) -> User:
     """
     Dépendance centrale d'authentification.
-    Décode le JWT, valide la signature et retourne l'utilisateur actif correspondant.
+    Extrait le token depuis le header Authorization: Bearer, le cookie etp_access_token
+    ou le header brut, décode le JWT et retourne l'utilisateur actif.
     """
-    credentials_exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Impossible de valider les informations d'identification",
-        headers={"WWW-Authenticate": "Bearer"},
-    )
+    token = bearer_token
+    if not token:
+        token = request.cookies.get("etp_access_token")
+    if not token:
+        auth_header = request.headers.get("authorization", "")
+        if auth_header.lower().startswith("bearer "):
+            token = auth_header[7:].strip()
+
+    if not token:
+        logger.warning(
+            "Auth echec : aucun jeton pour %s %s (cookies: %s)",
+            request.method,
+            request.url.path,
+            list(request.cookies.keys()),
+        )
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Impossible de valider les informations d'identification",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
 
     try:
         payload = verify_access_token(token)
         user_id: str | None = payload.get("sub")
         if user_id is None:
-            raise credentials_exception
+            logger.warning("Auth echec : sub manquant dans le JWT pour %s", request.url.path)
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Impossible de valider les informations d'identification",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
         token_data = TokenData(user_id=user_id)
-    except JWTError:
-        raise credentials_exception
+    except JWTError as err:
+        logger.warning("Auth echec JWT (%s) pour %s", err, request.url.path)
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Impossible de valider les informations d'identification",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
 
     result = await db.execute(select(User).where(User.id == token_data.user_id))
     user = result.scalars().first()
 
     if user is None or not user.is_active:
-        raise credentials_exception
+        logger.warning("Auth echec : utilisateur %s introuvable ou inactif", token_data.user_id)
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Impossible de valider les informations d'identification",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
 
     # Verification d'email obligatoire : un token emis a l'inscription ne doit
     # pas permettre de contourner la confirmation de l'adresse email.
     if not user.is_verified:
+        logger.warning("Auth echec : compte %s non vérifié", user.email)
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail=UNVERIFIED_EMAIL_DETAIL,

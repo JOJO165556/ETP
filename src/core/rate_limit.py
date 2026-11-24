@@ -73,11 +73,25 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         self.default_limit = default_limit
 
     async def dispatch(self, request: Request, call_next):
-        # Identifier le client (IP ou token)
-        client_id = request.client.host if request.client else "unknown"
+        # Exempter les sondes de santé et la doc du rate limiting
+        if request.url.path in ("/health", "/health/ready", "/docs", "/redoc", "/openapi.json"):
+            return await call_next(request)
+
+        # Identifier le client (token Bearer, cookie de session ou IP réelle via X-Forwarded-For)
+        client_id = ""
         auth_header = request.headers.get("Authorization", "")
-        if auth_header.startswith("Bearer "):
-            client_id = auth_header[7:30]  # Utiliser une partie du token comme clé
+        if auth_header.lower().startswith("bearer "):
+            client_id = auth_header[7:30].strip()
+        elif "etp_access_token" in request.cookies:
+            client_id = request.cookies["etp_access_token"][:25]
+        else:
+            forwarded = request.headers.get("x-forwarded-for")
+            if forwarded:
+                client_id = forwarded.split(",")[0].strip()
+            elif request.client:
+                client_id = request.client.host
+            else:
+                client_id = "unknown"
 
         key = f"rate_limit:{client_id}:{request.url.path}"
         is_limited, info = await self.limiter.is_rate_limited(key, self.default_limit)

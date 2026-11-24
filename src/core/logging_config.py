@@ -33,6 +33,8 @@ def setup_logging(level: str = "INFO") -> None:
     root_logger.handlers.clear()
     root_logger.addHandler(handler)
 
-    # Reduire le bruit des librairies
+    # Reduire le bruit des requêtes SQL uniquement
     logging.getLogger("sqlalchemy.engine").setLevel(logging.WARNING)
-    logging.getLogger("uvicorn.access").setLevel(logging.WARNING)
+    # uvicorn.access et uvicorn.error en INFO pour tracer toutes les requêtes entrantes
+    logging.getLogger("uvicorn.access").setLevel(logging.INFO)
+    logging.getLogger("uvicorn.error").setLevel(logging.INFO)

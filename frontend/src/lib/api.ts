@@ -34,15 +34,13 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
     credentials: "same-origin",
   });
 
-  // 401 : déconnexion uniquement si le token est définitivement invalide
-  // (pas pour des ressources protégées ponctuelles qui échouent temporairement)
-  // On ne déclenche le logout que si l'endpoint est lié à la session elle-même.
-  const isSessionEndpoint =
-    endpoint.includes("/auth/me") ||
-    endpoint.includes("/users/me") ||
-    endpoint.includes("/auth/login") ||
-    endpoint.includes("/auth/token");
-  if (res.status === 401 && isSessionEndpoint) {
+  // 401 : Déconnexion automatique uniquement si l'endpoint de validation de session
+  // explicite (/auth/me ou /auth/refresh) confirme l'invalidation définitive.
+  // On ne redirige JAMAIS sur un échec temporaire de /users/me ou de requêtes métier
+  // afin d'éviter les déconnexions intempestives lors d'un cold start du serveur.
+  const isStrictSessionCheck =
+    endpoint === "/auth/me" || endpoint === "/auth/refresh";
+  if (res.status === 401 && isStrictSessionCheck) {
     if (typeof window !== "undefined") {
       fetch("/api/auth/logout").catch(() => {});
       window.location.href = "/login?error=session_expired";
