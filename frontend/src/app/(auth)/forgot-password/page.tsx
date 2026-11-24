@@ -10,6 +10,7 @@ import * as z from "zod";
 import { isFirebaseConfigured, sendPasswordReset } from "@/lib/firebase";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { api } from "@/lib/api";
 
 /* Schéma de validation pour l'adresse email */
 const schema = z.object({
@@ -38,15 +39,11 @@ function ForgotPasswordForm() {
         setSent(true);
       } else {
         // Mode dégradé : avant la migration Firebase
-        const res = await fetch("/api/v1/auth/forgot-password", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email: data.email }),
-        });
-        if (res.ok || res.status === 404) {
+        try {
+          await api.post("/auth/forgot-password", { email: data.email });
           setSent(true);
-        } else {
-          throw new Error("Erreur lors de l'envoi");
+        } catch {
+          setSent(true);
         }
       }
     } catch {

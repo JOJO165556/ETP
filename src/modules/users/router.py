@@ -33,6 +33,7 @@ from src.modules.users.schemas import (
 from src.modules.users.services import UserService
 from src.modules.applications.models import Application
 from src.modules.jobs.models import Job
+from src.modules.users.tasks import process_candidate_cv
 
 profile_router = APIRouter(prefix="/profile")
 
@@ -150,10 +151,15 @@ async def upload_candidate_cv(
             detail=f"Erreur lors du transfert vers le service de stockage : {exc}",
         ) from exc
 
-    from src.modules.users.tasks import process_candidate_cv
-
     # Déclenchement de l'extraction par IA (OCR/NLP) en tâche de fond (Celery)
-    process_candidate_cv.delay(str(current_user.id), file_key)
+    task_id: str | None = None
+    try:
+        task = process_candidate_cv.delay(str(current_user.id), file_key)
+        if task and hasattr(task, "id"):
+            task_id = str(task.id)
+    except Exception as exc:
+        import logging
+        logging.getLogger(__name__).warning("Echec programmation Celery process_candidate_cv: %s", exc)
 
     updated_profile = await profile_repo.update_by_user_id(
         user_id=str(current_user.id),
@@ -169,6 +175,7 @@ async def upload_candidate_cv(
             detail="Profil utilisateur introuvable",
         )
 
+    setattr(updated_profile, "task_id", task_id)
     return updated_profile
 
 

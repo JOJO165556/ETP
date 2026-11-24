@@ -13,19 +13,33 @@ class UserProfileRepository(BaseAsyncRepository[Profile]):
         # Initialisation de la classe parente avec le modèle Profile et la session
         super().__init__(Profile, session)
 
-    async def get_by_user_id(self, user_id: str) -> Profile | None:
+    async def get_by_user_id(self, user_id: str | UUID) -> Profile | None:
         """
-        Récupère le profil d'un utilisateur par son user_id
+        Récupère le profil d'un utilisateur par son user_id avec ses relations chargées.
         """
-        query = select(self.model).where(self.model.user_id == user_id)
+        query = (
+            select(self.model)
+            .options(
+                selectinload(self.model.experiences),
+                selectinload(self.model.formations),
+            )
+            .where(self.model.user_id == str(user_id))
+        )
         result = await self.session.execute(query)
         return result.scalar_one_or_none()
 
-    async def update_by_user_id(self, user_id: str, data: dict) -> Profile | None:
-        """Met à jour le profil via le user_id"""
+    async def update_by_user_id(self, user_id: str | UUID, data: dict) -> Profile | None:
+        """Met à jour le profil via le user_id, le crée s'il n'existe pas encore."""
+        profile = await self.get_by_user_id(user_id)
+        if not profile:
+            profile = self.model(user_id=str(user_id), **data)
+            self.session.add(profile)
+            await self.session.flush()
+            return await self.get_by_user_id(user_id)
+
         query = (
             update(self.model)
-            .where(self.model.user_id == user_id)
+            .where(self.model.user_id == str(user_id))
             .values(**data)
             .execution_options(synchronize_session="fetch")
         )

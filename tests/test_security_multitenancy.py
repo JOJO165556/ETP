@@ -193,6 +193,50 @@ def test_upload_rejects_fake_pdf_by_magic_bytes():
     assert "PDF" in resp.json()["detail"]
 
 
+def test_upload_cv_success_serialization():
+    """Un upload de PDF valide retourne un profil sérialisé avec succès (200)."""
+    import uuid
+    from src.modules.users.models import Profile
+
+    uid = uuid.uuid4()
+    current_user = _user(UserRole.CANDIDATE, user_id=uid)
+    client = TestClient(_make_app(users_router, current_user=current_user))
+
+    with (
+        patch("src.modules.users.router.AsyncStorageService") as mock_storage_cls,
+        patch("src.modules.users.router.UserProfileRepository") as mock_repo_cls,
+        patch("src.modules.users.router.process_candidate_cv") as mock_task,
+    ):
+        mock_storage = MagicMock()
+        mock_storage.upload_cv = AsyncMock(return_value="cvs/resume.pdf")
+        mock_storage_cls.return_value = mock_storage
+
+        fake_task_result = MagicMock()
+        fake_task_result.id = "celery-task-123"
+        mock_task.delay.return_value = fake_task_result
+
+        fake_profile = Profile(
+            id=uuid.uuid4(),
+            user_id=str(uid),
+            cv_key="cvs/resume.pdf",
+        )
+        mock_repo = MagicMock()
+        mock_repo.update_by_user_id = AsyncMock(return_value=fake_profile)
+        mock_repo_cls.return_value = mock_repo
+
+        resp = client.post(
+            f"{API}/users/profile/upload-cv",
+            files={"file": ("resume.pdf", b"%PDF-1.4 sample content", "application/pdf")},
+        )
+
+        assert resp.status_code == 200, resp.text
+        data = resp.json()
+        assert data["cv_key"] == "cvs/resume.pdf"
+        assert data["task_id"] == "celery-task-123"
+        assert "experiences" in data
+        assert "formations" in data
+
+
 # ----------------------------------------------------------------------
 # 6. Schémas forgot-password / reset-password
 

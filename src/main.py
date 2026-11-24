@@ -2,6 +2,7 @@ import asyncio
 import logging
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request, Response
+from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
 from prometheus_fastapi_instrumentator import Instrumentator
@@ -141,6 +142,15 @@ try:
     app.add_middleware(RateLimitMiddleware, redis_url=str(settings.REDIS_URL), default_limit=100)
 except Exception:
     pass
+
+@app.exception_handler(Exception)
+async def unhandled_exception_handler(request: Request, exc: Exception):
+    logging.getLogger("uvicorn.error").exception("Erreur serveur non gérée sur %s: %s", request.url.path, exc)
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "Une erreur inattendue est survenue côté serveur."},
+    )
+
 
 @app.get("/health", tags=["Infrastructure"], summary="Verification de l'etat de sante (deep)")
 async def health_check_endpoint():

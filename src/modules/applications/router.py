@@ -83,13 +83,17 @@ async def apply_to_job(
 
     task_result = None
     if application.resume_storage_path:
-        task_result = parse_resume.delay(str(application.id), application.resume_storage_path)
-        await db.execute(
-            update(Application)
-            .where(Application.id == application.id)
-            .values(celery_task_id=task_result.id, celery_task_status=CELERY_TASK_PENDING)
-        )
-        await db.commit()
+        try:
+            task_result = parse_resume.delay(str(application.id), application.resume_storage_path)
+            await db.execute(
+                update(Application)
+                .where(Application.id == application.id)
+                .values(celery_task_id=task_result.id, celery_task_status=CELERY_TASK_PENDING)
+            )
+            await db.commit()
+        except Exception as exc:
+            import logging
+            logging.getLogger(__name__).warning("Echec programmation Celery parse_resume: %s", exc)
 
     repo = ApplicationRepository(db)
     application = await repo.get(str(application.id))
@@ -125,11 +129,12 @@ async def get_task_status(
     db: AsyncSession = Depends(get_db)
 ):
     """Permet de vérifier le statut d'une tâche Celery."""
-    application = await db.execute(
+    res = await db.execute(
         select(Application)
         .where(Application.celery_task_id == task_id)
         .where(Application.candidate_id == str(current_user.id))
-    ).scalar_one_or_none()
+    )
+    application = res.scalar_one_or_none()
     
     if not application:
         raise HTTPException(

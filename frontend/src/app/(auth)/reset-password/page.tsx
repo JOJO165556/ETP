@@ -10,6 +10,7 @@ import * as z from "zod";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { api } from "@/lib/api";
 
 /* Schéma de validation : mot de passe robuste, confirmation obligatoire */
 const schema = z
@@ -57,21 +58,14 @@ function ResetPasswordForm() {
   const onSubmit = async (data: FormValues) => {
     setError(null);
     try {
-      const res = await fetch("/api/v1/auth/reset-password", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token, new_password: data.password }),
+      await api.post("/auth/reset-password", {
+        token,
+        new_password: data.password,
       });
-
-      const json = await res.json();
-
-      if (!res.ok) {
-        setError(json.detail || "Une erreur est survenue.");
-        return;
-      }
       setDone(true);
-    } catch {
-      setError("Une erreur est survenue. Veuillez réessayer.");
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Une erreur est survenue.";
+      setError(msg);
     }
   };
 

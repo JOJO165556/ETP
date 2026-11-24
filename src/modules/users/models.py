@@ -86,10 +86,10 @@ class Profile(Base, BaseUUIDMixin, AuditMixin, SoftDeleteMixin):
     # Relations
     user: Mapped["User"] = relationship("User", back_populates="profile")
     experiences: Mapped[list["Experience"]] = relationship(
-        "Experience", back_populates="profile", cascade="all, delete-orphan"
+        "Experience", back_populates="profile", cascade="all, delete-orphan", lazy="selectin"
     )
     formations: Mapped[list["Formation"]] = relationship(
-        "Formation", back_populates="profile", cascade="all, delete-orphan"
+        "Formation", back_populates="profile", cascade="all, delete-orphan", lazy="selectin"
     )
 
 

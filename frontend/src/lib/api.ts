@@ -22,12 +22,17 @@ const API_V1 = typeof window !== "undefined" ? "/api/v1" : `${API_BASE}/api/v1`;
  * Le Middleware se chargera d'injecter le header Authorization vers FastAPI.
  */
 async function request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+  const isFormData = typeof FormData !== "undefined" && options.body instanceof FormData;
   const headers: HeadersInit = {
-    "Content-Type": "application/json",
+    ...(isFormData ? {} : { "Content-Type": "application/json" }),
     ...(options.headers as Record<string, string> | undefined),
   };
 
-  const res = await fetch(`${API_V1}${endpoint}`, { ...options, headers });
+  const res = await fetch(`${API_V1}${endpoint}`, {
+    ...options,
+    headers,
+    credentials: "same-origin",
+  });
 
   // 401 Non autorisé ou 403 session invalide : nettoyage et redirection
   if (

@@ -28,6 +28,13 @@ celery_app.conf.update(
     task_soft_time_limit=270,
     # Reconnexion au broker au demarrage (utile en conteneur/orchestration)
     broker_connection_retry_on_startup=True,
+    broker_connection_timeout=1.0,
+    broker_transport_options={
+        "max_retries": 1,
+        "interval_start": 0,
+        "interval_step": 0.2,
+        "interval_max": 0.5,
+    },
     # On autorise le chargement des taches depuis nos differents modules
     imports=[
         "src.modules.applications.tasks",

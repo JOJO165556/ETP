@@ -133,6 +133,7 @@ class ProfileResponse(ProfileBase):
     skills: list[str] | None = None
     experiences: list[ExperienceResponse] | None = None
     formations: list[FormationResponse] | None = None
+    task_id: str | None = None
 
 
 class ProfileUpdate(BaseModel):

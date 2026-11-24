@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { UploadCloud, Lock, ArrowRight, Loader2, FileText, CheckCircle2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
-import { API_V1 } from "@/lib/api";
+import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 
 /* Page d'upload du CV (Étape 1 de l'onboarding) */
@@ -40,16 +40,8 @@ export default function CVUploadPage() {
         const formData = new FormData();
         formData.append("file", file);
 
-        const res = await fetch(`${API_V1}/users/profile/upload-cv`, {
-          method: "POST",
-          body: formData,
-        });
+        const data = await api.post<{ task_id?: string }>("/users/profile/upload-cv", formData);
 
-        if (!res.ok) {
-          throw new Error("Erreur lors de l'upload");
-        }
-
-        const data = await res.json();
         // Stocker le task_id Celery pour le polling de la page suivante
         if (data.task_id) {
           sessionStorage.setItem("cv_task_id", data.task_id);
@@ -61,7 +53,8 @@ export default function CVUploadPage() {
         router.push("/cv-processing");
       } catch (error) {
         console.error(error);
-        alert("Une erreur est survenue lors du téléchargement du CV.");
+        const msg = error instanceof Error ? error.message : "Une erreur est survenue lors de l'upload.";
+        alert(msg);
       } finally {
         setIsUploading(false);
       }
